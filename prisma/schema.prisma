@@ -118,6 +118,7 @@ model Customer {
 
   @@unique([companyId, customerNumber])
   @@index([companyId])
+  @@index([companyId, balance])
 }
 
 // Invoices
@@ -147,6 +148,7 @@ model Invoice {
   @@unique([companyId, invoiceNumber])
   @@index([companyId, customerId])
   @@index([status])
+  @@index([companyId, status, date])
 }
 
 model InvoiceItem {
@@ -190,6 +192,7 @@ model Payment {
 
   @@index([companyId, customerId])
   @@index([invoiceId])
+  @@index([companyId, paymentDate])
 }
 
 // Inventory Items

@@ -1,6 +1,7 @@
 'use server'
 
 import { prisma } from '@/lib/prisma'
+import { logger } from '@/lib/logger'
 import { getCurrentCompanyId, generateCustomerNumber } from '@/lib/customer-utils'
 import {
   customerSchema,
@@ -8,7 +9,7 @@ import {
   type CustomerFormValues,
   type CustomerFiltersValues,
 } from '@/lib/validations/customer'
-import { Prisma } from '@prisma/client'
+import { Prisma, Customer } from '@prisma/client'
 import { revalidatePath } from 'next/cache'
 
 // Action result type
@@ -18,12 +19,18 @@ type ActionResult<T = unknown> = {
   error?: string
 }
 
+// Customer list response type
+type CustomerListResponse = {
+  customers: Customer[]
+  total: number
+}
+
 /**
  * Get list of customers with filters and pagination
  */
 export async function getCustomers(
   filters?: Partial<CustomerFiltersValues>
-): Promise<ActionResult<{ customers: any[]; total: number }>> {
+): Promise<ActionResult<CustomerListResponse>> {
   try {
     const companyId = await getCurrentCompanyId()
 
@@ -69,7 +76,7 @@ export async function getCustomers(
       },
     }
   } catch (error) {
-    console.error('Error fetching customers:', error)
+    logger.error('Error fetching customers', { error })
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to fetch customers',
@@ -80,7 +87,7 @@ export async function getCustomers(
 /**
  * Get a single customer by ID
  */
-export async function getCustomer(id: string): Promise<ActionResult<any>> {
+export async function getCustomer(id: string): Promise<ActionResult<Customer>> {
   try {
     const companyId = await getCurrentCompanyId()
 
@@ -103,7 +110,7 @@ export async function getCustomer(id: string): Promise<ActionResult<any>> {
       data: customer,
     }
   } catch (error) {
-    console.error('Error fetching customer:', error)
+    logger.error('Error fetching customer', { error })
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to fetch customer',
@@ -116,7 +123,7 @@ export async function getCustomer(id: string): Promise<ActionResult<any>> {
  */
 export async function createCustomer(
   data: CustomerFormValues
-): Promise<ActionResult<any>> {
+): Promise<ActionResult<Customer>> {
   try {
     const companyId = await getCurrentCompanyId()
 
@@ -153,7 +160,7 @@ export async function createCustomer(
       data: customer,
     }
   } catch (error) {
-    console.error('Error creating customer:', error)
+    logger.error('Error creating customer', { error })
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to create customer',
@@ -167,7 +174,7 @@ export async function createCustomer(
 export async function updateCustomer(
   id: string,
   data: CustomerFormValues
-): Promise<ActionResult<any>> {
+): Promise<ActionResult<Customer>> {
   try {
     const companyId = await getCurrentCompanyId()
 
@@ -212,7 +219,7 @@ export async function updateCustomer(
       data: customer,
     }
   } catch (error) {
-    console.error('Error updating customer:', error)
+    logger.error('Error updating customer', { error })
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to update customer',
@@ -252,7 +259,7 @@ export async function deleteCustomer(id: string): Promise<ActionResult> {
       success: true,
     }
   } catch (error) {
-    console.error('Error deleting customer:', error)
+    logger.error('Error deleting customer', { error })
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to delete customer',
@@ -292,7 +299,7 @@ export async function restoreCustomer(id: string): Promise<ActionResult> {
       success: true,
     }
   } catch (error) {
-    console.error('Error restoring customer:', error)
+    logger.error('Error restoring customer', { error })
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to restore customer',

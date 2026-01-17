@@ -18,14 +18,9 @@ export default withAuth(
 )
 
 // Protect application routes
+// Excludes public pages: /welcome, /login, /register
 export const config = {
   matcher: [
-    "/",
-    "/customers/:path*",
-    "/invoices/:path*",
-    "/payments/:path*",
-    "/reports/:path*",
-    "/settings/:path*",
-    "/api/:path*",
+    "/((?!welcome|login|register|api/auth|_next/static|_next/image|favicon.ico).*)",
   ],
 }

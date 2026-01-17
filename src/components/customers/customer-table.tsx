@@ -16,6 +16,16 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { formatCurrency } from '@/lib/utils'
@@ -32,6 +42,7 @@ interface CustomerTableProps {
 export function CustomerTable({ customers, isLoading }: CustomerTableProps) {
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null)
   const [isFormOpen, setIsFormOpen] = useState(false)
+  const [deletingCustomerId, setDeletingCustomerId] = useState<string | null>(null)
   const deleteCustomer = useDeleteCustomer()
   const restoreCustomer = useRestoreCustomer()
 
@@ -40,9 +51,14 @@ export function CustomerTable({ customers, isLoading }: CustomerTableProps) {
     setIsFormOpen(true)
   }
 
-  const handleDelete = async (id: string) => {
-    if (confirm('Are you sure you want to delete this customer?')) {
-      await deleteCustomer.mutateAsync(id)
+  const handleDeleteClick = (id: string) => {
+    setDeletingCustomerId(id)
+  }
+
+  const handleDeleteConfirm = async () => {
+    if (deletingCustomerId) {
+      await deleteCustomer.mutateAsync(deletingCustomerId)
+      setDeletingCustomerId(null)
     }
   }
 
@@ -123,7 +139,7 @@ export function CustomerTable({ customers, isLoading }: CustomerTableProps) {
                       </DropdownMenuItem>
                       {customer.isActive ? (
                         <DropdownMenuItem
-                          onClick={() => handleDelete(customer.id)}
+                          onClick={() => handleDeleteClick(customer.id)}
                           className="text-red-600"
                         >
                           <Trash2 className="h-4 w-4 mr-2" />
@@ -150,6 +166,26 @@ export function CustomerTable({ customers, isLoading }: CustomerTableProps) {
         customer={editingCustomer}
         onClose={handleCloseForm}
       />
+
+      <AlertDialog open={!!deletingCustomerId} onOpenChange={(open) => !open && setDeletingCustomerId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will deactivate the customer. You can restore them later from the inactive customers list.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteConfirm}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   )
 }
