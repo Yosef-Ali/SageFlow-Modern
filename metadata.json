@@ -1,0 +1,5 @@
+{
+  "name": "SageFlow Modern",
+  "description": "A modern, web-based reimagining of classic accounting software like Peachtree/Sage 50. Features a clean Windows-style UI, real-time dashboards, and AI-powered financial insights.",
+  "requestFramePermissions": []
+}
