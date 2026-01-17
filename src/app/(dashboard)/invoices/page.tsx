@@ -2,8 +2,8 @@
 
 import { Suspense } from 'react'
 import Link from 'next/link'
-import { useSearchParams } from 'next/navigation'
-import { Plus, FileText } from 'lucide-react'
+import { useSearchParams, useRouter } from 'next/navigation'
+import { Plus, Scan } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { InvoiceTable } from '@/components/invoices/invoice-table'
@@ -16,17 +16,26 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
+import { AIAutoScan } from '@/components/ai/ai-auto-scan'
 import { useState } from 'react'
 
 function InvoiceListContent() {
   const searchParams = useSearchParams()
+  const router = useRouter()
   const [search, setSearch] = useState('')
   const [status, setStatus] = useState<string>('all')
+  const [isAutoScanOpen, setIsAutoScanOpen] = useState(false)
 
   const { data, isLoading, error } = useInvoices({
     search: search || undefined,
     status: status as any,
   })
+
+  const handleScanComplete = (scannedData: any) => {
+    // Store scanned data in session storage and redirect to new invoice page
+    sessionStorage.setItem('scannedInvoiceData', JSON.stringify(scannedData))
+    router.push('/invoices/new')
+  }
 
   return (
     <div className="space-y-6">
@@ -36,12 +45,22 @@ function InvoiceListContent() {
           <h1 className="text-3xl font-bold tracking-tight">Invoices</h1>
           <p className="text-slate-500">Create and manage customer invoices</p>
         </div>
-        <Link href="/invoices/new">
-          <Button className="bg-emerald-600 hover:bg-emerald-700">
-            <Plus className="h-4 w-4 mr-2" />
-            Create Invoice
+        <div className="flex items-center gap-3">
+          <Button
+            onClick={() => setIsAutoScanOpen(true)}
+            variant="outline"
+            className="border-emerald-600 text-emerald-600 hover:bg-emerald-50"
+          >
+            <Scan className="h-4 w-4 mr-2" />
+            AI Auto-Scan
           </Button>
-        </Link>
+          <Link href="/invoices/new">
+            <Button className="bg-emerald-600 hover:bg-emerald-700">
+              <Plus className="h-4 w-4 mr-2" />
+              New Invoice
+            </Button>
+          </Link>
+        </div>
       </div>
 
       {/* Filters */}
@@ -96,6 +115,13 @@ function InvoiceListContent() {
           )}
         </>
       )}
+
+      {/* AI Auto-Scan Dialog */}
+      <AIAutoScan
+        open={isAutoScanOpen}
+        onOpenChange={setIsAutoScanOpen}
+        onScanComplete={handleScanComplete}
+      />
     </div>
   )
 }

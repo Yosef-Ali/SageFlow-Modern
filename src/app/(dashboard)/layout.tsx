@@ -1,5 +1,6 @@
 import { ReactNode } from 'react'
 import { DashboardSidebar } from '@/components/dashboard/sidebar'
+import { AIAssistant } from '@/components/ai/ai-assistant'
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   return (
@@ -13,6 +14,9 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           {children}
         </div>
       </main>
+
+      {/* AI Assistant - Floating Chatbot */}
+      <AIAssistant />
     </div>
   )
 }
