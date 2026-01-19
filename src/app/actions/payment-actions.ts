@@ -1,6 +1,8 @@
 'use server'
 
-import { prisma } from '@/lib/prisma'
+import { db } from '@/db'
+import { payments, invoices, customers } from '@/db/schema'
+import { eq, and, ilike, gte, lte, inArray, desc, asc, count, sql } from 'drizzle-orm'
 import { getCurrentCompanyId } from '@/lib/customer-utils'
 import {
   paymentSchema,
@@ -8,7 +10,6 @@ import {
   type PaymentFormValues,
   type PaymentFiltersValues,
 } from '@/lib/validations/payment'
-import { Prisma } from '@prisma/client'
 import { revalidatePath } from 'next/cache'
 
 // Action result type
@@ -29,45 +30,80 @@ export async function getPayments(
 
     const validatedFilters = paymentFiltersSchema.parse(filters || {})
 
-    const where: Prisma.PaymentWhereInput = {
-      companyId,
-      ...(validatedFilters.customerId && { customerId: validatedFilters.customerId }),
-      ...(validatedFilters.invoiceId && { invoiceId: validatedFilters.invoiceId }),
-      ...(validatedFilters.paymentMethod && { paymentMethod: validatedFilters.paymentMethod }),
-      ...(validatedFilters.dateFrom && { paymentDate: { gte: validatedFilters.dateFrom } }),
-      ...(validatedFilters.dateTo && { paymentDate: { lte: validatedFilters.dateTo } }),
-      ...(validatedFilters.search && {
-        OR: [
-          { reference: { contains: validatedFilters.search, mode: 'insensitive' } },
-          { customer: { name: { contains: validatedFilters.search, mode: 'insensitive' } } },
-        ],
-      }),
+    // Build where conditions
+    const conditions = [eq(payments.companyId, companyId)]
+
+    if (validatedFilters.customerId) {
+      conditions.push(eq(payments.customerId, validatedFilters.customerId))
     }
 
-    const orderBy: Prisma.PaymentOrderByWithRelationInput = {
-      [validatedFilters.sortBy || 'createdAt']: validatedFilters.sortOrder || 'desc',
+    if (validatedFilters.invoiceId) {
+      conditions.push(eq(payments.invoiceId, validatedFilters.invoiceId))
     }
 
-    const total = await prisma.payment.count({ where })
+    if (validatedFilters.paymentMethod) {
+      conditions.push(eq(payments.paymentMethod, validatedFilters.paymentMethod))
+    }
 
-    const payments = await prisma.payment.findMany({
-      where,
+    if (validatedFilters.dateFrom) {
+      conditions.push(gte(payments.paymentDate, validatedFilters.dateFrom))
+    }
+
+    if (validatedFilters.dateTo) {
+      conditions.push(lte(payments.paymentDate, validatedFilters.dateTo))
+    }
+
+    if (validatedFilters.search) {
+      const searchTerm = `%${validatedFilters.search}%`
+      conditions.push(ilike(payments.reference, searchTerm))
+    }
+
+    const whereClause = and(...conditions)
+
+    // Get total count
+    const [{ value: total }] = await db
+      .select({ value: count() })
+      .from(payments)
+      .where(whereClause)
+
+    // Build orderBy - use a type-safe column map
+    const sortableColumns = {
+      id: payments.id,
+      amount: payments.amount,
+      paymentDate: payments.paymentDate,
+      paymentMethod: payments.paymentMethod,
+      reference: payments.reference,
+      createdAt: payments.createdAt,
+    } as const
+
+    const sortField = validatedFilters.sortBy || 'createdAt'
+    const sortOrder = validatedFilters.sortOrder || 'desc'
+    const orderByColumn = sortableColumns[sortField as keyof typeof sortableColumns] ?? payments.createdAt
+    const orderBy = sortOrder === 'asc' ? asc(orderByColumn) : desc(orderByColumn)
+
+    // Get payments with relations
+    const limit = validatedFilters.limit || 20
+    const page = validatedFilters.page || 1
+    const offset = (page - 1) * limit
+
+    const paymentList = await db.query.payments.findMany({
+      where: whereClause,
       orderBy,
-      skip: ((validatedFilters.page || 1) - 1) * (validatedFilters.limit || 20),
-      take: validatedFilters.limit || 20,
-      include: {
+      limit,
+      offset,
+      with: {
         customer: {
-          select: { id: true, name: true },
+          columns: { id: true, name: true },
         },
         invoice: {
-          select: { id: true, invoiceNumber: true, total: true },
+          columns: { id: true, invoiceNumber: true, total: true },
         },
       },
     })
 
     return {
       success: true,
-      data: { payments, total },
+      data: { payments: paymentList, total },
     }
   } catch (error) {
     console.error('Error fetching payments:', error)
@@ -85,14 +121,14 @@ export async function getPayment(id: string): Promise<ActionResult<any>> {
   try {
     const companyId = await getCurrentCompanyId()
 
-    const payment = await prisma.payment.findUnique({
-      where: { id, companyId },
-      include: {
+    const payment = await db.query.payments.findFirst({
+      where: and(eq(payments.id, id), eq(payments.companyId, companyId)),
+      with: {
         customer: {
-          select: { id: true, name: true, email: true, phone: true },
+          columns: { id: true, name: true, email: true, phone: true },
         },
         invoice: {
-          select: { id: true, invoiceNumber: true, total: true, paidAmount: true },
+          columns: { id: true, invoiceNumber: true, total: true, paidAmount: true },
         },
       },
     })
@@ -122,66 +158,67 @@ export async function createPayment(
 
     const validatedData = paymentSchema.parse(data)
 
-    const payment = await prisma.$transaction(async (tx) => {
+    const payment = await db.transaction(async (tx) => {
       // Create the payment
-      const newPayment = await tx.payment.create({
-        data: {
+      const [newPayment] = await tx
+        .insert(payments)
+        .values({
           companyId,
           customerId: validatedData.customerId,
           invoiceId: validatedData.invoiceId || null,
-          amount: validatedData.amount,
+          amount: String(validatedData.amount),
           paymentDate: validatedData.paymentDate,
           paymentMethod: validatedData.paymentMethod,
           reference: validatedData.reference || null,
           notes: validatedData.notes || null,
-        },
-      })
+        })
+        .returning()
 
       // If linked to an invoice, update the invoice paid amount
       if (validatedData.invoiceId) {
-        const invoice = await tx.invoice.findUnique({
-          where: { id: validatedData.invoiceId },
-          select: { paidAmount: true, total: true },
+        const invoice = await tx.query.invoices.findFirst({
+          where: eq(invoices.id, validatedData.invoiceId),
+          columns: { paidAmount: true, total: true },
         })
 
         if (invoice) {
-          const newPaidAmount = invoice.paidAmount.toNumber() + validatedData.amount
-          const total = invoice.total.toNumber()
+          const newPaidAmount = Number(invoice.paidAmount) + validatedData.amount
+          const total = Number(invoice.total)
 
           // Determine new status based on payment
-          let newStatus = 'PARTIALLY_PAID'
+          let newStatus: 'PARTIALLY_PAID' | 'PAID' = 'PARTIALLY_PAID'
           if (newPaidAmount >= total) {
             newStatus = 'PAID'
           }
 
-          await tx.invoice.update({
-            where: { id: validatedData.invoiceId },
-            data: {
-              paidAmount: newPaidAmount,
-              status: newStatus as any,
-            },
-          })
+          await tx
+            .update(invoices)
+            .set({
+              paidAmount: String(newPaidAmount),
+              status: newStatus,
+              updatedAt: new Date(),
+            })
+            .where(eq(invoices.id, validatedData.invoiceId))
         }
       }
 
-      // Update customer balance
-      await tx.customer.update({
-        where: { id: validatedData.customerId },
-        data: {
-          balance: {
-            decrement: validatedData.amount,
-          },
-        },
-      })
+      // Update customer balance (decrement by payment amount)
+      await tx
+        .update(customers)
+        .set({
+          balance: sql`${customers.balance} - ${validatedData.amount}`,
+          updatedAt: new Date(),
+        })
+        .where(eq(customers.id, validatedData.customerId))
 
       return newPayment
     })
 
-    revalidatePath('/payments')
+    revalidatePath('/dashboard/payments')
     if (validatedData.invoiceId) {
-      revalidatePath(`/invoices/${validatedData.invoiceId}`)
+      revalidatePath(`/dashboard/invoices/${validatedData.invoiceId}`)
     }
-    revalidatePath('/invoices')
+    revalidatePath('/dashboard/invoices')
 
     return { success: true, data: payment }
   } catch (error) {
@@ -194,58 +231,162 @@ export async function createPayment(
 }
 
 /**
+ * Update an existing payment
+ */
+export async function updatePayment(
+  id: string,
+  data: PaymentFormValues
+): Promise<ActionResult<any>> {
+  try {
+    const companyId = await getCurrentCompanyId()
+
+    const validatedData = paymentSchema.parse(data)
+
+    // Get the existing payment
+    const existingPayment = await db.query.payments.findFirst({
+      where: and(eq(payments.id, id), eq(payments.companyId, companyId)),
+    })
+
+    if (!existingPayment) {
+      return { success: false, error: 'Payment not found' }
+    }
+
+    const payment = await db.transaction(async (tx) => {
+      const oldAmount = Number(existingPayment.amount)
+      const newAmount = validatedData.amount
+      const amountDiff = newAmount - oldAmount
+
+      // Update the payment
+      const [updatedPayment] = await tx
+        .update(payments)
+        .set({
+          customerId: validatedData.customerId,
+          invoiceId: validatedData.invoiceId || null,
+          amount: String(validatedData.amount),
+          paymentDate: validatedData.paymentDate,
+          paymentMethod: validatedData.paymentMethod,
+          reference: validatedData.reference || null,
+          notes: validatedData.notes || null,
+        })
+        .where(eq(payments.id, id))
+        .returning()
+
+      // Handle invoice updates if linked
+      if (validatedData.invoiceId === existingPayment.invoiceId && validatedData.invoiceId) {
+        // Same invoice - just update the amount difference
+        const invoice = await tx.query.invoices.findFirst({
+          where: eq(invoices.id, validatedData.invoiceId),
+          columns: { paidAmount: true, total: true },
+        })
+
+        if (invoice) {
+          const newPaidAmount = Number(invoice.paidAmount) + amountDiff
+          const total = Number(invoice.total)
+
+          let newStatus: 'SENT' | 'PARTIALLY_PAID' | 'PAID' = 'SENT'
+          if (newPaidAmount <= 0) {
+            newStatus = 'SENT'
+          } else if (newPaidAmount >= total) {
+            newStatus = 'PAID'
+          } else {
+            newStatus = 'PARTIALLY_PAID'
+          }
+
+          await tx
+            .update(invoices)
+            .set({
+              paidAmount: String(Math.max(0, newPaidAmount)),
+              status: newStatus,
+              updatedAt: new Date(),
+            })
+            .where(eq(invoices.id, validatedData.invoiceId))
+        }
+      }
+
+      // Update customer balance (adjust by amount difference)
+      if (amountDiff !== 0) {
+        await tx
+          .update(customers)
+          .set({
+            balance: sql`${customers.balance} - ${amountDiff}`,
+            updatedAt: new Date(),
+          })
+          .where(eq(customers.id, validatedData.customerId))
+      }
+
+      return updatedPayment
+    })
+
+    revalidatePath('/dashboard/payments')
+    revalidatePath(`/dashboard/payments/${id}`)
+    if (validatedData.invoiceId) {
+      revalidatePath(`/dashboard/invoices/${validatedData.invoiceId}`)
+    }
+    revalidatePath('/dashboard/invoices')
+
+    return { success: true, data: payment }
+  } catch (error) {
+    console.error('Error updating payment:', error)
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to update payment',
+    }
+  }
+}
+
+/**
  * Delete a payment (and reverse invoice/customer updates)
  */
 export async function deletePayment(id: string): Promise<ActionResult> {
   try {
     const companyId = await getCurrentCompanyId()
 
-    const payment = await prisma.payment.findUnique({
-      where: { id, companyId },
-      include: { invoice: true },
+    const payment = await db.query.payments.findFirst({
+      where: and(eq(payments.id, id), eq(payments.companyId, companyId)),
+      with: { invoice: true },
     })
 
     if (!payment) {
       return { success: false, error: 'Payment not found' }
     }
 
-    await prisma.$transaction(async (tx) => {
+    await db.transaction(async (tx) => {
       // If linked to invoice, reverse the paid amount
       if (payment.invoiceId) {
-        const invoice = await tx.invoice.findUnique({
-          where: { id: payment.invoiceId },
-          select: { paidAmount: true },
+        const invoice = await tx.query.invoices.findFirst({
+          where: eq(invoices.id, payment.invoiceId),
+          columns: { paidAmount: true },
         })
 
         if (invoice) {
-          const newPaidAmount = invoice.paidAmount.toNumber() - payment.amount.toNumber()
+          const newPaidAmount = Number(invoice.paidAmount) - Number(payment.amount)
 
-          await tx.invoice.update({
-            where: { id: payment.invoiceId },
-            data: {
-              paidAmount: Math.max(0, newPaidAmount),
+          await tx
+            .update(invoices)
+            .set({
+              paidAmount: String(Math.max(0, newPaidAmount)),
               status: newPaidAmount <= 0 ? 'SENT' : 'PARTIALLY_PAID',
-            },
-          })
+              updatedAt: new Date(),
+            })
+            .where(eq(invoices.id, payment.invoiceId))
         }
       }
 
-      // Reverse customer balance update
-      await tx.customer.update({
-        where: { id: payment.customerId },
-        data: {
-          balance: {
-            increment: payment.amount.toNumber(),
-          },
-        },
-      })
+      // Reverse customer balance update (increment by payment amount)
+      await tx
+        .update(customers)
+        .set({
+          balance: sql`${customers.balance} + ${Number(payment.amount)}`,
+          updatedAt: new Date(),
+        })
+        .where(eq(customers.id, payment.customerId))
 
       // Delete the payment
-      await tx.payment.delete({ where: { id } })
+      await tx.delete(payments).where(eq(payments.id, id))
     })
 
-    revalidatePath('/payments')
-    revalidatePath('/invoices')
+    revalidatePath('/dashboard/payments')
+    revalidatePath('/dashboard/invoices')
 
     return { success: true }
   } catch (error) {
@@ -266,13 +407,13 @@ export async function getUnpaidInvoicesForCustomer(
   try {
     const companyId = await getCurrentCompanyId()
 
-    const invoices = await prisma.invoice.findMany({
-      where: {
-        companyId,
-        customerId,
-        status: { in: ['SENT', 'PARTIALLY_PAID', 'OVERDUE'] },
-      },
-      select: {
+    const unpaidInvoices = await db.query.invoices.findMany({
+      where: and(
+        eq(invoices.companyId, companyId),
+        eq(invoices.customerId, customerId),
+        inArray(invoices.status, ['SENT', 'PARTIALLY_PAID', 'OVERDUE'])
+      ),
+      columns: {
         id: true,
         invoiceNumber: true,
         date: true,
@@ -280,10 +421,10 @@ export async function getUnpaidInvoicesForCustomer(
         total: true,
         paidAmount: true,
       },
-      orderBy: { dueDate: 'asc' },
+      orderBy: asc(invoices.dueDate),
     })
 
-    return { success: true, data: invoices }
+    return { success: true, data: unpaidInvoices }
   } catch (error) {
     console.error('Error fetching unpaid invoices:', error)
     return {

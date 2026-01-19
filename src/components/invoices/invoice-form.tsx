@@ -109,7 +109,7 @@ export function InvoiceForm({ invoice, onSuccess }: InvoiceFormProps) {
       if (onSuccess) {
         onSuccess()
       } else {
-        router.push('/invoices')
+        router.push('/dashboard/invoices')
       }
     } catch (error) {
       // Error handled by mutation hooks
@@ -329,7 +329,7 @@ export function InvoiceForm({ invoice, onSuccess }: InvoiceFormProps) {
         <Button
           type="button"
           variant="outline"
-          onClick={() => router.push('/invoices')}
+          onClick={() => router.push('/dashboard/invoices')}
         >
           Cancel
         </Button>

@@ -22,7 +22,7 @@ export function CustomerFilters() {
         params.delete('search')
       }
       params.set('status', status)
-      router.push(`/customers?${params.toString()}`)
+      router.push(`/dashboard/customers?${params.toString()}`)
     }, 300)
 
     return () => clearTimeout(timer)
@@ -31,7 +31,7 @@ export function CustomerFilters() {
   const handleClearFilters = () => {
     setSearch('')
     setStatus('active')
-    router.push('/customers')
+    router.push('/dashboard/customers')
   }
 
   const hasFilters = search || status !== 'active'

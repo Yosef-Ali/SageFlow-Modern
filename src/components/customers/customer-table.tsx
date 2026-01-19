@@ -29,24 +29,25 @@ import {
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { formatCurrency } from '@/lib/utils'
-import { Customer } from '@prisma/client'
+// import { Customer } from '@prisma/client' // Removing Prisma import
+import { type SerializedCustomer } from '@/types/customer'
 import { CustomerFormDialog } from './customer-form-dialog'
 import { useDeleteCustomer, useRestoreCustomer } from '@/hooks/use-customers'
 import { CustomersEmptyState } from './customers-empty-state'
 
 interface CustomerTableProps {
-  customers: Customer[]
+  customers: SerializedCustomer[]
   isLoading?: boolean
 }
 
 export function CustomerTable({ customers, isLoading }: CustomerTableProps) {
-  const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null)
+  const [editingCustomer, setEditingCustomer] = useState<SerializedCustomer | null>(null)
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [deletingCustomerId, setDeletingCustomerId] = useState<string | null>(null)
   const deleteCustomer = useDeleteCustomer()
   const restoreCustomer = useRestoreCustomer()
 
-  const handleEdit = (customer: Customer) => {
+  const handleEdit = (customer: SerializedCustomer) => {
     setEditingCustomer(customer)
     setIsFormOpen(true)
   }
@@ -112,12 +113,12 @@ export function CustomerTable({ customers, isLoading }: CustomerTableProps) {
                 <TableCell>
                   <span
                     className={
-                      Number(customer.balance) > 0
+                      customer.balance > 0
                         ? 'text-red-600 font-medium'
                         : 'text-slate-600'
                     }
                   >
-                    {formatCurrency(Number(customer.balance))}
+                    {formatCurrency(customer.balance)}
                   </span>
                 </TableCell>
                 <TableCell>
@@ -189,3 +190,4 @@ export function CustomerTable({ customers, isLoading }: CustomerTableProps) {
     </>
   )
 }
+

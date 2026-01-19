@@ -1,6 +1,8 @@
 'use server'
 
-import { prisma } from '@/lib/prisma'
+import { db } from '@/db'
+import { customers, Customer } from '@/db/schema'
+import { eq, and, or, ilike, desc, asc, count } from 'drizzle-orm'
 import { logger } from '@/lib/logger'
 import { getCurrentCompanyId, generateCustomerNumber } from '@/lib/customer-utils'
 import {
@@ -9,7 +11,6 @@ import {
   type CustomerFormValues,
   type CustomerFiltersValues,
 } from '@/lib/validations/customer'
-import { Prisma, Customer } from '@prisma/client'
 import { revalidatePath } from 'next/cache'
 
 // Action result type
@@ -19,9 +20,24 @@ type ActionResult<T = unknown> = {
   error?: string
 }
 
+// Helper type for serialized customer (handling Decimals)
+export type SerializedCustomer = Omit<Customer, 'balance' | 'creditLimit'> & {
+  balance: number
+  creditLimit: number
+}
+
+// Helper to serialize customer data (convert Decimals to numbers)
+function serializeCustomer(customer: Customer): SerializedCustomer {
+  return {
+    ...customer,
+    balance: Number(customer.balance),
+    creditLimit: Number(customer.creditLimit),
+  }
+}
+
 // Customer list response type
 type CustomerListResponse = {
-  customers: Customer[]
+  customers: SerializedCustomer[]
   total: number
 }
 
@@ -37,41 +53,70 @@ export async function getCustomers(
     // Validate and parse filters
     const validatedFilters = customerFiltersSchema.parse(filters || {})
 
-    // Build where clause
-    const where: Prisma.CustomerWhereInput = {
-      companyId,
-      ...(validatedFilters.status === 'active' && { isActive: true }),
-      ...(validatedFilters.status === 'inactive' && { isActive: false }),
-      ...(validatedFilters.search && {
-        OR: [
-          { name: { contains: validatedFilters.search, mode: 'insensitive' } },
-          { email: { contains: validatedFilters.search, mode: 'insensitive' } },
-          { customerNumber: { contains: validatedFilters.search, mode: 'insensitive' } },
-          { phone: { contains: validatedFilters.search, mode: 'insensitive' } },
-        ],
-      }),
+    // Build where conditions
+    const conditions = [eq(customers.companyId, companyId)]
+
+    if (validatedFilters.status === 'active') {
+      conditions.push(eq(customers.isActive, true))
+    } else if (validatedFilters.status === 'inactive') {
+      conditions.push(eq(customers.isActive, false))
     }
 
-    // Build orderBy
-    const orderBy: Prisma.CustomerOrderByWithRelationInput = {
-      [validatedFilters.sortBy || 'createdAt']: validatedFilters.sortOrder || 'desc',
+    if (validatedFilters.search) {
+      const searchTerm = `%${validatedFilters.search}%`
+      conditions.push(
+        or(
+          ilike(customers.name, searchTerm),
+          ilike(customers.email, searchTerm),
+          ilike(customers.customerNumber, searchTerm),
+          ilike(customers.phone, searchTerm)
+        )!
+      )
     }
+
+    const whereClause = and(...conditions)
 
     // Get total count
-    const total = await prisma.customer.count({ where })
+    const [{ value: total }] = await db
+      .select({ value: count() })
+      .from(customers)
+      .where(whereClause)
+
+    // Build orderBy - use a type-safe column map
+    const sortableColumns = {
+      id: customers.id,
+      name: customers.name,
+      email: customers.email,
+      customerNumber: customers.customerNumber,
+      phone: customers.phone,
+      balance: customers.balance,
+      creditLimit: customers.creditLimit,
+      createdAt: customers.createdAt,
+      updatedAt: customers.updatedAt,
+    } as const
+
+    const sortField = validatedFilters.sortBy || 'createdAt'
+    const sortOrder = validatedFilters.sortOrder || 'desc'
+    const orderByColumn = sortableColumns[sortField as keyof typeof sortableColumns] ?? customers.createdAt
+    const orderBy = sortOrder === 'asc' ? asc(orderByColumn) : desc(orderByColumn)
 
     // Get customers
-    const customers = await prisma.customer.findMany({
-      where,
-      orderBy,
-      skip: ((validatedFilters.page || 1) - 1) * (validatedFilters.limit || 20),
-      take: validatedFilters.limit || 20,
-    })
+    const limit = validatedFilters.limit || 20
+    const page = validatedFilters.page || 1
+    const offset = (page - 1) * limit
+
+    const customerList = await db
+      .select()
+      .from(customers)
+      .where(whereClause)
+      .orderBy(orderBy)
+      .limit(limit)
+      .offset(offset)
 
     return {
       success: true,
       data: {
-        customers,
+        customers: customerList.map(serializeCustomer),
         total,
       },
     }
@@ -87,15 +132,15 @@ export async function getCustomers(
 /**
  * Get a single customer by ID
  */
-export async function getCustomer(id: string): Promise<ActionResult<Customer>> {
+export async function getCustomer(id: string): Promise<ActionResult<SerializedCustomer>> {
   try {
     const companyId = await getCurrentCompanyId()
 
-    const customer = await prisma.customer.findUnique({
-      where: {
-        id,
-        companyId, // Security: Ensure customer belongs to user's company
-      },
+    const customer = await db.query.customers.findFirst({
+      where: and(
+        eq(customers.id, id),
+        eq(customers.companyId, companyId) // Security: Ensure customer belongs to user's company
+      ),
     })
 
     if (!customer) {
@@ -107,7 +152,7 @@ export async function getCustomer(id: string): Promise<ActionResult<Customer>> {
 
     return {
       success: true,
-      data: customer,
+      data: serializeCustomer(customer),
     }
   } catch (error) {
     logger.error('Error fetching customer', { error })
@@ -123,7 +168,7 @@ export async function getCustomer(id: string): Promise<ActionResult<Customer>> {
  */
 export async function createCustomer(
   data: CustomerFormValues
-): Promise<ActionResult<Customer>> {
+): Promise<ActionResult<SerializedCustomer>> {
   try {
     const companyId = await getCurrentCompanyId()
 
@@ -134,30 +179,31 @@ export async function createCustomer(
     const customerNumber = await generateCustomerNumber(companyId)
 
     // Create customer
-    const customer = await prisma.customer.create({
-      data: {
+    const [customer] = await db
+      .insert(customers)
+      .values({
         companyId,
         customerNumber,
         name: validatedData.name,
         email: validatedData.email || null,
         phone: validatedData.phone,
         taxId: validatedData.taxId || null,
-        billingAddress: validatedData.billingAddress as Prisma.InputJsonValue,
-        shippingAddress: (validatedData.sameAsBilling
+        billingAddress: validatedData.billingAddress,
+        shippingAddress: validatedData.sameAsBilling
           ? validatedData.billingAddress
-          : validatedData.shippingAddress) as Prisma.InputJsonValue,
-        creditLimit: validatedData.creditLimit || 0,
-        balance: 0, // Initial balance is 0
+          : validatedData.shippingAddress,
+        creditLimit: String(validatedData.creditLimit || 0),
+        balance: '0', // Initial balance is 0
         notes: validatedData.notes || null,
         isActive: true,
-      },
-    })
+      })
+      .returning()
 
-    revalidatePath('/customers')
+    revalidatePath('/dashboard/customers')
 
     return {
       success: true,
-      data: customer,
+      data: serializeCustomer(customer),
     }
   } catch (error) {
     logger.error('Error creating customer', { error })
@@ -174,7 +220,7 @@ export async function createCustomer(
 export async function updateCustomer(
   id: string,
   data: CustomerFormValues
-): Promise<ActionResult<Customer>> {
+): Promise<ActionResult<SerializedCustomer>> {
   try {
     const companyId = await getCurrentCompanyId()
 
@@ -182,9 +228,9 @@ export async function updateCustomer(
     const validatedData = customerSchema.parse(data)
 
     // Verify ownership
-    const existingCustomer = await prisma.customer.findUnique({
-      where: { id },
-      select: { companyId: true },
+    const existingCustomer = await db.query.customers.findFirst({
+      where: eq(customers.id, id),
+      columns: { companyId: true },
     })
 
     if (!existingCustomer || existingCustomer.companyId !== companyId) {
@@ -195,28 +241,30 @@ export async function updateCustomer(
     }
 
     // Update customer
-    const customer = await prisma.customer.update({
-      where: { id },
-      data: {
+    const [customer] = await db
+      .update(customers)
+      .set({
         name: validatedData.name,
         email: validatedData.email || null,
         phone: validatedData.phone,
         taxId: validatedData.taxId || null,
-        billingAddress: validatedData.billingAddress as Prisma.InputJsonValue,
-        shippingAddress: (validatedData.sameAsBilling
+        billingAddress: validatedData.billingAddress,
+        shippingAddress: validatedData.sameAsBilling
           ? validatedData.billingAddress
-          : validatedData.shippingAddress) as Prisma.InputJsonValue,
-        creditLimit: validatedData.creditLimit || 0,
+          : validatedData.shippingAddress,
+        creditLimit: String(validatedData.creditLimit || 0),
         notes: validatedData.notes || null,
-      },
-    })
+        updatedAt: new Date(),
+      })
+      .where(eq(customers.id, id))
+      .returning()
 
-    revalidatePath('/customers')
-    revalidatePath(`/customers/${id}`)
+    revalidatePath('/dashboard/customers')
+    revalidatePath(`/dashboard/customers/${id}`)
 
     return {
       success: true,
-      data: customer,
+      data: serializeCustomer(customer),
     }
   } catch (error) {
     logger.error('Error updating customer', { error })
@@ -235,9 +283,9 @@ export async function deleteCustomer(id: string): Promise<ActionResult> {
     const companyId = await getCurrentCompanyId()
 
     // Verify ownership
-    const existingCustomer = await prisma.customer.findUnique({
-      where: { id },
-      select: { companyId: true },
+    const existingCustomer = await db.query.customers.findFirst({
+      where: eq(customers.id, id),
+      columns: { companyId: true },
     })
 
     if (!existingCustomer || existingCustomer.companyId !== companyId) {
@@ -248,12 +296,12 @@ export async function deleteCustomer(id: string): Promise<ActionResult> {
     }
 
     // Soft delete
-    await prisma.customer.update({
-      where: { id },
-      data: { isActive: false },
-    })
+    await db
+      .update(customers)
+      .set({ isActive: false, updatedAt: new Date() })
+      .where(eq(customers.id, id))
 
-    revalidatePath('/customers')
+    revalidatePath('/dashboard/customers')
 
     return {
       success: true,
@@ -275,9 +323,9 @@ export async function restoreCustomer(id: string): Promise<ActionResult> {
     const companyId = await getCurrentCompanyId()
 
     // Verify ownership
-    const existingCustomer = await prisma.customer.findUnique({
-      where: { id },
-      select: { companyId: true },
+    const existingCustomer = await db.query.customers.findFirst({
+      where: eq(customers.id, id),
+      columns: { companyId: true },
     })
 
     if (!existingCustomer || existingCustomer.companyId !== companyId) {
@@ -288,12 +336,12 @@ export async function restoreCustomer(id: string): Promise<ActionResult> {
     }
 
     // Restore
-    await prisma.customer.update({
-      where: { id },
-      data: { isActive: true },
-    })
+    await db
+      .update(customers)
+      .set({ isActive: true, updatedAt: new Date() })
+      .where(eq(customers.id, id))
 
-    revalidatePath('/customers')
+    revalidatePath('/dashboard/customers')
 
     return {
       success: true,

@@ -1,6 +1,8 @@
 'use server'
 
-import { prisma } from '@/lib/prisma'
+import { db } from '@/db'
+import { invoices, invoiceItems, customers, items, InvoiceStatus } from '@/db/schema'
+import { eq, and, or, ilike, gte, lte, desc, asc, count } from 'drizzle-orm'
 import { getCurrentCompanyId } from '@/lib/customer-utils'
 import {
   invoiceSchema,
@@ -9,7 +11,6 @@ import {
   type InvoiceFormValues,
   type InvoiceFiltersValues,
 } from '@/lib/validations/invoice'
-import { Prisma, InvoiceStatus } from '@prisma/client'
 import { revalidatePath } from 'next/cache'
 
 // Action result type
@@ -24,10 +25,10 @@ type ActionResult<T = unknown> = {
  * Format: INV-001, INV-002, etc.
  */
 async function generateInvoiceNumber(companyId: string): Promise<string> {
-  const lastInvoice = await prisma.invoice.findFirst({
-    where: { companyId },
-    orderBy: { invoiceNumber: 'desc' },
-    select: { invoiceNumber: true },
+  const lastInvoice = await db.query.invoices.findFirst({
+    where: eq(invoices.companyId, companyId),
+    orderBy: desc(invoices.invoiceNumber),
+    columns: { invoiceNumber: true },
   })
 
   if (!lastInvoice) {
@@ -54,40 +55,73 @@ export async function getInvoices(
     // Validate and parse filters
     const validatedFilters = invoiceFiltersSchema.parse(filters || {})
 
-    // Build where clause
-    const where: Prisma.InvoiceWhereInput = {
-      companyId,
-      ...(validatedFilters.status && validatedFilters.status !== 'all' && {
-        status: validatedFilters.status as InvoiceStatus,
-      }),
-      ...(validatedFilters.customerId && { customerId: validatedFilters.customerId }),
-      ...(validatedFilters.dateFrom && { date: { gte: validatedFilters.dateFrom } }),
-      ...(validatedFilters.dateTo && { date: { lte: validatedFilters.dateTo } }),
-      ...(validatedFilters.search && {
-        OR: [
-          { invoiceNumber: { contains: validatedFilters.search, mode: 'insensitive' } },
-          { customer: { name: { contains: validatedFilters.search, mode: 'insensitive' } } },
-        ],
-      }),
+    // Build where conditions
+    const conditions = [eq(invoices.companyId, companyId)]
+
+    if (validatedFilters.status && validatedFilters.status !== 'all') {
+      conditions.push(eq(invoices.status, validatedFilters.status as InvoiceStatus))
     }
 
-    // Build orderBy
-    const orderBy: Prisma.InvoiceOrderByWithRelationInput = {
-      [validatedFilters.sortBy || 'createdAt']: validatedFilters.sortOrder || 'desc',
+    if (validatedFilters.customerId) {
+      conditions.push(eq(invoices.customerId, validatedFilters.customerId))
     }
+
+    if (validatedFilters.dateFrom) {
+      conditions.push(gte(invoices.date, validatedFilters.dateFrom))
+    }
+
+    if (validatedFilters.dateTo) {
+      conditions.push(lte(invoices.date, validatedFilters.dateTo))
+    }
+
+    if (validatedFilters.search) {
+      const searchTerm = `%${validatedFilters.search}%`
+      conditions.push(
+        or(
+          ilike(invoices.invoiceNumber, searchTerm)
+        )!
+      )
+    }
+
+    const whereClause = and(...conditions)
 
     // Get total count
-    const total = await prisma.invoice.count({ where })
+    const [{ value: total }] = await db
+      .select({ value: count() })
+      .from(invoices)
+      .where(whereClause)
+
+    // Build orderBy - use a type-safe column map
+    const sortableColumns = {
+      id: invoices.id,
+      invoiceNumber: invoices.invoiceNumber,
+      date: invoices.date,
+      dueDate: invoices.dueDate,
+      total: invoices.total,
+      paidAmount: invoices.paidAmount,
+      status: invoices.status,
+      createdAt: invoices.createdAt,
+      updatedAt: invoices.updatedAt,
+    } as const
+
+    const sortField = validatedFilters.sortBy || 'createdAt'
+    const sortOrder = validatedFilters.sortOrder || 'desc'
+    const orderByColumn = sortableColumns[sortField as keyof typeof sortableColumns] ?? invoices.createdAt
+    const orderBy = sortOrder === 'asc' ? asc(orderByColumn) : desc(orderByColumn)
 
     // Get invoices with customer info
-    const invoices = await prisma.invoice.findMany({
-      where,
+    const limit = validatedFilters.limit || 20
+    const page = validatedFilters.page || 1
+    const offset = (page - 1) * limit
+
+    const invoiceList = await db.query.invoices.findMany({
+      where: whereClause,
       orderBy,
-      skip: ((validatedFilters.page || 1) - 1) * (validatedFilters.limit || 20),
-      take: validatedFilters.limit || 20,
-      include: {
+      limit,
+      offset,
+      with: {
         customer: {
-          select: {
+          columns: {
             id: true,
             name: true,
           },
@@ -98,7 +132,7 @@ export async function getInvoices(
     return {
       success: true,
       data: {
-        invoices,
+        invoices: invoiceList,
         total,
       },
     }
@@ -118,16 +152,16 @@ export async function getInvoice(id: string): Promise<ActionResult<any>> {
   try {
     const companyId = await getCurrentCompanyId()
 
-    const invoice = await prisma.invoice.findUnique({
-      where: {
-        id,
-        companyId, // Security: Ensure invoice belongs to user's company
-      },
-      include: {
+    const invoice = await db.query.invoices.findFirst({
+      where: and(
+        eq(invoices.id, id),
+        eq(invoices.companyId, companyId) // Security: Ensure invoice belongs to user's company
+      ),
+      with: {
         items: {
-          include: {
+          with: {
             item: {
-              select: {
+              columns: {
                 id: true,
                 name: true,
                 sku: true,
@@ -136,7 +170,7 @@ export async function getInvoice(id: string): Promise<ActionResult<any>> {
           },
         },
         customer: {
-          select: {
+          columns: {
             id: true,
             name: true,
             email: true,
@@ -186,37 +220,36 @@ export async function createInvoice(
     const invoiceNumber = await generateInvoiceNumber(companyId)
 
     // Create invoice with items in a transaction
-    const invoice = await prisma.$transaction(async (tx) => {
+    const invoice = await db.transaction(async (tx) => {
       // Create invoice
-      const newInvoice = await tx.invoice.create({
-        data: {
+      const [newInvoice] = await tx
+        .insert(invoices)
+        .values({
           companyId,
           customerId: validatedData.customerId,
           invoiceNumber,
           date: validatedData.date,
           dueDate: validatedData.dueDate,
-          subtotal,
-          taxAmount,
-          total,
+          subtotal: String(subtotal),
+          taxAmount: String(taxAmount),
+          total: String(total),
           status: validatedData.status,
           notes: validatedData.notes || null,
           terms: validatedData.terms || null,
-        },
-      })
+        })
+        .returning()
 
       // Create invoice items
       for (const item of validatedData.items) {
         const lineTotal = item.quantity * item.unitPrice * (1 + (item.taxRate ?? 0.15))
-        await tx.invoiceItem.create({
-          data: {
-            invoiceId: newInvoice.id,
-            itemId: item.itemId || null,
-            description: item.description,
-            quantity: item.quantity,
-            unitPrice: item.unitPrice,
-            taxRate: item.taxRate ?? 0.15,
-            total: lineTotal,
-          },
+        await tx.insert(invoiceItems).values({
+          invoiceId: newInvoice.id,
+          itemId: item.itemId || null,
+          description: item.description,
+          quantity: String(item.quantity),
+          unitPrice: String(item.unitPrice),
+          taxRate: String(item.taxRate ?? 0.15),
+          total: String(lineTotal),
         })
       }
 
@@ -252,9 +285,9 @@ export async function updateInvoice(
     const validatedData = invoiceSchema.parse(data)
 
     // Verify ownership
-    const existingInvoice = await prisma.invoice.findUnique({
-      where: { id },
-      select: { companyId: true, status: true },
+    const existingInvoice = await db.query.invoices.findFirst({
+      where: eq(invoices.id, id),
+      columns: { companyId: true, status: true },
     })
 
     if (!existingInvoice || existingInvoice.companyId !== companyId) {
@@ -276,41 +309,39 @@ export async function updateInvoice(
     const { subtotal, taxAmount, total } = calculateInvoiceTotals(validatedData.items)
 
     // Update invoice with items in a transaction
-    const invoice = await prisma.$transaction(async (tx) => {
+    const invoice = await db.transaction(async (tx) => {
       // Update invoice
-      const updatedInvoice = await tx.invoice.update({
-        where: { id },
-        data: {
+      const [updatedInvoice] = await tx
+        .update(invoices)
+        .set({
           customerId: validatedData.customerId,
           date: validatedData.date,
           dueDate: validatedData.dueDate,
-          subtotal,
-          taxAmount,
-          total,
+          subtotal: String(subtotal),
+          taxAmount: String(taxAmount),
+          total: String(total),
           status: validatedData.status,
           notes: validatedData.notes || null,
           terms: validatedData.terms || null,
-        },
-      })
+          updatedAt: new Date(),
+        })
+        .where(eq(invoices.id, id))
+        .returning()
 
       // Delete existing items and recreate
-      await tx.invoiceItem.deleteMany({
-        where: { invoiceId: id },
-      })
+      await tx.delete(invoiceItems).where(eq(invoiceItems.invoiceId, id))
 
       // Create new invoice items
       for (const item of validatedData.items) {
         const lineTotal = item.quantity * item.unitPrice * (1 + (item.taxRate ?? 0.15))
-        await tx.invoiceItem.create({
-          data: {
-            invoiceId: id,
-            itemId: item.itemId || null,
-            description: item.description,
-            quantity: item.quantity,
-            unitPrice: item.unitPrice,
-            taxRate: item.taxRate ?? 0.15,
-            total: lineTotal,
-          },
+        await tx.insert(invoiceItems).values({
+          invoiceId: id,
+          itemId: item.itemId || null,
+          description: item.description,
+          quantity: String(item.quantity),
+          unitPrice: String(item.unitPrice),
+          taxRate: String(item.taxRate ?? 0.15),
+          total: String(lineTotal),
         })
       }
 
@@ -344,9 +375,9 @@ export async function updateInvoiceStatus(
     const companyId = await getCurrentCompanyId()
 
     // Verify ownership
-    const existingInvoice = await prisma.invoice.findUnique({
-      where: { id },
-      select: { companyId: true },
+    const existingInvoice = await db.query.invoices.findFirst({
+      where: eq(invoices.id, id),
+      columns: { companyId: true },
     })
 
     if (!existingInvoice || existingInvoice.companyId !== companyId) {
@@ -356,10 +387,10 @@ export async function updateInvoiceStatus(
       }
     }
 
-    await prisma.invoice.update({
-      where: { id },
-      data: { status },
-    })
+    await db
+      .update(invoices)
+      .set({ status, updatedAt: new Date() })
+      .where(eq(invoices.id, id))
 
     revalidatePath('/invoices')
     revalidatePath(`/invoices/${id}`)
@@ -383,9 +414,9 @@ export async function cancelInvoice(id: string): Promise<ActionResult> {
   try {
     const companyId = await getCurrentCompanyId()
 
-    const existingInvoice = await prisma.invoice.findUnique({
-      where: { id },
-      select: { companyId: true, paidAmount: true },
+    const existingInvoice = await db.query.invoices.findFirst({
+      where: eq(invoices.id, id),
+      columns: { companyId: true, paidAmount: true },
     })
 
     if (!existingInvoice || existingInvoice.companyId !== companyId) {
@@ -396,17 +427,17 @@ export async function cancelInvoice(id: string): Promise<ActionResult> {
     }
 
     // Prevent cancelling invoices with payments
-    if (existingInvoice.paidAmount.toNumber() > 0) {
+    if (Number(existingInvoice.paidAmount) > 0) {
       return {
         success: false,
         error: 'Cannot cancel an invoice with recorded payments',
       }
     }
 
-    await prisma.invoice.update({
-      where: { id },
-      data: { status: 'CANCELLED' },
-    })
+    await db
+      .update(invoices)
+      .set({ status: 'CANCELLED', updatedAt: new Date() })
+      .where(eq(invoices.id, id))
 
     revalidatePath('/invoices')
 
@@ -429,23 +460,20 @@ export async function getCustomersForDropdown(): Promise<ActionResult<any[]>> {
   try {
     const companyId = await getCurrentCompanyId()
 
-    const customers = await prisma.customer.findMany({
-      where: {
-        companyId,
-        isActive: true,
-      },
-      select: {
+    const customerList = await db.query.customers.findMany({
+      where: and(eq(customers.companyId, companyId), eq(customers.isActive, true)),
+      columns: {
         id: true,
         name: true,
         email: true,
         customerNumber: true,
       },
-      orderBy: { name: 'asc' },
+      orderBy: asc(customers.name),
     })
 
     return {
       success: true,
-      data: customers,
+      data: customerList,
     }
   } catch (error) {
     console.error('Error fetching customers:', error)
@@ -463,24 +491,21 @@ export async function getItemsForDropdown(): Promise<ActionResult<any[]>> {
   try {
     const companyId = await getCurrentCompanyId()
 
-    const items = await prisma.item.findMany({
-      where: {
-        companyId,
-        isActive: true,
-      },
-      select: {
+    const itemList = await db.query.items.findMany({
+      where: and(eq(items.companyId, companyId), eq(items.isActive, true)),
+      columns: {
         id: true,
         name: true,
         sku: true,
         sellingPrice: true,
         description: true,
       },
-      orderBy: { name: 'asc' },
+      orderBy: asc(items.name),
     })
 
     return {
       success: true,
-      data: items,
+      data: itemList,
     }
   } catch (error) {
     console.error('Error fetching items:', error)

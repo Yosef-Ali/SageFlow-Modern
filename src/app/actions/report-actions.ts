@@ -1,8 +1,18 @@
 'use server'
 
-import { prisma } from '@/lib/prisma'
+import { db } from '@/db'
+import { journalEntries, journalLines, chartOfAccounts } from '@/db/schema'
+import { eq, and, gte, lte, asc, desc } from 'drizzle-orm'
 import { getCurrentCompanyId } from '@/lib/customer-utils'
-import { Decimal } from '@prisma/client/runtime/library'
+import { z } from 'zod'
+
+const glFilterSchema = z.object({
+  startDate: z.string().optional(),
+  endDate: z.string().optional(),
+  accountId: z.string().optional(),
+})
+
+export type GLFilterValues = z.infer<typeof glFilterSchema>
 
 type ActionResult<T = unknown> = {
   success: boolean
@@ -10,266 +20,89 @@ type ActionResult<T = unknown> = {
   error?: string
 }
 
-export interface ProfitLossData {
-  revenue: {
-    total: number
-    items: { name: string; amount: number }[]
-  }
-  cogs: {
-    total: number
-    items: { name: string; amount: number }[]
-  }
-  expenses: {
-    total: number
-    items: { name: string; amount: number }[]
-  }
-  grossProfit: number
-  netIncome: number
-  period: {
-    from: string
-    to: string
-  }
-}
-
-export interface BalanceSheetData {
-  assets: {
-    total: number
-    categories: {
-      name: string
-      total: number
-      items: { name: string; amount: number }[]
-    }[]
-  }
-  liabilities: {
-    total: number
-    categories: {
-      name: string
-      total: number
-      items: { name: string; amount: number }[]
-    }[]
-  }
-  equity: {
-    total: number
-    categories: {
-      name: string
-      total: number
-      items: { name: string; amount: number }[]
-    }[]
-  }
-  period: string
-}
-
 /**
- * Get Profit & Loss Report
+ * Get General Ledger Report
  */
-export async function getProfitLoss(
-  from?: Date,
-  to?: Date
-): Promise<ActionResult<ProfitLossData>> {
+export async function getGeneralLedger(filters?: GLFilterValues): Promise<ActionResult<any>> {
   try {
     const companyId = await getCurrentCompanyId()
-    const dateFrom = from || new Date(new Date().getFullYear(), 0, 1) // Start of year
-    const dateTo = to || new Date()
 
-    // 1. Calculate Revenue (Invoices excluding tax)
-    const invoices = await prisma.invoice.findMany({
-      where: {
-        companyId,
-        date: { gte: dateFrom, lte: dateTo },
-        status: { not: 'CANCELLED' },
-      },
-      select: {
-        total: true,
-        taxAmount: true,
-      },
-    })
+    // Build where clause
+    let whereClause = eq(journalEntries.companyId, companyId)
 
-    const totalRevenue = invoices.reduce(
-      (acc, inv) => acc + (inv.total.toNumber() - inv.taxAmount.toNumber()),
-      0
-    )
-
-    // 2. Calculate COGS (InvoiceItems * Item Cost)
-    const invoiceItems = await prisma.invoiceItem.findMany({
-      where: {
-        invoice: {
-          companyId,
-          date: { gte: dateFrom, lte: dateTo },
-          status: { not: 'CANCELLED' },
-        },
-      },
-      include: {
-        item: {
-          select: {
-            costPrice: true,
-            name: true,
-          },
-        },
-      },
-    })
-
-    const totalCogs = invoiceItems.reduce((acc, item) => {
-      const cost = item.item?.costPrice.toNumber() || 0
-      return acc + (item.quantity.toNumber() * cost)
-    }, 0)
-
-    // 3. Expenses (Placeholder - until Expense/Bill models are added)
-    // We can pull from ChartOfAccount balances if they were manually updated
-    const expenseAccounts = await prisma.chartOfAccount.findMany({
-      where: {
-        companyId,
-        type: 'EXPENSE',
-        isActive: true,
-      },
-    })
-
-    const totalExpenses = expenseAccounts.reduce(
-      (acc, accnt) => acc + accnt.balance.toNumber(),
-      0
-    )
-
-    const grossProfit = totalRevenue - totalCogs
-    const netIncome = grossProfit - totalExpenses
-
-    return {
-      success: true,
-      data: {
-        revenue: {
-          total: totalRevenue,
-          items: [{ name: 'Sales Revenue', amount: totalRevenue }],
-        },
-        cogs: {
-          total: totalCogs,
-          items: [{ name: 'Cost of Goods Sold', amount: totalCogs }],
-        },
-        expenses: {
-          total: totalExpenses,
-          items: expenseAccounts.map((a) => ({ name: a.accountName, amount: a.balance.toNumber() })),
-        },
-        grossProfit,
-        netIncome,
-        period: {
-          from: dateFrom.toISOString(),
-          to: dateTo.toISOString(),
-        },
-      },
+    if (filters?.startDate) {
+      whereClause = and(whereClause, gte(journalEntries.date, new Date(filters.startDate))) as any
     }
+    if (filters?.endDate) {
+      whereClause = and(whereClause, lte(journalEntries.date, new Date(filters.endDate))) as any
+    }
+
+    const entries = await db.query.journalEntries.findMany({
+      where: whereClause,
+      with: {
+        lines: {
+          with: {
+            account: true
+          }
+        }
+      },
+      orderBy: [desc(journalEntries.date)]
+    })
+
+    // If filtered by account, we only want entries that have a line for that account
+    let filteredEntries = entries
+    if (filters?.accountId) {
+      filteredEntries = entries.filter(entry =>
+        entry.lines.some(line => line.accountId === filters.accountId)
+      )
+    }
+
+    return { success: true, data: filteredEntries }
   } catch (error) {
-    console.error('Error generating Profit & Loss:', error)
+    console.error('Error fetching GL:', error)
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Failed to generate report',
+      error: error instanceof Error ? error.message : 'Failed to fetch GL',
     }
   }
 }
 
 /**
- * Get Balance Sheet Report
+ * Get GL Summary (Total Debits/Credits)
  */
-export async function getBalanceSheet(
-  asOf?: Date
-): Promise<ActionResult<BalanceSheetData>> {
+export async function getGLSummary(filters?: GLFilterValues): Promise<ActionResult<any>> {
   try {
-    const companyId = await getCurrentCompanyId()
-    const dateTo = asOf || new Date()
+    const report = await getGeneralLedger(filters)
+    if (!report.success) return report
 
-    // Assets
-    // Cash: Sum of all payments received
-    const payments = await prisma.payment.aggregate({
-      where: { companyId, paymentDate: { lte: dateTo } },
-      _sum: { amount: true },
+    const entries = report.data
+    let totalDebit = 0
+    let totalCredit = 0
+
+    entries.forEach((entry: any) => {
+      entry.lines.forEach((line: any) => {
+        if (filters?.accountId) {
+          if (line.accountId === filters.accountId) {
+            totalDebit += parseFloat(line.debit || '0')
+            totalCredit += parseFloat(line.credit || '0')
+          }
+        } else {
+          totalDebit += parseFloat(line.debit || '0')
+          totalCredit += parseFloat(line.credit || '0')
+        }
+      })
     })
-    const cashBalance = payments._sum.amount?.toNumber() || 0
-
-    // AR: Unpaid Invoices
-    const arInvoices = await prisma.invoice.findMany({
-      where: {
-        companyId,
-        date: { lte: dateTo },
-        status: { in: ['SENT', 'PARTIALLY_PAID', 'OVERDUE'] },
-      },
-      select: { total: true, paidAmount: true },
-    })
-    const arBalance = arInvoices.reduce(
-      (acc, inv) => acc + (inv.total.toNumber() - inv.paidAmount.toNumber()),
-      0
-    )
-
-    // Inventory Value
-    const items = await prisma.item.findMany({
-      where: { companyId },
-      select: { quantityOnHand: true, costPrice: true },
-    })
-    const inventoryValue = items.reduce(
-      (acc, item) => acc + (item.quantityOnHand.toNumber() * item.costPrice.toNumber()),
-      0
-    )
-
-    // Liabilities
-    // VAT Payable (15%) - approximated as 15% of unpaid invoices tax part? 
-    // Actually, let's just sum all taxAmount from invoices
-    const taxInvoices = await prisma.invoice.aggregate({
-      where: { companyId, date: { lte: dateTo }, status: { not: 'CANCELLED' } },
-      _sum: { taxAmount: true },
-    })
-    const vatPayable = taxInvoices._sum.taxAmount?.toNumber() || 0
-
-    // AP: Placeholder (no Bills yet)
-    const apBalance = 0
-
-    // Equity
-    // Retained Earnings (all time P&L)
-    const allTimePl = await getProfitLoss(new Date(2000, 0, 1), dateTo)
-    const netIncomeAllTime = allTimePl.success ? allTimePl.data!.netIncome : 0
 
     return {
       success: true,
       data: {
-        assets: {
-          total: cashBalance + arBalance + inventoryValue,
-          categories: [
-            {
-              name: 'Current Assets',
-              total: cashBalance + arBalance + inventoryValue,
-              items: [
-                { name: 'Cash', amount: cashBalance },
-                { name: 'Accounts Receivable', amount: arBalance },
-                { name: 'Inventory', amount: inventoryValue },
-              ],
-            },
-          ],
-        },
-        liabilities: {
-          total: vatPayable + apBalance,
-          categories: [
-            {
-              name: 'Current Liabilities',
-              total: vatPayable + apBalance,
-              items: [
-                { name: 'VAT Payable', amount: vatPayable },
-                { name: 'Accounts Payable', amount: apBalance },
-              ],
-            },
-          ],
-        },
-        equity: {
-          total: netIncomeAllTime,
-          categories: [
-            {
-              name: 'Equity',
-              total: netIncomeAllTime,
-              items: [{ name: 'Retained Earnings', amount: netIncomeAllTime }],
-            },
-          ],
-        },
-        period: dateTo.toISOString(),
-      },
+        totalDebit,
+        totalCredit,
+        netBalance: totalDebit - totalCredit,
+        entryCount: entries.length
+      }
     }
   } catch (error) {
-    console.error('Error generating Balance Sheet:', error)
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Failed to generate report',
-    }
+    return { success: false, error: 'Failed to calculate summary' }
   }
 }

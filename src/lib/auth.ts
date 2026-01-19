@@ -1,7 +1,9 @@
 import { NextAuthOptions, getServerSession } from "next-auth"
 import CredentialsProvider from "next-auth/providers/credentials"
 import { compare } from "bcryptjs"
-import { prisma } from "@/lib/prisma"
+import { db } from "@/db"
+import { users } from "@/db/schema"
+import { eq } from "drizzle-orm"
 
 export const authOptions: NextAuthOptions = {
   session: {
@@ -23,9 +25,12 @@ export const authOptions: NextAuthOptions = {
           throw new Error("Email and password are required")
         }
 
-        const user = await prisma.user.findUnique({
-          where: { email: credentials.email.toLowerCase() },
-          include: { company: true },
+        // Find user with company
+        const user = await db.query.users.findFirst({
+          where: eq(users.email, credentials.email.toLowerCase()),
+          with: {
+            company: true,
+          },
         })
 
         if (!user) {

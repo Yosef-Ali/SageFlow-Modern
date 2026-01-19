@@ -1,4 +1,6 @@
-import { prisma } from '@/lib/prisma'
+import { db } from '@/db'
+import { customers } from '@/db/schema'
+import { eq, desc } from 'drizzle-orm'
 import { getSession } from '@/lib/auth'
 
 /**
@@ -14,8 +16,8 @@ export async function getCurrentCompanyId(): Promise<string> {
   if (!session?.user?.companyId) {
     // For development/testing, fall back to first company
     // This should be removed in production
-    const defaultCompany = await prisma.company.findFirst({
-      select: { id: true },
+    const defaultCompany = await db.query.companies.findFirst({
+      columns: { id: true },
     })
 
     if (!defaultCompany) {
@@ -37,10 +39,10 @@ export async function getCurrentCompanyId(): Promise<string> {
  * @returns The next available customer number in format CUST-XXX
  */
 export async function generateCustomerNumber(companyId: string): Promise<string> {
-  const lastCustomer = await prisma.customer.findFirst({
-    where: { companyId },
-    orderBy: { customerNumber: 'desc' },
-    select: { customerNumber: true },
+  const lastCustomer = await db.query.customers.findFirst({
+    where: eq(customers.companyId, companyId),
+    orderBy: desc(customers.customerNumber),
+    columns: { customerNumber: true },
   })
 
   if (!lastCustomer) {

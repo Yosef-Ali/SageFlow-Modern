@@ -1,13 +1,13 @@
-import { Invoice as PrismaInvoice, InvoiceItem as PrismaInvoiceItem, InvoiceStatus } from '@prisma/client'
+import type { Invoice as DrizzleInvoice, InvoiceItem as DrizzleInvoiceItem, InvoiceStatus } from '@/db/schema'
 
-// Re-export status enum
-export { InvoiceStatus }
+// Re-export InvoiceStatus from Drizzle schema
+export type { InvoiceStatus }
 
-// Full invoice type from Prisma
-export type Invoice = PrismaInvoice
+// Full invoice type from Drizzle
+export type Invoice = DrizzleInvoice
 
 // Invoice item type
-export type InvoiceItem = PrismaInvoiceItem
+export type InvoiceItem = DrizzleInvoiceItem
 
 // Invoice with items included
 export interface InvoiceWithItems extends Invoice {

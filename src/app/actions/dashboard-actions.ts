@@ -1,6 +1,8 @@
 'use server'
 
-import { prisma } from '@/lib/prisma'
+import { db } from '@/db'
+import { invoices, customers, payments } from '@/db/schema'
+import { eq, and, notInArray, inArray, gte, lte, lt, count, sum, desc } from 'drizzle-orm'
 import { getCurrentCompanyId } from '@/lib/customer-utils'
 
 type ActionResult<T = unknown> = {
@@ -50,55 +52,63 @@ export async function getDashboardStats(): Promise<ActionResult<DashboardStats>>
   try {
     const companyId = await getCurrentCompanyId()
 
-    // Get total revenue (sum of all paid amounts)
-    const revenueResult = await prisma.invoice.aggregate({
-      where: { companyId, status: 'PAID' },
-      _sum: { total: true },
-    })
+    // Get total revenue (sum of all paid invoice totals)
+    const [revenueResult] = await db
+      .select({ total: sum(invoices.total) })
+      .from(invoices)
+      .where(and(eq(invoices.companyId, companyId), eq(invoices.status, 'PAID')))
 
     // Get total customers count
-    const totalCustomers = await prisma.customer.count({
-      where: { companyId, isActive: true },
-    })
+    const [customerCount] = await db
+      .select({ count: count() })
+      .from(customers)
+      .where(and(eq(customers.companyId, companyId), eq(customers.isActive, true)))
 
     // Get invoices sent this month
     const startOfMonth = new Date()
     startOfMonth.setDate(1)
     startOfMonth.setHours(0, 0, 0, 0)
 
-    const invoicesSent = await prisma.invoice.count({
-      where: {
-        companyId,
-        status: { notIn: ['DRAFT', 'CANCELLED'] },
-        createdAt: { gte: startOfMonth },
-      },
-    })
+    const [invoiceCount] = await db
+      .select({ count: count() })
+      .from(invoices)
+      .where(
+        and(
+          eq(invoices.companyId, companyId),
+          notInArray(invoices.status, ['DRAFT', 'CANCELLED']),
+          gte(invoices.createdAt, startOfMonth)
+        )
+      )
 
     // Get pending payments (unpaid invoices)
-    const pendingResult = await prisma.invoice.aggregate({
-      where: {
-        companyId,
-        status: { in: ['SENT', 'PARTIALLY_PAID', 'OVERDUE'] },
-      },
-      _sum: { total: true },
-    })
+    const [pendingTotalResult] = await db
+      .select({ total: sum(invoices.total) })
+      .from(invoices)
+      .where(
+        and(
+          eq(invoices.companyId, companyId),
+          inArray(invoices.status, ['SENT', 'PARTIALLY_PAID', 'OVERDUE'])
+        )
+      )
 
-    const paidResult = await prisma.invoice.aggregate({
-      where: {
-        companyId,
-        status: { in: ['SENT', 'PARTIALLY_PAID', 'OVERDUE'] },
-      },
-      _sum: { paidAmount: true },
-    })
+    const [paidAmountResult] = await db
+      .select({ total: sum(invoices.paidAmount) })
+      .from(invoices)
+      .where(
+        and(
+          eq(invoices.companyId, companyId),
+          inArray(invoices.status, ['SENT', 'PARTIALLY_PAID', 'OVERDUE'])
+        )
+      )
 
-    const pendingTotal = (pendingResult._sum.total?.toNumber() || 0) - (paidResult._sum.paidAmount?.toNumber() || 0)
+    const pendingTotal = (Number(pendingTotalResult?.total) || 0) - (Number(paidAmountResult?.total) || 0)
 
     return {
       success: true,
       data: {
-        totalRevenue: revenueResult._sum.total?.toNumber() || 0,
-        totalCustomers,
-        invoicesSent,
+        totalRevenue: Number(revenueResult?.total) || 0,
+        totalCustomers: customerCount.count,
+        invoicesSent: invoiceCount.count,
         pendingPayments: pendingTotal,
         revenueChange: 12.5, // Would calculate from previous period
         customerChange: 8.2,
@@ -132,28 +142,34 @@ export async function getMonthlyRevenue(): Promise<ActionResult<MonthlyRevenue[]
       const monthName = monthStart.toLocaleDateString('en-US', { month: 'short' })
 
       // Get revenue (invoices created in this month)
-      const invoiceResult = await prisma.invoice.aggregate({
-        where: {
-          companyId,
-          date: { gte: monthStart, lte: monthEnd },
-          status: { notIn: ['CANCELLED'] },
-        },
-        _sum: { total: true },
-      })
+      const [invoiceResult] = await db
+        .select({ total: sum(invoices.total) })
+        .from(invoices)
+        .where(
+          and(
+            eq(invoices.companyId, companyId),
+            gte(invoices.date, monthStart),
+            lte(invoices.date, monthEnd),
+            notInArray(invoices.status, ['CANCELLED'])
+          )
+        )
 
       // Get payments received in this month
-      const paymentResult = await prisma.payment.aggregate({
-        where: {
-          companyId,
-          paymentDate: { gte: monthStart, lte: monthEnd },
-        },
-        _sum: { amount: true },
-      })
+      const [paymentResult] = await db
+        .select({ total: sum(payments.amount) })
+        .from(payments)
+        .where(
+          and(
+            eq(payments.companyId, companyId),
+            gte(payments.paymentDate, monthStart),
+            lte(payments.paymentDate, monthEnd)
+          )
+        )
 
       months.push({
         month: monthName,
-        revenue: invoiceResult._sum.total?.toNumber() || 0,
-        payments: paymentResult._sum.amount?.toNumber() || 0,
+        revenue: Number(invoiceResult?.total) || 0,
+        payments: Number(paymentResult?.total) || 0,
       })
     }
 
@@ -174,22 +190,24 @@ export async function getRecentInvoices(): Promise<ActionResult<RecentInvoice[]>
   try {
     const companyId = await getCurrentCompanyId()
 
-    const invoices = await prisma.invoice.findMany({
-      where: { companyId },
-      orderBy: { createdAt: 'desc' },
-      take: 5,
-      include: {
-        customer: { select: { name: true } },
+    const recentInvoices = await db.query.invoices.findMany({
+      where: eq(invoices.companyId, companyId),
+      orderBy: desc(invoices.createdAt),
+      limit: 5,
+      with: {
+        customer: {
+          columns: { name: true },
+        },
       },
     })
 
     return {
       success: true,
-      data: invoices.map((inv) => ({
+      data: recentInvoices.map((inv) => ({
         id: inv.id,
         invoiceNumber: inv.invoiceNumber,
         customerName: inv.customer.name,
-        total: inv.total.toNumber(),
+        total: Number(inv.total),
         status: inv.status,
         date: inv.date,
       })),
@@ -211,26 +229,28 @@ export async function getPendingPayments(): Promise<ActionResult<PendingPayment[
     const companyId = await getCurrentCompanyId()
     const today = new Date()
 
-    const invoices = await prisma.invoice.findMany({
-      where: {
-        companyId,
-        status: { in: ['SENT', 'PARTIALLY_PAID', 'OVERDUE'] },
-        dueDate: { lt: today },
-      },
-      orderBy: { dueDate: 'asc' },
-      take: 5,
-      include: {
-        customer: { select: { name: true } },
+    const overdueInvoices = await db.query.invoices.findMany({
+      where: and(
+        eq(invoices.companyId, companyId),
+        inArray(invoices.status, ['SENT', 'PARTIALLY_PAID', 'OVERDUE']),
+        lt(invoices.dueDate, today)
+      ),
+      orderBy: invoices.dueDate,
+      limit: 5,
+      with: {
+        customer: {
+          columns: { name: true },
+        },
       },
     })
 
     return {
       success: true,
-      data: invoices.map((inv) => ({
+      data: overdueInvoices.map((inv) => ({
         id: inv.id,
         invoiceNumber: inv.invoiceNumber,
         customerName: inv.customer.name,
-        amountDue: inv.total.toNumber() - inv.paidAmount.toNumber(),
+        amountDue: Number(inv.total) - Number(inv.paidAmount),
         daysOverdue: Math.floor((today.getTime() - inv.dueDate.getTime()) / (1000 * 60 * 60 * 24)),
       })),
     }

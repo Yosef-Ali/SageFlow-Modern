@@ -1,6 +1,6 @@
 'use client'
 
-import { InvoiceStatus } from '@prisma/client'
+import { InvoiceStatus } from '@/db/schema'
 import { invoiceStatusColors, invoiceStatusLabels } from '@/types/invoice'
 import { cn } from '@/lib/utils'
 
