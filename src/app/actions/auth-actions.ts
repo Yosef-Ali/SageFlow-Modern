@@ -1,7 +1,9 @@
 'use server'
 
 import { hash } from "bcryptjs"
-import { prisma } from "@/lib/prisma"
+import { db } from "@/db"
+import { users, companies, chartOfAccounts, AccountType } from "@/db/schema"
+import { eq } from "drizzle-orm"
 import { registerSchema, type RegisterFormValues } from "@/lib/validations/auth"
 
 type ActionResult<T = unknown> = {
@@ -21,8 +23,8 @@ export async function registerUser(
     const validatedData = registerSchema.parse(data)
 
     // Check if email already exists
-    const existingUser = await prisma.user.findUnique({
-      where: { email: validatedData.email.toLowerCase() },
+    const existingUser = await db.query.users.findFirst({
+      where: eq(users.email, validatedData.email.toLowerCase()),
     })
 
     if (existingUser) {
@@ -36,26 +38,28 @@ export async function registerUser(
     const passwordHash = await hash(validatedData.password, 12)
 
     // Create company and user in a transaction
-    const result = await prisma.$transaction(async (tx) => {
+    const result = await db.transaction(async (tx) => {
       // Create company
-      const company = await tx.company.create({
-        data: {
+      const [company] = await tx
+        .insert(companies)
+        .values({
           name: validatedData.companyName,
           email: validatedData.email.toLowerCase(),
           currency: "ETB", // Default to Ethiopian Birr
-        },
-      })
+        })
+        .returning()
 
       // Create user as ADMIN (first user of company)
-      const user = await tx.user.create({
-        data: {
+      const [user] = await tx
+        .insert(users)
+        .values({
           email: validatedData.email.toLowerCase(),
           passwordHash,
           name: validatedData.name,
           role: "ADMIN",
           companyId: company.id,
-        },
-      })
+        })
+        .returning()
 
       // Create default chart of accounts for Ethiopian businesses
       await createDefaultChartOfAccounts(tx, company.id)
@@ -80,10 +84,10 @@ export async function registerUser(
  * Create default chart of accounts for a new company
  */
 async function createDefaultChartOfAccounts(
-  tx: any,
+  tx: Parameters<Parameters<typeof db.transaction>[0]>[0],
   companyId: string
 ): Promise<void> {
-  const defaultAccounts = [
+  const defaultAccounts: { accountNumber: string; accountName: string; type: AccountType }[] = [
     // Assets
     { accountNumber: "1000", accountName: "Cash", type: "ASSET" },
     { accountNumber: "1100", accountName: "Bank Account - ETB", type: "ASSET" },
@@ -113,12 +117,11 @@ async function createDefaultChartOfAccounts(
   ]
 
   for (const account of defaultAccounts) {
-    await tx.chartOfAccount.create({
-      data: {
-        companyId,
-        ...account,
-        type: account.type as any,
-      },
+    await tx.insert(chartOfAccounts).values({
+      companyId,
+      accountNumber: account.accountNumber,
+      accountName: account.accountName,
+      type: account.type,
     })
   }
 }
@@ -137,8 +140,8 @@ export async function addUserToCompany(
 ): Promise<ActionResult<{ userId: string }>> {
   try {
     // Check if email already exists
-    const existingUser = await prisma.user.findUnique({
-      where: { email: data.email.toLowerCase() },
+    const existingUser = await db.query.users.findFirst({
+      where: eq(users.email, data.email.toLowerCase()),
     })
 
     if (existingUser) {
@@ -152,15 +155,16 @@ export async function addUserToCompany(
     const passwordHash = await hash(data.password, 12)
 
     // Create user
-    const user = await prisma.user.create({
-      data: {
+    const [user] = await db
+      .insert(users)
+      .values({
         email: data.email.toLowerCase(),
         passwordHash,
         name: data.name,
         role: data.role,
         companyId,
-      },
-    })
+      })
+      .returning()
 
     return {
       success: true,

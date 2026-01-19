@@ -98,7 +98,7 @@ export function PaymentForm({
       if (onSuccess) {
         onSuccess()
       } else {
-        router.push('/payments')
+        router.push('/dashboard/payments')
       }
     } catch (error) {
       // Error handled by mutation hook
@@ -244,14 +244,13 @@ export function PaymentForm({
         <Button
           type="button"
           variant="outline"
-          onClick={() => router.push('/payments')}
+          onClick={() => router.push('/dashboard/payments')}
         >
           Cancel
         </Button>
         <Button
           type="submit"
           disabled={isLoading}
-          className="bg-emerald-600 hover:bg-emerald-700"
         >
           {isLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
           Record Payment

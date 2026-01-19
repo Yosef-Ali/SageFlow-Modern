@@ -1,8 +1,8 @@
-import { Payment as PrismaPayment } from '@prisma/client'
+import type { Payment as DrizzlePayment } from '@/db/schema'
 import { paymentMethods } from '@/lib/validations/payment'
 
-// Full payment type from Prisma
-export type Payment = PrismaPayment
+// Full payment type from Drizzle
+export type Payment = DrizzlePayment
 
 // Payment with related data
 export interface PaymentWithDetails extends Payment {
@@ -13,7 +13,7 @@ export interface PaymentWithDetails extends Payment {
   invoice?: {
     id: string
     invoiceNumber: string
-    total: any
+    total: string | number
   } | null
 }
 

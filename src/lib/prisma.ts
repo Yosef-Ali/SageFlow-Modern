@@ -1,14 +1,4 @@
-import { PrismaClient } from '@prisma/client'
-import { env } from './env'
-
-const globalForPrisma = globalThis as unknown as {
-  prisma: PrismaClient | undefined
-}
-
-export const prisma =
-  globalForPrisma.prisma ??
-  new PrismaClient({
-    log: env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
-  })
-
-if (env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
+// Re-export Drizzle database connection for backward compatibility
+// This file exists to maintain import paths during migration
+export { db } from '@/db';
+export * from '@/db/schema';

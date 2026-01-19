@@ -1,4 +1,4 @@
-import { Customer as PrismaCustomer } from '@prisma/client'
+import type { Customer as DrizzleCustomer } from '@/db/schema'
 
 // Address structure for billing and shipping addresses
 export interface Address {
@@ -9,8 +9,14 @@ export interface Address {
   postalCode?: string
 }
 
-// Full customer type from Prisma
-export type Customer = PrismaCustomer
+// Full customer type from Drizzle
+export type Customer = DrizzleCustomer
+
+// Serialized customer type (with Decimals converted to numbers for client-side use)
+export type SerializedCustomer = Omit<Customer, 'balance' | 'creditLimit'> & {
+  balance: number
+  creditLimit: number
+}
 
 // Customer form data (used for create/update operations)
 export interface CustomerFormData {

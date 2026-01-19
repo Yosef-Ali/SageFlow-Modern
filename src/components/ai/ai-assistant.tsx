@@ -137,7 +137,7 @@ export function AIAssistant() {
     return (
       <Button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg hover:shadow-xl transition-all z-50 bg-emerald-600 hover:bg-emerald-700"
+        className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg hover:shadow-xl transition-all z-50"
         size="icon"
       >
         <Sparkles className="h-6 w-6" />
@@ -146,9 +146,9 @@ export function AIAssistant() {
   }
 
   return (
-    <div className="fixed bottom-6 right-6 w-96 h-[600px] bg-white rounded-lg shadow-2xl flex flex-col z-50 border border-slate-200">
+    <div className="fixed bottom-6 right-6 w-96 h-[600px] bg-background rounded-lg shadow-2xl flex flex-col z-50 border border-border">
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-slate-200 bg-emerald-600 text-white rounded-t-lg">
+      <div className="flex items-center justify-between p-4 border-b border-border bg-primary text-primary-foreground rounded-t-lg">
         <div className="flex items-center gap-2">
           <Sparkles className="h-5 w-5" />
           <h3 className="font-semibold">AI Assistant</h3>
@@ -157,7 +157,7 @@ export function AIAssistant() {
           onClick={() => setIsOpen(false)}
           variant="ghost"
           size="icon"
-          className="h-8 w-8 text-white hover:bg-emerald-700"
+          className="h-8 w-8 text-primary-foreground hover:bg-primary/90"
         >
           <X className="h-4 w-4" />
         </Button>
@@ -177,8 +177,8 @@ export function AIAssistant() {
               className={cn(
                 'max-w-[80%] rounded-lg p-3 whitespace-pre-wrap',
                 message.role === 'user'
-                  ? 'bg-emerald-600 text-white'
-                  : 'bg-slate-100 text-slate-900'
+                  ? 'bg-primary text-primary-foreground'
+                  : 'bg-muted text-foreground'
               )}
             >
               <p className="text-sm">{message.content}</p>
@@ -193,8 +193,8 @@ export function AIAssistant() {
         ))}
         {isLoading && (
           <div className="flex justify-start">
-            <div className="bg-slate-100 rounded-lg p-3">
-              <Loader2 className="h-5 w-5 animate-spin text-emerald-600" />
+            <div className="bg-muted rounded-lg p-3">
+              <Loader2 className="h-5 w-5 animate-spin text-primary" />
             </div>
           </div>
         )}
@@ -220,7 +220,7 @@ export function AIAssistant() {
       </div>
 
       {/* Input */}
-      <div className="p-4 border-t border-slate-200">
+      <div className="p-4 border-t border-border">
         <div className="flex gap-2">
           <Textarea
             ref={textareaRef}
@@ -235,12 +235,12 @@ export function AIAssistant() {
             onClick={handleSendMessage}
             disabled={!inputValue.trim() || isLoading}
             size="icon"
-            className="bg-emerald-600 hover:bg-emerald-700 flex-shrink-0"
+            className="flex-shrink-0"
           >
             <Send className="h-4 w-4" />
           </Button>
         </div>
-        <p className="text-xs text-slate-500 mt-2">
+        <p className="text-xs text-muted-foreground mt-2">
           Press Enter to send, Shift+Enter for new line
         </p>
       </div>

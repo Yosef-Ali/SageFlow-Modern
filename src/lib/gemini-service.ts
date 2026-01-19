@@ -25,7 +25,7 @@ export async function chatWithAI(
       }
     }
 
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' })
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' })
 
     // Build context-aware prompt
     let prompt = `You are an AI assistant for SageFlow, an accounting software designed for Ethiopian businesses.
@@ -103,7 +103,7 @@ export async function autoScanInvoice(
       }
     }
 
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' })
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' })
 
     const prompt = `You are an AI that extracts structured data from invoice and receipt images.
 Extract the following information from this invoice/receipt:
@@ -194,7 +194,7 @@ export async function getFinancialInsights(financialData: {
       }
     }
 
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' })
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' })
 
     const prompt = `Analyze this financial data for an Ethiopian business and provide actionable insights and recommendations:
 
@@ -217,6 +217,93 @@ Keep the response concise (3-5 bullet points).`
     return {
       insights: '',
       error: error instanceof Error ? error.message : 'Failed to generate insights',
+    }
+  }
+}
+
+/**
+ * Auto-scan and extract data from payment receipt images
+ */
+export async function autoScanPayment(
+  imageData: string | Buffer,
+  mimeType: string = 'image/jpeg'
+): Promise<{
+  success: boolean
+  data?: {
+    amount?: number
+    paymentDate?: string
+    paymentMethod?: string
+    customerName?: string
+    reference?: string
+    notes?: string
+    currency?: string
+  }
+  error?: string
+}> {
+  try {
+    if (!genAI) {
+      return {
+        success: false,
+        error: 'Gemini API key not configured',
+      }
+    }
+
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' })
+
+    const prompt = `You are an AI that extracts structured data from payment receipts and bank transfer confirmations.
+Extract the following information from this payment receipt/confirmation:
+
+1. Payment Amount
+2. Payment Date
+3. Payment Method (one of: cash, bank_transfer, chapa, check, credit_card)
+4. Customer/Payer Name
+5. Transaction Reference or Receipt Number
+6. Any notes or memo
+7. Currency (default to ETB if not specified)
+
+Return the data in this exact JSON format:
+{
+  "amount": number or null,
+  "paymentDate": "YYYY-MM-DD or null",
+  "paymentMethod": "cash" | "bank_transfer" | "chapa" | "check" | "credit_card" | null,
+  "customerName": "string or null",
+  "reference": "string or null",
+  "notes": "string or null",
+  "currency": "ETB or other"
+}
+
+Only return valid JSON, no additional text.`
+
+    const imagePart = {
+      inlineData: {
+        data: typeof imageData === 'string' ? imageData : imageData.toString('base64'),
+        mimeType,
+      },
+    }
+
+    const result = await model.generateContent([prompt, imagePart])
+    const responseText = result.response.text()
+
+    // Parse JSON response
+    const jsonMatch = responseText.match(/\{[\s\S]*\}/)
+    if (!jsonMatch) {
+      return {
+        success: false,
+        error: 'Could not parse payment data from image',
+      }
+    }
+
+    const extractedData = JSON.parse(jsonMatch[0])
+
+    return {
+      success: true,
+      data: extractedData,
+    }
+  } catch (error) {
+    console.error('Auto-scan payment error:', error)
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to scan payment receipt',
     }
   }
 }

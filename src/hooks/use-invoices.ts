@@ -12,7 +12,7 @@ import {
   getItemsForDropdown,
 } from '@/app/actions/invoice-actions'
 import { InvoiceFormValues, InvoiceFiltersValues } from '@/lib/validations/invoice'
-import { InvoiceStatus } from '@prisma/client'
+import { InvoiceStatus } from '@/db/schema'
 import { useToast } from '@/components/ui/use-toast'
 
 // Query keys

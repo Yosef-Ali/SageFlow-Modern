@@ -1,9 +1,11 @@
 'use server'
 
-import { chatWithAI, autoScanInvoice, getFinancialInsights } from '@/lib/gemini-service'
+import { chatWithAI, autoScanInvoice, autoScanPayment, getFinancialInsights } from '@/lib/gemini-service'
 import { logger } from '@/lib/logger'
 import { getCurrentCompanyId } from '@/lib/customer-utils'
-import { prisma } from '@/lib/prisma'
+import { db } from '@/db'
+import { companies, invoices, payments, customers } from '@/db/schema'
+import { eq, inArray, desc, sum } from 'drizzle-orm'
 
 type ActionResult<T = unknown> = {
   success: boolean
@@ -22,34 +24,31 @@ export async function sendChatMessage(
     const companyId = await getCurrentCompanyId()
 
     // Get company context
-    const company = await prisma.company.findUnique({
-      where: { id: companyId },
-      select: { name: true, currency: true },
+    const company = await db.query.companies.findFirst({
+      where: eq(companies.id, companyId),
+      columns: { name: true, currency: true },
     })
 
     // Get recent financial summary
-    const [totalRevenue, totalExpenses, outstandingInvoices] = await Promise.all([
-      prisma.invoice.aggregate({
-        where: { companyId, status: 'PAID' },
-        _sum: { total: true },
-      }),
-      prisma.payment.aggregate({
-        where: { companyId },
-        _sum: { amount: true },
-      }),
-      prisma.invoice.aggregate({
-        where: {
-          companyId,
-          status: { in: ['SENT', 'OVERDUE', 'PARTIALLY_PAID'] },
-        },
-        _sum: { total: true },
-      }),
+    const [totalRevenueResult, totalExpensesResult, outstandingInvoicesResult] = await Promise.all([
+      db
+        .select({ total: sum(invoices.total) })
+        .from(invoices)
+        .where(eq(invoices.companyId, companyId)),
+      db
+        .select({ total: sum(payments.amount) })
+        .from(payments)
+        .where(eq(payments.companyId, companyId)),
+      db
+        .select({ total: sum(invoices.total) })
+        .from(invoices)
+        .where(inArray(invoices.status, ['SENT', 'OVERDUE', 'PARTIALLY_PAID'])),
     ])
 
     const financialData = {
-      revenue: totalRevenue._sum.total?.toNumber() || 0,
-      expenses: totalExpenses._sum.amount?.toNumber() || 0,
-      outstandingInvoices: outstandingInvoices._sum.total?.toNumber() || 0,
+      revenue: Number(totalRevenueResult[0]?.total) || 0,
+      expenses: Number(totalExpensesResult[0]?.total) || 0,
+      outstandingInvoices: Number(outstandingInvoicesResult[0]?.total) || 0,
       currency: company?.currency || 'ETB',
     }
 
@@ -110,6 +109,36 @@ export async function scanInvoiceImage(
 }
 
 /**
+ * Scan payment receipt image and extract data
+ */
+export async function scanPaymentImage(
+  imageBase64: string,
+  mimeType: string = 'image/jpeg'
+): Promise<ActionResult<any>> {
+  try {
+    const result = await autoScanPayment(imageBase64, mimeType)
+
+    if (!result.success) {
+      return {
+        success: false,
+        error: result.error || 'Failed to scan payment receipt',
+      }
+    }
+
+    return {
+      success: true,
+      data: result.data,
+    }
+  } catch (error) {
+    logger.error('Payment scan error', { error })
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to scan payment receipt',
+    }
+  }
+}
+
+/**
  * Get AI-generated financial insights
  */
 export async function getAIInsights(): Promise<ActionResult<{ insights: string }>> {
@@ -117,52 +146,50 @@ export async function getAIInsights(): Promise<ActionResult<{ insights: string }
     const companyId = await getCurrentCompanyId()
 
     // Gather financial data
-    const [
-      revenueData,
-      expenseData,
-      invoiceStats,
-      topCustomers,
-    ] = await Promise.all([
-      prisma.invoice.aggregate({
-        where: { companyId, status: 'PAID' },
-        _sum: { total: true },
-      }),
-      prisma.payment.aggregate({
-        where: { companyId },
-        _sum: { amount: true },
-      }),
-      prisma.invoice.groupBy({
-        by: ['status'],
-        where: { companyId },
-        _sum: { total: true },
-        _count: true,
-      }),
-      prisma.customer.findMany({
-        where: { companyId },
-        orderBy: { balance: 'desc' },
-        take: 5,
-        select: { name: true, balance: true },
+    const [revenueResult, expenseResult, topCustomersList] = await Promise.all([
+      db
+        .select({ total: sum(invoices.total) })
+        .from(invoices)
+        .where(eq(invoices.companyId, companyId)),
+      db
+        .select({ total: sum(payments.amount) })
+        .from(payments)
+        .where(eq(payments.companyId, companyId)),
+      db.query.customers.findMany({
+        where: eq(customers.companyId, companyId),
+        orderBy: desc(customers.balance),
+        limit: 5,
+        columns: { name: true, balance: true },
       }),
     ])
 
-    const revenue = revenueData._sum.total?.toNumber() || 0
-    const expenses = expenseData._sum.amount?.toNumber() || 0
+    const revenue = Number(revenueResult[0]?.total) || 0
+    const expenses = Number(expenseResult[0]?.total) || 0
     const profit = revenue - expenses
 
-    const overdueInvoices = invoiceStats.find((s) => s.status === 'OVERDUE')
-    const outstandingInvoices = invoiceStats
-      .filter((s) => ['SENT', 'OVERDUE', 'PARTIALLY_PAID'].includes(s.status))
-      .reduce((sum, s) => sum + (s._sum.total?.toNumber() || 0), 0)
+    // Get invoice status breakdown
+    const invoiceList = await db.query.invoices.findMany({
+      where: eq(invoices.companyId, companyId),
+      columns: { status: true, total: true },
+    })
+
+    const statusTotals: Record<string, number> = {}
+    invoiceList.forEach((inv) => {
+      statusTotals[inv.status] = (statusTotals[inv.status] || 0) + Number(inv.total)
+    })
+
+    const overdueTotal = statusTotals['OVERDUE'] || 0
+    const outstandingTotal = (statusTotals['SENT'] || 0) + (statusTotals['OVERDUE'] || 0) + (statusTotals['PARTIALLY_PAID'] || 0)
 
     const financialData = {
       revenue,
       expenses,
       profit,
-      outstandingInvoices,
-      overdueInvoices: overdueInvoices?._sum.total?.toNumber() || 0,
-      topCustomers: topCustomers.map((c) => ({
+      outstandingInvoices: outstandingTotal,
+      overdueInvoices: overdueTotal,
+      topCustomers: topCustomersList.map((c) => ({
         name: c.name,
-        total: c.balance.toNumber(),
+        total: Number(c.balance),
       })),
     }
 

@@ -5,6 +5,7 @@ import {
   getPayments,
   getPayment,
   createPayment,
+  updatePayment,
   deletePayment,
   getUnpaidInvoicesForCustomer,
 } from '@/app/actions/payment-actions'
@@ -100,6 +101,40 @@ export function useCreatePayment() {
       toast({
         title: 'Error',
         description: error.message || 'Failed to record payment',
+        variant: 'destructive',
+      })
+    },
+  })
+}
+
+/**
+ * Hook to update a payment
+ */
+export function useUpdatePayment() {
+  const queryClient = useQueryClient()
+  const { toast } = useToast()
+
+  return useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: PaymentFormValues }) => {
+      const result = await updatePayment(id, data)
+      if (!result.success) {
+        throw new Error(result.error)
+      }
+      return result.data
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: paymentKeys.lists() })
+      queryClient.invalidateQueries({ queryKey: paymentKeys.detail(variables.id) })
+      queryClient.invalidateQueries({ queryKey: invoiceKeys.lists() })
+      toast({
+        title: 'Success',
+        description: 'Payment updated successfully',
+      })
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to update payment',
         variant: 'destructive',
       })
     },

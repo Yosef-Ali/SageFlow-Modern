@@ -31,13 +31,13 @@ import {
 import { Button } from '@/components/ui/button'
 import { customerSchema, type CustomerFormValues } from '@/lib/validations/customer'
 import { useCreateCustomer, useUpdateCustomer } from '@/hooks/use-customers'
-import { Customer } from '@prisma/client'
+import { type SerializedCustomer } from '@/types/customer'
 import { Loader2 } from 'lucide-react'
 
 interface CustomerFormDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  customer?: Customer | null
+  customer?: SerializedCustomer | null
   onClose: () => void
 }
 
@@ -119,7 +119,7 @@ export function CustomerFormDialog({
           postalCode: '',
         },
         sameAsBilling: JSON.stringify(billingAddress) === JSON.stringify(shippingAddress),
-        creditLimit: customer.creditLimit ? customer.creditLimit.toNumber() : 0,
+        creditLimit: customer.creditLimit || 0,
         notes: customer.notes || '',
       })
       setSameAsBilling(
