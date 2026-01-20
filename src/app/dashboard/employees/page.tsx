@@ -85,6 +85,7 @@ export default function EmployeesPage() {
             <TableRow>
               <TableHead>Employee</TableHead>
               <TableHead>Job Title</TableHead>
+              <TableHead>Type</TableHead>
               <TableHead>Department</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="text-right">Actions</TableHead>
@@ -93,13 +94,13 @@ export default function EmployeesPage() {
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={5} className="h-24 text-center">
+                <TableCell colSpan={6} className="h-24 text-center">
                   Loading...
                 </TableCell>
               </TableRow>
             ) : employees?.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="h-24 text-center">
+                <TableCell colSpan={6} className="h-24 text-center">
                   No employees found.
                 </TableCell>
               </TableRow>
@@ -118,6 +119,12 @@ export default function EmployeesPage() {
                     </div>
                   </TableCell>
                   <TableCell>{employee.jobTitle || '-'}</TableCell>
+                  <TableCell>
+                    <span className="text-xs px-2 py-1 bg-slate-100 rounded">
+                      {employee.employeeType === 'CONTRACT' ? 'Contract' :
+                       employee.employeeType === 'TEMPORARY' ? 'Temporary' : 'Regular'}
+                    </span>
+                  </TableCell>
                   <TableCell>{employee.department || '-'}</TableCell>
                   <TableCell>
                     <Badge variant={employee.isActive ? 'default' : 'secondary'}>

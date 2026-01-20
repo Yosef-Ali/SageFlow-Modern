@@ -4,7 +4,8 @@ import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import {
   Sparkles, Send, X, Bot, User, Lightbulb, Minimize2, Maximize2,
   RotateCcw, TrendingUp, TrendingDown, AlertCircle, CheckCircle2,
-  Info, AlertTriangle, Clock, ArrowRight, Calendar, Zap
+  Info, AlertTriangle, Clock, ArrowRight, Calendar, Zap,
+  DollarSign, Users, Package, Mic, MicOff
 } from 'lucide-react'
 import {
   BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip,
@@ -181,8 +182,47 @@ interface ActionWidget {
   }>
 }
 
+// New widget types for AI chatbot improvements
+interface GaugeWidget {
+  type: 'gauge'
+  value: number
+  max: number
+  label: string
+  thresholds?: { warning: number; critical: number }
+}
+
+interface SparklineWidget {
+  type: 'sparkline'
+  title: string
+  data: number[]
+  trend: 'up' | 'down' | 'neutral'
+  currentValue: string
+}
+
+interface KPICardWidget {
+  type: 'kpicard'
+  icon: 'dollar' | 'users' | 'package' | 'alert' | 'trending'
+  label: string
+  value: string
+  trend?: { value: string; direction: 'up' | 'down' }
+  color?: 'green' | 'red' | 'blue' | 'amber'
+}
+
+interface DistributionItem {
+  label: string
+  value: number
+  color?: string
+}
+
+interface DistributionWidget {
+  type: 'distribution'
+  title: string
+  items: DistributionItem[]
+}
+
 type Widget = StatsWidget | ListWidget | ProgressWidget | CardWidget | FormWidget |
-  ChartWidget | TableWidget | AlertWidget | TimelineWidget | ComparisonWidget | MetricWidget | ActionWidget
+  ChartWidget | TableWidget | AlertWidget | TimelineWidget | ComparisonWidget | MetricWidget | ActionWidget |
+  GaugeWidget | SparklineWidget | KPICardWidget | DistributionWidget
 
 interface ParsedContent {
   text: string
@@ -207,6 +247,21 @@ const SUGGESTIONS: Record<string, Suggestion[]> = {
   '/dashboard/customers': [
     { id: '1', label: 'Top Customers', prompt: 'Who are my most valuable customers?' },
     { id: '2', label: 'Customer Analysis', prompt: 'Analyze customer payment patterns.' },
+  ],
+  '/dashboard/vendors': [
+    { id: '1', label: 'Vendor Balance', prompt: 'What is my total outstanding balance to vendors?' },
+    { id: '2', label: 'Vendor Types', prompt: 'List vendors by their Peachtree type (Supplier, Contractor, etc.).' },
+    { id: '3', label: 'Credit Limits', prompt: 'Which vendors have I exceeded credit limits with?' },
+  ],
+  '/dashboard/inventory': [
+    { id: '1', label: 'Low Stock', prompt: 'Which items are below reorder point?' },
+    { id: '2', label: 'Price List', prompt: 'Show me the Retail, Wholesale, and Distributor prices for items.' },
+    { id: '3', label: 'Valuation', prompt: 'What is the total value of my inventory?' },
+  ],
+  '/dashboard/employees': [
+    { id: '1', label: 'Payroll Summary', prompt: 'Calculate total monthly payroll cost including overtime.' },
+    { id: '2', label: 'Employee Types', prompt: 'Break down employees by type (Regular vs Contract).' },
+    { id: '3', label: 'Bank Info', prompt: 'List employees missing bank account details.' },
   ],
   'default': [
     { id: '1', label: 'VAT Guide', prompt: 'Explain how Ethiopian VAT works with an example calculation.' },
@@ -712,12 +767,242 @@ function ActionWidgetComponent({
 }
 
 // ============================================================================
+// NEW WIDGETS - Gauge, Sparkline, KPI Card, Distribution
+// ============================================================================
+
+function GaugeWidgetComponent({ value, max, label, thresholds }: Omit<GaugeWidget, 'type'>) {
+  const percentage = Math.min((value / max) * 100, 100)
+  const circumference = 2 * Math.PI * 40 // radius = 40
+  const strokeDashoffset = circumference - (percentage / 100) * circumference * 0.75 // 75% arc
+
+  // Determine color based on thresholds
+  let color = 'text-emerald-500'
+  let bgColor = 'stroke-emerald-500'
+  if (thresholds) {
+    if (percentage <= thresholds.critical) {
+      color = 'text-red-500'
+      bgColor = 'stroke-red-500'
+    } else if (percentage <= thresholds.warning) {
+      color = 'text-amber-500'
+      bgColor = 'stroke-amber-500'
+    }
+  }
+
+  return (
+    <Card className="my-2 p-4">
+      <div className="flex items-center justify-between">
+        <div className="relative w-24 h-24">
+          <svg className="w-full h-full transform -rotate-135" viewBox="0 0 100 100">
+            {/* Background arc */}
+            <circle
+              cx="50"
+              cy="50"
+              r="40"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="8"
+              strokeLinecap="round"
+              strokeDasharray={circumference * 0.75}
+              className="text-muted/30"
+            />
+            {/* Progress arc */}
+            <circle
+              cx="50"
+              cy="50"
+              r="40"
+              fill="none"
+              strokeWidth="8"
+              strokeLinecap="round"
+              strokeDasharray={circumference * 0.75}
+              strokeDashoffset={strokeDashoffset}
+              className={cn('transition-all duration-500', bgColor)}
+            />
+          </svg>
+          <div className="absolute inset-0 flex items-center justify-center">
+            <span className={cn('text-lg font-bold', color)}>{Math.round(percentage)}%</span>
+          </div>
+        </div>
+        <div className="flex-1 pl-4">
+          <p className="text-sm font-medium">{label}</p>
+          <p className="text-xs text-muted-foreground mt-1">
+            {value.toLocaleString()} / {max.toLocaleString()}
+          </p>
+          {thresholds && (
+            <div className="flex gap-2 mt-2 text-[10px]">
+              <span className="text-emerald-500">● Good: &gt;{thresholds.warning}%</span>
+              <span className="text-amber-500">● Warning: &gt;{thresholds.critical}%</span>
+              <span className="text-red-500">● Critical: ≤{thresholds.critical}%</span>
+            </div>
+          )}
+        </div>
+      </div>
+    </Card>
+  )
+}
+
+function SparklineWidgetComponent({ title, data, trend, currentValue }: Omit<SparklineWidget, 'type'>) {
+  const max = Math.max(...data)
+  const min = Math.min(...data)
+  const range = max - min || 1
+  const height = 32
+  const width = 120
+
+  // Create SVG path for sparkline
+  const points = data.map((val, i) => {
+    const x = (i / (data.length - 1)) * width
+    const y = height - ((val - min) / range) * height
+    return `${x},${y}`
+  }).join(' ')
+
+  const trendColors = {
+    up: 'text-emerald-500',
+    down: 'text-red-500',
+    neutral: 'text-muted-foreground'
+  }
+
+  const lineColors = {
+    up: '#10b981',
+    down: '#ef4444',
+    neutral: '#6b7280'
+  }
+
+  return (
+    <Card className="my-2 p-3">
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-xs text-muted-foreground">{title}</p>
+          <div className="flex items-center gap-2 mt-1">
+            <span className="text-lg font-semibold">{currentValue}</span>
+            <span className={cn('flex items-center text-xs', trendColors[trend])}>
+              {trend === 'up' && <TrendingUp className="h-3 w-3 mr-0.5" />}
+              {trend === 'down' && <TrendingDown className="h-3 w-3 mr-0.5" />}
+              {trend}
+            </span>
+          </div>
+        </div>
+        <svg width={width} height={height} className="overflow-visible">
+          <polyline
+            fill="none"
+            stroke={lineColors[trend]}
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            points={points}
+          />
+          {/* Dot at the end */}
+          <circle
+            cx={width}
+            cy={height - ((data[data.length - 1] - min) / range) * height}
+            r="3"
+            fill={lineColors[trend]}
+          />
+        </svg>
+      </div>
+    </Card>
+  )
+}
+
+function KPICardWidgetComponent({ icon, label, value, trend, color = 'blue' }: Omit<KPICardWidget, 'type'>) {
+  const iconMap = {
+    dollar: DollarSign,
+    users: Users,
+    package: Package,
+    alert: AlertCircle,
+    trending: TrendingUp
+  }
+  const IconComponent = iconMap[icon]
+
+  const colorClasses = {
+    green: 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400',
+    red: 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400',
+    blue: 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400',
+    amber: 'bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400'
+  }
+
+  return (
+    <Card className="my-2 p-4">
+      <div className="flex items-start gap-3">
+        <div className={cn('p-2 rounded-lg', colorClasses[color])}>
+          <IconComponent className="h-5 w-5" />
+        </div>
+        <div className="flex-1">
+          <p className="text-xs text-muted-foreground">{label}</p>
+          <p className="text-xl font-bold mt-0.5">{value}</p>
+          {trend && (
+            <div className={cn(
+              'flex items-center gap-1 mt-1 text-xs',
+              trend.direction === 'up' ? 'text-emerald-600' : 'text-red-600'
+            )}>
+              {trend.direction === 'up' ? (
+                <TrendingUp className="h-3 w-3" />
+              ) : (
+                <TrendingDown className="h-3 w-3" />
+              )}
+              <span>{trend.value}</span>
+            </div>
+          )}
+        </div>
+      </div>
+    </Card>
+  )
+}
+
+function DistributionWidgetComponent({ title, items }: Omit<DistributionWidget, 'type'>) {
+  const total = items.reduce((sum, item) => sum + item.value, 0)
+  const defaultColors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899']
+
+  return (
+    <Card className="my-2 overflow-hidden">
+      <CardHeader className="py-2 px-3">
+        <CardTitle className="text-xs font-medium">{title}</CardTitle>
+      </CardHeader>
+      <CardContent className="p-3 pt-0 space-y-2">
+        {items.map((item, i) => {
+          const percentage = total > 0 ? (item.value / total) * 100 : 0
+          const color = item.color || defaultColors[i % defaultColors.length]
+
+          return (
+            <div key={i}>
+              <div className="flex items-center justify-between text-xs mb-1">
+                <div className="flex items-center gap-2">
+                  <div
+                    className="w-2 h-2 rounded-full"
+                    style={{ backgroundColor: color }}
+                  />
+                  <span>{item.label}</span>
+                </div>
+                <span className="font-medium">ETB {item.value.toLocaleString()}</span>
+              </div>
+              <div className="h-2 bg-muted rounded-full overflow-hidden">
+                <div
+                  className="h-full rounded-full transition-all duration-500"
+                  style={{
+                    width: `${percentage}%`,
+                    backgroundColor: color
+                  }}
+                />
+              </div>
+            </div>
+          )
+        })}
+        <div className="pt-2 border-t mt-2">
+          <div className="flex justify-between text-xs">
+            <span className="text-muted-foreground">Total</span>
+            <span className="font-semibold">ETB {total.toLocaleString()}</span>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
+// ============================================================================
 // CONTENT PARSER
 // ============================================================================
 
 function parseContent(content: string): ParsedContent {
   const widgets: Widget[] = []
-  const widgetRegex = /```widget:(stats|list|progress|card|form|chart|table|alert|timeline|comparison|metric|action)\n([\s\S]*?)```/g
+  const widgetRegex = /```widget:(stats|list|progress|card|form|chart|table|alert|timeline|comparison|metric|action|gauge|sparkline|kpicard|distribution)\n([\s\S]*?)```/g
   let cleanedText = content
 
   let match
@@ -761,6 +1046,19 @@ function parseContent(content: string): ParsedContent {
           break
         case 'action':
           widgets.push({ type: 'action', title: data.title, actions: data.actions || [] })
+          break
+        // New widget types
+        case 'gauge':
+          widgets.push({ type: 'gauge', value: data.value || 0, max: data.max || 100, label: data.label || '', thresholds: data.thresholds })
+          break
+        case 'sparkline':
+          widgets.push({ type: 'sparkline', title: data.title || '', data: data.data || [], trend: data.trend || 'neutral', currentValue: data.currentValue || '' })
+          break
+        case 'kpicard':
+          widgets.push({ type: 'kpicard', icon: data.icon || 'dollar', label: data.label || '', value: data.value || '', trend: data.trend, color: data.color })
+          break
+        case 'distribution':
+          widgets.push({ type: 'distribution', title: data.title || '', items: data.items || [] })
           break
       }
     } catch {
@@ -812,6 +1110,15 @@ function RenderWidget({
       return <MetricWidgetComponent {...widget} />
     case 'action':
       return <ActionWidgetComponent title={widget.title} actions={widget.actions} onAction={onAction} />
+    // New widget types
+    case 'gauge':
+      return <GaugeWidgetComponent value={widget.value} max={widget.max} label={widget.label} thresholds={widget.thresholds} />
+    case 'sparkline':
+      return <SparklineWidgetComponent title={widget.title} data={widget.data} trend={widget.trend} currentValue={widget.currentValue} />
+    case 'kpicard':
+      return <KPICardWidgetComponent icon={widget.icon} label={widget.label} value={widget.value} trend={widget.trend} color={widget.color} />
+    case 'distribution':
+      return <DistributionWidgetComponent title={widget.title} items={widget.items} />
     default:
       return null
   }
@@ -821,14 +1128,71 @@ function RenderWidget({
 // MAIN COMPONENT
 // ============================================================================
 
+// Speech Recognition types for TypeScript
+interface SpeechRecognitionResult {
+  readonly isFinal: boolean
+  readonly length: number
+  item(index: number): SpeechRecognitionAlternative
+  [index: number]: SpeechRecognitionAlternative
+}
+
+interface SpeechRecognitionAlternative {
+  readonly transcript: string
+  readonly confidence: number
+}
+
+interface SpeechRecognitionResultList {
+  readonly length: number
+  item(index: number): SpeechRecognitionResult
+  [index: number]: SpeechRecognitionResult
+}
+
+interface SpeechRecognitionEventMap {
+  result: SpeechRecognitionEvent
+  error: SpeechRecognitionErrorEvent
+  end: Event
+}
+
+interface SpeechRecognitionEvent extends Event {
+  readonly results: SpeechRecognitionResultList
+  readonly resultIndex: number
+}
+
+interface SpeechRecognitionErrorEvent extends Event {
+  readonly error: string
+  readonly message: string
+}
+
+interface SpeechRecognitionInterface extends EventTarget {
+  continuous: boolean
+  interimResults: boolean
+  lang: string
+  onresult: ((event: SpeechRecognitionEvent) => void) | null
+  onerror: ((event: SpeechRecognitionErrorEvent) => void) | null
+  onend: (() => void) | null
+  start(): void
+  stop(): void
+  abort(): void
+}
+
+declare global {
+  interface Window {
+    SpeechRecognition: new () => SpeechRecognitionInterface
+    webkitSpeechRecognition: new () => SpeechRecognitionInterface
+  }
+}
+
 export function AIAssistant() {
   const [isOpen, setIsOpen] = useState(false)
   const [isExpanded, setIsExpanded] = useState(false)
   const [messages, setMessages] = useState<A2UIMessage[]>([INITIAL_MESSAGE])
   const [inputValue, setInputValue] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [isListening, setIsListening] = useState(false)
+  const [voiceSupported, setVoiceSupported] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
+  const recognitionRef = useRef<SpeechRecognitionInterface | null>(null)
   const pathname = usePathname()
 
   const scrollToBottom = useCallback(() => {
@@ -842,6 +1206,60 @@ export function AIAssistant() {
   useEffect(() => {
     if (isOpen) setTimeout(() => inputRef.current?.focus(), 100)
   }, [isOpen])
+
+  // Setup speech recognition
+  useEffect(() => {
+    if (typeof window !== 'undefined' && ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window)) {
+      setVoiceSupported(true)
+      const SpeechRecognitionClass = window.SpeechRecognition || window.webkitSpeechRecognition
+      const recognition = new SpeechRecognitionClass()
+
+      recognition.continuous = false
+      recognition.interimResults = true
+      recognition.lang = 'en-US'
+
+      recognition.onresult = (event) => {
+        let transcript = ''
+        for (let i = 0; i < event.results.length; i++) {
+          transcript += event.results[i][0].transcript
+        }
+        setInputValue(transcript)
+      }
+
+      recognition.onend = () => {
+        setIsListening(false)
+      }
+
+      recognition.onerror = (event) => {
+        console.error('Speech recognition error:', event.error)
+        setIsListening(false)
+      }
+
+      recognitionRef.current = recognition
+    }
+
+    return () => {
+      if (recognitionRef.current) {
+        recognitionRef.current.abort()
+      }
+    }
+  }, [])
+
+  const toggleVoiceInput = useCallback(() => {
+    if (!recognitionRef.current) return
+
+    if (isListening) {
+      recognitionRef.current.stop()
+      setIsListening(false)
+    } else {
+      try {
+        recognitionRef.current.start()
+        setIsListening(true)
+      } catch (error) {
+        console.error('Failed to start speech recognition:', error)
+      }
+    }
+  }, [isListening])
 
   const generateId = () => `msg-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`
 
@@ -1097,8 +1515,11 @@ export function AIAssistant() {
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Ask about accounting, taxes, invoices..."
-            className="flex-1 min-h-[24px] max-h-28 resize-none bg-transparent border-0 focus:outline-none focus:ring-0 px-2 py-1 text-sm placeholder:text-muted-foreground"
+            placeholder={isListening ? "Listening..." : "Ask about accounting, taxes, invoices..."}
+            className={cn(
+              "flex-1 min-h-[24px] max-h-28 resize-none bg-transparent border-0 focus:outline-none focus:ring-0 px-2 py-1 text-sm placeholder:text-muted-foreground",
+              isListening && "placeholder:text-red-500 placeholder:animate-pulse"
+            )}
             rows={1}
             style={{ height: 'auto', overflow: 'hidden' }}
             onInput={(e) => {
@@ -1107,6 +1528,24 @@ export function AIAssistant() {
               target.style.height = `${Math.min(target.scrollHeight, 112)}px`
             }}
           />
+          {voiceSupported && (
+            <Button
+              size="icon"
+              variant="ghost"
+              className={cn(
+                "h-9 w-9 shrink-0 transition-colors",
+                isListening && "text-red-500 bg-red-100 hover:bg-red-200 dark:bg-red-900/30 dark:hover:bg-red-900/50"
+              )}
+              onClick={toggleVoiceInput}
+              title={isListening ? "Stop listening" : "Voice input"}
+            >
+              {isListening ? (
+                <MicOff className="h-4 w-4 animate-pulse" />
+              ) : (
+                <Mic className="h-4 w-4" />
+              )}
+            </Button>
+          )}
           <Button
             size="icon"
             className="h-9 w-9 shrink-0"
@@ -1118,7 +1557,7 @@ export function AIAssistant() {
         </div>
 
         <p className="text-[10px] text-center text-muted-foreground">
-          Powered by Gemini • Verify data before making financial decisions
+          {voiceSupported ? 'Powered by Gemini • Voice enabled • ' : 'Powered by Gemini • '}Verify data before making financial decisions
         </p>
       </div>
     </Card>
