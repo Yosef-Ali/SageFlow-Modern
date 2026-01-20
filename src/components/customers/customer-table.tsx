@@ -29,8 +29,8 @@ import {
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { formatCurrency } from '@/lib/utils'
-// import { Customer } from '@prisma/client' // Removing Prisma import
 import { type SerializedCustomer } from '@/types/customer'
+import { paymentTerms } from '@/lib/validations/customer'
 import { CustomerFormDialog } from './customer-form-dialog'
 import { useDeleteCustomer, useRestoreCustomer } from '@/hooks/use-customers'
 import { CustomersEmptyState } from './customers-empty-state'
@@ -81,6 +81,12 @@ export function CustomerTable({ customers, isLoading }: CustomerTableProps) {
     return <CustomersEmptyState onAddCustomer={handleAddCustomer} />
   }
 
+  // Helper to get payment terms label
+  const getTermsLabel = (terms: string | undefined) => {
+    const term = paymentTerms.find(t => t.value === terms)
+    return term?.label || 'Net 30'
+  }
+
   return (
     <>
       <div className="border rounded-lg overflow-hidden">
@@ -89,7 +95,9 @@ export function CustomerTable({ customers, isLoading }: CustomerTableProps) {
             <TableRow>
               <TableHead>Customer #</TableHead>
               <TableHead>Name</TableHead>
+              <TableHead>Email</TableHead>
               <TableHead>Phone</TableHead>
+              <TableHead>Terms</TableHead>
               <TableHead>Balance</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="text-right">Actions</TableHead>
@@ -104,12 +112,20 @@ export function CustomerTable({ customers, isLoading }: CustomerTableProps) {
                 <TableCell>
                   <div>
                     <div className="font-medium">{customer.name}</div>
-                    {customer.email && (
-                      <div className="text-sm text-slate-500">{customer.email}</div>
+                    {(customer as any).contactName && (
+                      <div className="text-xs text-slate-500">{(customer as any).contactName}</div>
                     )}
                   </div>
                 </TableCell>
-                <TableCell>{customer.phone}</TableCell>
+                <TableCell className="text-sm text-slate-600">
+                  {customer.email || '-'}
+                </TableCell>
+                <TableCell className="text-sm">{customer.phone || '-'}</TableCell>
+                <TableCell>
+                  <span className="text-xs px-2 py-1 bg-slate-100 rounded-md">
+                    {getTermsLabel((customer as any).paymentTerms)}
+                  </span>
+                </TableCell>
                 <TableCell>
                   <span
                     className={

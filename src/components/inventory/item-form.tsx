@@ -33,6 +33,14 @@ const itemFormSchema = z.object({
   reorderQuantity: z.number().min(0).default(0),
   quantityOnHand: z.number().min(0).default(0),
   isActive: z.boolean().default(true),
+  // Peachtree-standard fields
+  sellingPrice2: z.number().min(0).optional(),  // Wholesale
+  sellingPrice3: z.number().min(0).optional(),  // Distributor
+  taxable: z.boolean().default(true),
+  barcode: z.string().optional(),
+  location: z.string().optional(),
+  weight: z.number().min(0).optional(),
+  weightUnit: z.string().default('Kg'),
 })
 
 type ItemFormValues = z.infer<typeof itemFormSchema>
@@ -82,6 +90,14 @@ export function ItemForm({ item, onSuccess }: ItemFormProps) {
       reorderQuantity: item ? Number(item.reorderQuantity) : 0,
       quantityOnHand: item ? Number(item.quantityOnHand) : 0,
       isActive: item?.isActive ?? true,
+      // Peachtree fields
+      sellingPrice2: item ? Number(item.sellingPrice2) || undefined : undefined,
+      sellingPrice3: item ? Number(item.sellingPrice3) || undefined : undefined,
+      taxable: item?.taxable ?? true,
+      barcode: item?.barcode || '',
+      location: item?.location || '',
+      weight: item ? Number(item.weight) || undefined : undefined,
+      weightUnit: item?.weightUnit || 'Kg',
     },
   })
 
@@ -224,7 +240,7 @@ export function ItemForm({ item, onSuccess }: ItemFormProps) {
           </div>
 
           <div className="space-y-2">
-            <Label>Selling Price (ETB) *</Label>
+            <Label>Selling Price - Retail (ETB) *</Label>
             <Input
               type="number"
               step="0.01"
@@ -235,6 +251,95 @@ export function ItemForm({ item, onSuccess }: ItemFormProps) {
             {form.formState.errors.sellingPrice && (
               <p className="text-sm text-red-500">{form.formState.errors.sellingPrice.message}</p>
             )}
+          </div>
+        </div>
+
+        {/* Price Levels (Peachtree) */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-2">
+            <Label>Wholesale Price (Level 2)</Label>
+            <Input
+              type="number"
+              step="0.01"
+              min="0"
+              {...form.register('sellingPrice2', { valueAsNumber: true })}
+              placeholder="0.00"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Distributor Price (Level 3)</Label>
+            <Input
+              type="number"
+              step="0.01"
+              min="0"
+              {...form.register('sellingPrice3', { valueAsNumber: true })}
+              placeholder="0.00"
+            />
+          </div>
+        </div>
+
+        <div className="flex items-center space-x-3">
+          <Switch
+            id="taxable"
+            checked={form.watch('taxable')}
+            onCheckedChange={(checked) => form.setValue('taxable', checked)}
+          />
+          <div>
+            <Label htmlFor="taxable" className="cursor-pointer">Taxable (15% VAT)</Label>
+            <p className="text-xs text-muted-foreground">Item is subject to Value Added Tax</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Additional Info (Peachtree) */}
+      <div className="bg-white p-6 rounded-lg border border-slate-200 space-y-6">
+        <h3 className="text-lg font-semibold">Additional Information</h3>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="space-y-2">
+            <Label>Barcode (UPC/EAN)</Label>
+            <Input
+              {...form.register('barcode')}
+              placeholder="e.g., 0123456789012"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Warehouse Location</Label>
+            <Input
+              {...form.register('location')}
+              placeholder="e.g., A-12-3"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-2">
+              <Label>Weight</Label>
+              <Input
+                type="number"
+                step="0.01"
+                min="0"
+                {...form.register('weight', { valueAsNumber: true })}
+                placeholder="0"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Unit</Label>
+              <Select
+                value={form.watch('weightUnit')}
+                onValueChange={(value) => form.setValue('weightUnit', value)}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Kg">Kg</SelectItem>
+                  <SelectItem value="Gram">Gram</SelectItem>
+                  <SelectItem value="Lb">Lb</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </div>
       </div>

@@ -16,6 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { Switch } from '@/components/ui/switch'
 import {
   invoiceSchema,
   type InvoiceFormValues,
@@ -61,6 +62,11 @@ export function InvoiceForm({ invoice, onSuccess }: InvoiceFormProps) {
       notes: '',
       terms: 'Payment is due within 30 days of invoice date.',
       status: 'DRAFT',
+      // Peachtree fields
+      salesRepId: '',
+      poNumber: '',
+      shipMethod: '',
+      dropShip: false,
     },
   })
 
@@ -95,6 +101,12 @@ export function InvoiceForm({ invoice, onSuccess }: InvoiceFormProps) {
         notes: invoice.notes || '',
         terms: invoice.terms || '',
         status: invoice.status,
+        // Peachtree fields
+        salesRepId: invoice.salesRepId || '',
+        poNumber: invoice.poNumber || '',
+        shipMethod: invoice.shipMethod || '',
+        shipDate: invoice.shipDate ? new Date(invoice.shipDate) : undefined,
+        dropShip: invoice.dropShip || false,
       })
     }
   }, [invoice, form])
@@ -300,9 +312,61 @@ export function InvoiceForm({ invoice, onSuccess }: InvoiceFormProps) {
         </div>
       </div>
 
+      {/* Shipping & PO Info (Peachtree) */}
+      <div className="bg-white p-6 rounded-lg border border-slate-200 space-y-6">
+        <h3 className="text-lg font-semibold">Shipping & PO Details</h3>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-2">
+            <Label>PO Number</Label>
+            <Input
+              {...form.register('poNumber')}
+              placeholder="Customer Purchase Order #"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Sales Rep ID</Label>
+            <Input
+              {...form.register('salesRepId')}
+              placeholder="Employee ID"
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-2">
+            <Label>Ship Method</Label>
+            <Input
+              {...form.register('shipMethod')}
+              placeholder="e.g. Courier, Pickup, DHL"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Ship Date</Label>
+            <Input
+              type="date"
+              value={form.watch('shipDate')?.toISOString().split('T')[0] || ''}
+              onChange={(e) => {
+                const val = e.target.value ? new Date(e.target.value) : null
+                form.setValue('shipDate', val)
+              }}
+            />
+          </div>
+        </div>
+
+        <div className="flex items-center space-x-2">
+          <Switch
+            id="dropShip"
+            checked={form.watch('dropShip')}
+            onCheckedChange={(checked) => form.setValue('dropShip', checked)}
+          />
+          <Label htmlFor="dropShip">Drop Ship (Ship directly from vendor)</Label>
+        </div>
+      </div>
+
       {/* Notes & Terms */}
       <div className="bg-white p-6 rounded-lg border border-slate-200 space-y-6">
-        <h3 className="text-lg font-semibold">Additional Information</h3>
+        <h3 className="text-lg font-semibold">Terms & Notes</h3>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">

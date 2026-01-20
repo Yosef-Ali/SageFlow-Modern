@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -9,28 +10,30 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { useCreateVendor, useUpdateVendor } from '@/hooks/use-vendors'
-import { z } from 'zod'
+import { vendorSchema, vendorTypes, paymentTerms, type VendorFormValues } from '@/lib/validations/vendor'
 
-const vendorFormSchema = z.object({
-  vendorNumber: z.string().optional(),
-  name: z.string().min(1, 'Vendor name is required'),
-  email: z.string().email().optional().or(z.literal('')),
-  phone: z.string().optional(),
-  address: z.object({
-    street: z.string().optional(),
-    city: z.string().optional(),
-    state: z.string().optional(),
-    zip: z.string().optional(),
-    country: z.string().optional(),
-  }).optional(),
-  taxId: z.string().optional(),
-  paymentTerms: z.string().optional(),
-  notes: z.string().optional(),
-  isActive: z.boolean().default(true),
-})
-
-type VendorFormValues = z.infer<typeof vendorFormSchema>
+const ethiopianRegions = [
+  'Addis Ababa',
+  'Oromia',
+  'Amhara',
+  'Tigray',
+  'SNNPR',
+  'Afar',
+  'Somali',
+  'Benishangul-Gumuz',
+  'Gambela',
+  'Harari',
+  'Dire Dawa',
+  'Sidama',
+]
 
 interface VendorFormProps {
   vendor?: any
@@ -44,7 +47,7 @@ export function VendorForm({ vendor, onSuccess }: VendorFormProps) {
   const isEditing = !!vendor
 
   const form = useForm<VendorFormValues>({
-    resolver: zodResolver(vendorFormSchema),
+    resolver: zodResolver(vendorSchema),
     defaultValues: {
       vendorNumber: vendor?.vendorNumber || '',
       name: vendor?.name || '',
@@ -55,14 +58,24 @@ export function VendorForm({ vendor, onSuccess }: VendorFormProps) {
         city: vendor?.address?.city || '',
         state: vendor?.address?.state || '',
         zip: vendor?.address?.zip || '',
-        country: vendor?.address?.country || '',
+        country: vendor?.address?.country || 'Ethiopia',
       },
       taxId: vendor?.taxId || '',
-      paymentTerms: vendor?.paymentTerms || '',
       notes: vendor?.notes || '',
       isActive: vendor?.isActive ?? true,
+      // Peachtree-standard fields
+      vendorType: vendor?.vendorType || 'SUPPLIER',
+      paymentTerms: vendor?.paymentTerms || 'NET_30',
+      contactName: vendor?.contactName || '',
+      discountPercent: Number(vendor?.discountPercent) || 0,
+      creditLimit: Number(vendor?.creditLimit) || 0,
+      taxExempt: vendor?.taxExempt || false,
+      taxExemptNumber: vendor?.taxExemptNumber || '',
     },
   })
+
+  // Watch taxExempt for conditional rendering
+  const taxExempt = form.watch('taxExempt')
 
   const onSubmit = async (data: VendorFormValues) => {
     try {
@@ -85,6 +98,7 @@ export function VendorForm({ vendor, onSuccess }: VendorFormProps) {
 
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+      {/* Vendor Details */}
       <div className="bg-white p-6 rounded-lg border border-slate-200 space-y-6">
         <h3 className="text-lg font-semibold">Vendor Details</h3>
 
@@ -93,7 +107,7 @@ export function VendorForm({ vendor, onSuccess }: VendorFormProps) {
             <Label>Vendor Name *</Label>
             <Input
               {...form.register('name')}
-              placeholder="e.g., Acme Corp"
+              placeholder="e.g., Ethiopian Trading Co."
             />
             {form.formState.errors.name && (
               <p className="text-sm text-red-500">{form.formState.errors.name.message}</p>
@@ -106,6 +120,35 @@ export function VendorForm({ vendor, onSuccess }: VendorFormProps) {
               {...form.register('vendorNumber')}
               placeholder="Auto-generated if empty"
             />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-2">
+            <Label>Contact Person</Label>
+            <Input
+              {...form.register('contactName')}
+              placeholder="Primary contact name"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Vendor Type</Label>
+            <Select
+              value={form.watch('vendorType')}
+              onValueChange={(value) => form.setValue('vendorType', value as any)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select type" />
+              </SelectTrigger>
+              <SelectContent>
+                {vendorTypes.map((type) => (
+                  <SelectItem key={type.value} value={type.value}>
+                    {type.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
 
@@ -132,21 +175,91 @@ export function VendorForm({ vendor, onSuccess }: VendorFormProps) {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">
-            <Label>Tax ID</Label>
+            <Label>TIN (Tax ID)</Label>
             <Input
               {...form.register('taxId')}
-              placeholder="TIN number"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label>Payment Terms</Label>
-            <Input
-              {...form.register('paymentTerms')}
-              placeholder="e.g., Net 30"
+              placeholder="10-digit TIN"
             />
           </div>
         </div>
+      </div>
+
+      {/* Account Settings (Peachtree-style) */}
+      <div className="bg-white p-6 rounded-lg border border-slate-200 space-y-6">
+        <h3 className="text-lg font-semibold">Account Settings</h3>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-2">
+            <Label>Payment Terms</Label>
+            <Select
+              value={form.watch('paymentTerms')}
+              onValueChange={(value) => form.setValue('paymentTerms', value as any)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select terms" />
+              </SelectTrigger>
+              <SelectContent>
+                {paymentTerms.map((term) => (
+                  <SelectItem key={term.value} value={term.value}>
+                    {term.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Credit Limit (ETB)</Label>
+            <Input
+              type="number"
+              placeholder="0.00"
+              {...form.register('creditLimit', { valueAsNumber: true })}
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-2">
+            <Label>Discount %</Label>
+            <Input
+              type="number"
+              min="0"
+              max="100"
+              step="0.1"
+              placeholder="0"
+              {...form.register('discountPercent', { valueAsNumber: true })}
+            />
+          </div>
+
+          <div className="flex items-center space-x-3 pt-6">
+            <Switch
+              id="taxExempt"
+              checked={taxExempt}
+              onCheckedChange={(checked: boolean) => form.setValue('taxExempt', checked)}
+            />
+            <div>
+              <Label htmlFor="taxExempt" className="cursor-pointer">VAT Exempt</Label>
+              <p className="text-xs text-muted-foreground">Vendor is exempt from 15% VAT</p>
+            </div>
+          </div>
+        </div>
+
+        {taxExempt && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <Label>Exemption Certificate #</Label>
+              <Input
+                {...form.register('taxExemptNumber')}
+                placeholder="Certificate number"
+              />
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Address */}
+      <div className="bg-white p-6 rounded-lg border border-slate-200 space-y-6">
+        <h3 className="text-lg font-semibold">Address</h3>
 
         <div className="space-y-2">
           <Label>Street Address</Label>
@@ -166,10 +279,21 @@ export function VendorForm({ vendor, onSuccess }: VendorFormProps) {
           </div>
           <div className="space-y-2">
             <Label>State / Region</Label>
-            <Input
-              {...form.register('address.state')}
-              placeholder="AA"
-            />
+            <Select
+              value={form.watch('address.state') || ''}
+              onValueChange={(value) => form.setValue('address.state', value)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select region" />
+              </SelectTrigger>
+              <SelectContent>
+                {ethiopianRegions.map((region) => (
+                  <SelectItem key={region} value={region}>
+                    {region}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <div className="space-y-2">
             <Label>Country</Label>
@@ -179,7 +303,10 @@ export function VendorForm({ vendor, onSuccess }: VendorFormProps) {
             />
           </div>
         </div>
+      </div>
 
+      {/* Notes */}
+      <div className="bg-white p-6 rounded-lg border border-slate-200 space-y-6">
         <div className="space-y-2">
           <Label>Notes</Label>
           <Textarea

@@ -3,6 +3,38 @@ import { z } from 'zod'
 // Ethiopian phone number format: +251 or 0 followed by 9 or 7 and 8 more digits
 const ethiopianPhoneRegex = /^(\+251|0)[97]\d{8}$/
 
+// Ethiopian TIN format: 10 digits
+const ethiopianTINRegex = /^\d{10}$/
+
+// Peachtree-standard customer types
+export const customerTypes = [
+  { value: 'RETAIL', label: 'Retail' },
+  { value: 'WHOLESALE', label: 'Wholesale' },
+  { value: 'GOVERNMENT', label: 'Government' },
+  { value: 'NGO', label: 'NGO / Non-Profit' },
+  { value: 'CORPORATE', label: 'Corporate' },
+  { value: 'OTHER', label: 'Other' },
+] as const
+
+// Peachtree-standard payment terms
+export const paymentTerms = [
+  { value: 'DUE_ON_RECEIPT', label: 'Due on Receipt', days: 0 },
+  { value: 'NET_15', label: 'Net 15', days: 15 },
+  { value: 'NET_30', label: 'Net 30', days: 30 },
+  { value: 'NET_45', label: 'Net 45', days: 45 },
+  { value: 'NET_60', label: 'Net 60', days: 60 },
+  { value: 'NET_90', label: 'Net 90', days: 90 },
+  { value: '2_10_NET_30', label: '2% 10 Net 30', days: 30, discountDays: 10, discountPercent: 2 },
+  { value: 'COD', label: 'Cash on Delivery', days: 0 },
+] as const
+
+// Price levels (Peachtree standard)
+export const priceLevels = [
+  { value: '1', label: 'Level 1 - Retail' },
+  { value: '2', label: 'Level 2 - Wholesale' },
+  { value: '3', label: 'Level 3 - Distributor' },
+] as const
+
 // Address validation schema
 export const addressSchema = z.object({
   street: z.string().optional(),
@@ -42,10 +74,40 @@ export const customerSchema = z.object({
     .max(500, 'Notes must be less than 500 characters')
     .optional()
     .or(z.literal('')),
+  // Peachtree-standard fields
+  customerType: z.enum(['RETAIL', 'WHOLESALE', 'GOVERNMENT', 'NGO', 'CORPORATE', 'OTHER']).optional().default('RETAIL'),
+  paymentTerms: z.enum(['DUE_ON_RECEIPT', 'NET_15', 'NET_30', 'NET_45', 'NET_60', 'NET_90', '2_10_NET_30', 'COD']).optional().default('NET_30'),
+  contactName: z.string().max(100).optional().or(z.literal('')),
+  discountPercent: z.number().min(0).max(100).optional().default(0),
+  taxExempt: z.boolean().optional().default(false),
+  taxExemptNumber: z.string().max(50).optional().or(z.literal('')),
+  priceLevel: z.enum(['1', '2', '3']).optional().default('1'),
 })
 
 // Type inference from schema
 export type CustomerFormValues = z.infer<typeof customerSchema>
+
+// Helper function to calculate due date based on payment terms
+export function calculateDueDate(invoiceDate: Date, terms: string): Date {
+  const termConfig = paymentTerms.find(t => t.value === terms)
+  const daysToAdd = termConfig?.days ?? 30
+
+  const dueDate = new Date(invoiceDate)
+  dueDate.setDate(dueDate.getDate() + daysToAdd)
+  return dueDate
+}
+
+// Helper function to get early payment discount info
+export function getEarlyPaymentDiscount(terms: string): { discountPercent: number; discountDays: number } | null {
+  const termConfig = paymentTerms.find(t => t.value === terms)
+  if (termConfig && 'discountPercent' in termConfig && 'discountDays' in termConfig) {
+    return {
+      discountPercent: termConfig.discountPercent,
+      discountDays: termConfig.discountDays,
+    }
+  }
+  return null
+}
 
 // Search/filter validation
 export const customerFiltersSchema = z.object({

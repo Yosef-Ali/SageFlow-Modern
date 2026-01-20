@@ -45,6 +45,21 @@ export const companies = pgTable('companies', {
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });
 
+// Customer Type Enum (Peachtree standard)
+export const customerTypeEnum = pgEnum('customer_type', ['RETAIL', 'WHOLESALE', 'GOVERNMENT', 'NGO', 'CORPORATE', 'OTHER']);
+
+// Payment Terms Enum (Peachtree standard)
+export const paymentTermsEnum = pgEnum('payment_terms', [
+  'DUE_ON_RECEIPT',
+  'NET_15',
+  'NET_30',
+  'NET_45',
+  'NET_60',
+  'NET_90',
+  '2_10_NET_30', // 2% discount if paid within 10 days, otherwise net 30
+  'COD'          // Cash on Delivery
+]);
+
 // Customers
 export const customers = pgTable('customers', {
   id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
@@ -60,6 +75,18 @@ export const customers = pgTable('customers', {
   taxId: text('tax_id'),
   notes: text('notes'),
   isActive: boolean('is_active').notNull().default(true),
+  // Peachtree-standard fields
+  customerType: customerTypeEnum('customer_type').default('RETAIL'),
+  paymentTerms: paymentTermsEnum('payment_terms').default('NET_30'),
+  contactName: text('contact_name'),          // Primary contact person
+  discountPercent: decimal('discount_percent', { precision: 5, scale: 2 }).default('0'),
+  taxExempt: boolean('tax_exempt').notNull().default(false),
+  taxExemptNumber: text('tax_exempt_number'),  // Exemption certificate
+  priceLevel: text('price_level').default('1'), // 1=Retail, 2=Wholesale, 3=Distributor
+  salesRepId: text('sales_rep_id'),            // FK to employees
+  openingBalance: decimal('opening_balance', { precision: 15, scale: 2 }).default('0'),
+  openingBalanceDate: timestamp('opening_balance_date'),
+  customerSince: timestamp('customer_since'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });
@@ -80,6 +107,13 @@ export const invoices = pgTable('invoices', {
   status: invoiceStatusEnum('status').notNull().default('DRAFT'),
   notes: text('notes'),
   terms: text('terms'),
+  // Peachtree-standard fields
+  salesRepId: text('sales_rep_id'),  // FK to employees
+  poNumber: text('po_number'),  // Customer's PO reference
+  shipMethod: text('ship_method'),  // DHL, EMS, Local Delivery, etc.
+  shipDate: timestamp('ship_date'),
+  shipAddress: json('ship_address'),
+  dropShip: boolean('drop_ship').default(false),  // Ship direct from vendor
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });
@@ -126,6 +160,16 @@ export const items = pgTable('items', {
   reorderQuantity: decimal('reorder_quantity', { precision: 15, scale: 2 }).notNull().default('0'),
   quantityOnHand: decimal('quantity_on_hand', { precision: 15, scale: 2 }).notNull().default('0'),
   isActive: boolean('is_active').notNull().default(true),
+  // Peachtree-standard fields
+  sellingPrice2: decimal('selling_price_2', { precision: 15, scale: 2 }),  // Wholesale price
+  sellingPrice3: decimal('selling_price_3', { precision: 15, scale: 2 }),  // Distributor price
+  preferredVendorId: text('preferred_vendor_id'),  // FK to vendors
+  taxable: boolean('taxable').notNull().default(true),  // Subject to 15% VAT
+  weight: decimal('weight', { precision: 10, scale: 4 }),
+  weightUnit: text('weight_unit').default('Kg'),  // Kg, Gram, etc.
+  barcode: text('barcode'),  // UPC/EAN barcode
+  location: text('location'),  // Warehouse location
+  lastCostDate: timestamp('last_cost_date'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });
@@ -151,6 +195,9 @@ export const stockMovements = pgTable('stock_movements', {
   notes: text('notes'),
 });
 
+// Vendor Type Enum (Peachtree standard)
+export const vendorTypeEnum = pgEnum('vendor_type', ['SUPPLIER', 'CONTRACTOR', 'GOVERNMENT', 'UTILITY', 'SERVICE_PROVIDER', 'OTHER']);
+
 // Vendors
 export const vendors = pgTable('vendors', {
   id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
@@ -161,8 +208,19 @@ export const vendors = pgTable('vendors', {
   phone: text('phone'),
   address: json('address'),
   taxId: text('tax_id'),
-  paymentTerms: text('payment_terms'),
+  paymentTerms: paymentTermsEnum('payment_terms').default('NET_30'),
   balance: decimal('balance', { precision: 15, scale: 2 }).notNull().default('0'),
+  // Peachtree-standard fields
+  vendorType: vendorTypeEnum('vendor_type').default('SUPPLIER'),
+  contactName: text('contact_name'),
+  discountPercent: decimal('discount_percent', { precision: 5, scale: 2 }).default('0'),
+  creditLimit: decimal('credit_limit', { precision: 15, scale: 2 }),
+  taxExempt: boolean('tax_exempt').notNull().default(false),
+  taxExemptNumber: text('tax_exempt_number'),
+  openingBalance: decimal('opening_balance', { precision: 15, scale: 2 }).default('0'),
+  openingBalanceDate: timestamp('opening_balance_date'),
+  vendorSince: timestamp('vendor_since'),
+  notes: text('notes'),
   isActive: boolean('is_active').notNull().default(true),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
@@ -242,10 +300,95 @@ export const employees = pgTable('employees', {
   payFrequency: text('pay_frequency'),
   hireDate: timestamp('hire_date'),
   isActive: boolean('is_active').notNull().default(true),
+  // Peachtree-standard payroll fields
+  employeeType: text('employee_type').default('REGULAR'),  // REGULAR, CONTRACT, TEMPORARY
+  payRate: decimal('pay_rate', { precision: 15, scale: 2 }),  // Hourly or monthly rate
+  overtimeRate: decimal('overtime_rate', { precision: 5, scale: 2 }).default('1.5'),  // OT multiplier
+  bankAccountNo: text('bank_account_no'),  // Salary deposit account
+  bankName: text('bank_name'),
+  taxId: text('tax_id'),  // Personal TIN
+  emergencyContactName: text('emergency_contact_name'),
+  emergencyContactPhone: text('emergency_contact_phone'),
+  terminationDate: timestamp('termination_date'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });
 
+// Audit Logs
+
+// ... (existing audit logs)
+export const auditLogs = pgTable('audit_logs', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  companyId: text('company_id').notNull(),
+  action: text('action').notNull().default('UNKNOWN'),
+  entityType: text('entity_type'),
+  entityId: text('entity_id'),
+  details: text('details'),
+  userId: text('user_id'),
+  timestamp: timestamp('timestamp').notNull().defaultNow(),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+});
+
+// Purchases Enums
+export const purchaseOrderStatusEnum = pgEnum('purchase_order_status', ['DRAFT', 'OPEN', 'CLOSED', 'CANCELLED']);
+export const billStatusEnum = pgEnum('bill_status', ['OPEN', 'PAID', 'OVERDUE', 'PARTIALLY_PAID']);
+
+// Purchase Orders
+export const purchaseOrders = pgTable('purchase_orders', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  companyId: text('company_id').notNull(),
+  vendorId: text('vendor_id').notNull(),
+  poNumber: text('po_number').notNull(),
+  date: timestamp('date').notNull(),
+  expectedDate: timestamp('expected_date'),
+  status: purchaseOrderStatusEnum('status').notNull().default('DRAFT'),
+  totalAmount: decimal('total_amount', { precision: 15, scale: 2 }).notNull().default('0'),
+  notes: text('notes'),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+});
+
+// Purchase Order Items
+export const purchaseOrderItems = pgTable('purchase_order_items', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  poId: text('po_id').notNull(),
+  itemId: text('item_id').notNull(),
+  description: text('description'),
+  quantity: decimal('quantity', { precision: 15, scale: 4 }).notNull(),
+  unitCost: decimal('unit_cost', { precision: 15, scale: 2 }).notNull(),
+  total: decimal('total', { precision: 15, scale: 2 }).notNull(),
+});
+
+// Bills
+export const bills = pgTable('bills', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  companyId: text('company_id').notNull(),
+  vendorId: text('vendor_id').notNull(),
+  poId: text('po_id'), // Optional link to PO
+  billNumber: text('bill_number').notNull(),
+  date: timestamp('date').notNull(),
+  dueDate: timestamp('due_date').notNull(),
+  totalAmount: decimal('total_amount', { precision: 15, scale: 2 }).notNull(),
+  paidAmount: decimal('paid_amount', { precision: 15, scale: 2 }).notNull().default('0'),
+  status: billStatusEnum('status').notNull().default('OPEN'),
+  notes: text('notes'),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+});
+
+// Bill Payments
+export const billPayments = pgTable('bill_payments', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  companyId: text('company_id').notNull(),
+  vendorId: text('vendor_id').notNull(),
+  billId: text('bill_id'), // Can be null if deposit/prepayment, but usually linked
+  amount: decimal('amount', { precision: 15, scale: 2 }).notNull(),
+  paymentDate: timestamp('payment_date').notNull(),
+  paymentMethod: text('payment_method').notNull(),
+  reference: text('reference'),
+  notes: text('notes'),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+});
 
 
 // Bank Transactions
@@ -260,6 +403,65 @@ export const bankTransactions = pgTable('bank_transactions', {
   category: text('category'),
   isReconciled: boolean('is_reconciled').notNull().default(false),
   createdAt: timestamp('created_at').notNull().defaultNow(),
+});
+
+// ============= INVENTORY & SERVICES TABLES =============
+
+// Assemblies (Bill of Materials)
+export const assemblies = pgTable('assemblies', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  companyId: text('company_id').notNull(),
+  itemId: text('item_id').notNull(), // The item being built
+  description: text('description'),
+  yieldQuantity: decimal('yield_quantity', { precision: 15, scale: 4 }).notNull().default('1'),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+});
+
+// Assembly Items (Components)
+export const assemblyItems = pgTable('assembly_items', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  assemblyId: text('assembly_id').notNull(),
+  itemId: text('item_id').notNull(), // The component item
+  quantity: decimal('quantity', { precision: 15, scale: 4 }).notNull(), // Qty required per yield
+});
+
+// Inventory Adjustments
+export const inventoryAdjustments = pgTable('inventory_adjustments', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  companyId: text('company_id').notNull(),
+  date: timestamp('date').notNull().defaultNow(),
+  reference: text('reference'),
+  reason: text('reason'),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+});
+
+// Adjustment Items (Lines)
+export const adjustmentItems = pgTable('adjustment_items', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  adjustmentId: text('adjustment_id').notNull(),
+  itemId: text('item_id').notNull(),
+  quantity: decimal('quantity', { precision: 15, scale: 4 }).notNull(), // Positive = add, Negative = remove
+  unitCost: decimal('unit_cost', { precision: 15, scale: 2 }), // Cost at time of adjustment
+});
+
+// ============= BANKING TABLES =============
+
+export const bankReconciliations = pgTable('bank_reconciliations', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  bankAccountId: text('bank_account_id').notNull(),
+  statementDate: timestamp('statement_date').notNull(),
+  statementBalance: decimal('statement_balance', { precision: 15, scale: 2 }).notNull(),
+  status: text('status').notNull().default('DRAFT'), // DRAFT, COMPLETED
+  startedAt: timestamp('started_at').notNull().defaultNow(),
+  completedAt: timestamp('completed_at'),
+});
+
+export const reconciliationItems = pgTable('reconciliation_items', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  reconciliationId: text('reconciliation_id').notNull(),
+  transactionId: text('transaction_id').notNull(),
+  isCleared: boolean('is_cleared').notNull().default(false),
 });
 
 // ============= RELATIONS =============
@@ -278,6 +480,9 @@ export const companiesRelations = relations(companies, ({ many }) => ({
   invoices: many(invoices),
   items: many(items),
   vendors: many(vendors),
+  auditLogs: many(auditLogs),
+  purchaseOrders: many(purchaseOrders),
+  bills: many(bills),
 }));
 
 export const customersRelations = relations(customers, ({ one, many }) => ({
@@ -335,6 +540,11 @@ export const itemsRelations = relations(items, ({ one, many }) => ({
   }),
   invoiceItems: many(invoiceItems),
   stockMovements: many(stockMovements),
+  purchaseOrderItems: many(purchaseOrderItems),
+  // Inventory Relations
+  assemblies: many(assemblies), // Items that are produced by assemblies
+  assemblyComponents: many(assemblyItems), // Items used as components
+  adjustmentItems: many(adjustmentItems),
 }));
 
 export const stockMovementsRelations = relations(stockMovements, ({ one }) => ({
@@ -356,6 +566,25 @@ export const bankTransactionsRelations = relations(bankTransactions, ({ one }) =
   bankAccount: one(bankAccounts, {
     fields: [bankTransactions.bankAccountId],
     references: [bankAccounts.id],
+  }),
+}));
+
+export const bankReconciliationsRelations = relations(bankReconciliations, ({ one, many }) => ({
+  bankAccount: one(bankAccounts, {
+    fields: [bankReconciliations.bankAccountId],
+    references: [bankAccounts.id],
+  }),
+  items: many(reconciliationItems),
+}));
+
+export const reconciliationItemsRelations = relations(reconciliationItems, ({ one }) => ({
+  reconciliation: one(bankReconciliations, {
+    fields: [reconciliationItems.reconciliationId],
+    references: [bankReconciliations.id],
+  }),
+  transaction: one(bankTransactions, {
+    fields: [reconciliationItems.transactionId],
+    references: [bankTransactions.id],
   }),
 }));
 
@@ -385,7 +614,112 @@ export const employeesRelations = relations(employees, ({ one }) => ({
   }),
 }));
 
+export const auditLogsRelations = relations(auditLogs, ({ one }) => ({
+  company: one(companies, {
+    fields: [auditLogs.companyId],
+    references: [companies.id],
+  }),
+}));
 
+export const purchaseOrdersRelations = relations(purchaseOrders, ({ one, many }) => ({
+  company: one(companies, {
+    fields: [purchaseOrders.companyId],
+    references: [companies.id],
+  }),
+  vendor: one(vendors, {
+    fields: [purchaseOrders.vendorId],
+    references: [vendors.id],
+  }),
+  items: many(purchaseOrderItems),
+  bills: many(bills),
+}));
+
+export const purchaseOrderItemsRelations = relations(purchaseOrderItems, ({ one }) => ({
+  purchaseOrder: one(purchaseOrders, {
+    fields: [purchaseOrderItems.poId],
+    references: [purchaseOrders.id],
+  }),
+  item: one(items, {
+    fields: [purchaseOrderItems.itemId],
+    references: [items.id],
+  }),
+}));
+
+export const billsRelations = relations(bills, ({ one, many }) => ({
+  company: one(companies, {
+    fields: [bills.companyId],
+    references: [companies.id],
+  }),
+  vendor: one(vendors, {
+    fields: [bills.vendorId],
+    references: [vendors.id],
+  }),
+  purchaseOrder: one(purchaseOrders, {
+    fields: [bills.poId],
+    references: [purchaseOrders.id],
+  }),
+  payments: many(billPayments),
+}));
+
+export const billPaymentsRelations = relations(billPayments, ({ one }) => ({
+  company: one(companies, {
+    fields: [billPayments.companyId],
+    references: [companies.id],
+  }),
+  vendor: one(vendors, {
+    fields: [billPayments.vendorId],
+    references: [vendors.id],
+  }),
+  bill: one(bills, {
+    fields: [billPayments.billId],
+    references: [bills.id],
+  }),
+}));
+
+
+// Inventory Relations Definitions
+
+export const assembliesRelations = relations(assemblies, ({ one, many }) => ({
+  company: one(companies, {
+    fields: [assemblies.companyId],
+    references: [companies.id],
+  }),
+  item: one(items, {
+    fields: [assemblies.itemId],
+    references: [items.id],
+  }),
+  components: many(assemblyItems),
+}));
+
+export const assemblyItemsRelations = relations(assemblyItems, ({ one }) => ({
+  assembly: one(assemblies, {
+    fields: [assemblyItems.assemblyId],
+    references: [assemblies.id],
+  }),
+  item: one(items, {
+    fields: [assemblyItems.itemId],
+    references: [items.id],
+  }),
+}));
+
+export const inventoryAdjustmentsRelations = relations(inventoryAdjustments, ({ one, many }) => ({
+  company: one(companies, {
+    fields: [inventoryAdjustments.companyId],
+    references: [companies.id],
+  }),
+  items: many(adjustmentItems),
+}));
+
+export const adjustmentItemsRelations = relations(adjustmentItems, ({ one }) => ({
+  adjustment: one(inventoryAdjustments, {
+    fields: [adjustmentItems.adjustmentId],
+    references: [inventoryAdjustments.id],
+  }),
+  item: one(items, {
+    fields: [adjustmentItems.itemId],
+    references: [items.id],
+  }),
+}));
 
 // ============= ENUM TYPES =============
 
@@ -394,6 +728,11 @@ export type AccountType = (typeof accountTypeEnum.enumValues)[number];
 export type InvoiceStatus = (typeof invoiceStatusEnum.enumValues)[number];
 export type ItemType = (typeof itemTypeEnum.enumValues)[number];
 export type MovementType = (typeof movementTypeEnum.enumValues)[number];
+export type PurchaseOrderStatus = (typeof purchaseOrderStatusEnum.enumValues)[number];
+export type BillStatus = (typeof billStatusEnum.enumValues)[number];
+export type CustomerType = (typeof customerTypeEnum.enumValues)[number];
+export type PaymentTerms = (typeof paymentTermsEnum.enumValues)[number];
+export type VendorType = (typeof vendorTypeEnum.enumValues)[number];
 
 // ============= TABLE TYPES =============
 
@@ -438,3 +777,36 @@ export type NewJournalLine = typeof journalLines.$inferInsert;
 
 export type Employee = typeof employees.$inferSelect;
 export type NewEmployee = typeof employees.$inferInsert;
+
+export type AuditLog = typeof auditLogs.$inferSelect;
+export type NewAuditLog = typeof auditLogs.$inferInsert;
+
+export type PurchaseOrder = typeof purchaseOrders.$inferSelect;
+export type NewPurchaseOrder = typeof purchaseOrders.$inferInsert;
+
+export type PurchaseOrderItem = typeof purchaseOrderItems.$inferSelect;
+export type NewPurchaseOrderItem = typeof purchaseOrderItems.$inferInsert;
+
+export type Bill = typeof bills.$inferSelect;
+export type NewBill = typeof bills.$inferInsert;
+
+export type BillPayment = typeof billPayments.$inferSelect;
+export type NewBillPayment = typeof billPayments.$inferInsert;
+
+export type Assembly = typeof assemblies.$inferSelect;
+export type NewAssembly = typeof assemblies.$inferInsert;
+
+export type AssemblyItem = typeof assemblyItems.$inferSelect;
+export type NewAssemblyItem = typeof assemblyItems.$inferInsert;
+
+export type InventoryAdjustment = typeof inventoryAdjustments.$inferSelect;
+export type NewInventoryAdjustment = typeof inventoryAdjustments.$inferInsert;
+
+export type AdjustmentItem = typeof adjustmentItems.$inferSelect;
+export type NewAdjustmentItem = typeof adjustmentItems.$inferInsert;
+
+export type BankReconciliation = typeof bankReconciliations.$inferSelect;
+export type NewBankReconciliation = typeof bankReconciliations.$inferInsert;
+
+export type ReconciliationItem = typeof reconciliationItems.$inferSelect;
+export type NewReconciliationItem = typeof reconciliationItems.$inferInsert;

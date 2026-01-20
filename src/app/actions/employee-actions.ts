@@ -22,6 +22,16 @@ const employeeSchema = z.object({
   address: z.any().optional(),
   hireDate: z.string().optional().nullable(),
   isActive: z.boolean().default(true),
+  // Peachtree payroll fields
+  employeeType: z.string().default('REGULAR'),
+  payRate: z.number().min(0).optional(),
+  overtimeRate: z.number().min(1).default(1.5),
+  bankAccountNo: z.string().optional(),
+  bankName: z.string().optional(),
+  taxId: z.string().optional(),
+  emergencyContactName: z.string().optional(),
+  emergencyContactPhone: z.string().optional(),
+  terminationDate: z.string().optional().nullable(),
 })
 
 export type EmployeeFormValues = z.infer<typeof employeeSchema>
@@ -133,6 +143,16 @@ export async function createEmployee(data: EmployeeFormValues): Promise<ActionRe
       address: validated.address || null,
       hireDate: validated.hireDate ? new Date(validated.hireDate) : null,
       isActive: validated.isActive,
+      // Peachtree fields
+      employeeType: validated.employeeType || 'REGULAR',
+      payRate: validated.payRate?.toString() || null,
+      overtimeRate: validated.overtimeRate?.toString() || '1.5',
+      bankAccountNo: validated.bankAccountNo || null,
+      bankName: validated.bankName || null,
+      taxId: validated.taxId || null,
+      emergencyContactName: validated.emergencyContactName || null,
+      emergencyContactPhone: validated.emergencyContactPhone || null,
+      terminationDate: validated.terminationDate ? new Date(validated.terminationDate) : null,
     }).returning()
 
     revalidatePath('/dashboard/employees')
@@ -183,6 +203,16 @@ export async function updateEmployee(id: string, data: EmployeeFormValues): Prom
         address: validated.address || null,
         hireDate: validated.hireDate ? new Date(validated.hireDate) : null,
         isActive: validated.isActive,
+        // Peachtree fields
+        employeeType: validated.employeeType || 'REGULAR',
+        payRate: validated.payRate?.toString() || null,
+        overtimeRate: validated.overtimeRate?.toString() || '1.5',
+        bankAccountNo: validated.bankAccountNo || null,
+        bankName: validated.bankName || null,
+        taxId: validated.taxId || null,
+        emergencyContactName: validated.emergencyContactName || null,
+        emergencyContactPhone: validated.emergencyContactPhone || null,
+        terminationDate: validated.terminationDate ? new Date(validated.terminationDate) : null,
         updatedAt: new Date(),
       })
       .where(eq(employees.id, id))

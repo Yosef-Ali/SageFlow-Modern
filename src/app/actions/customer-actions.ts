@@ -21,9 +21,11 @@ type ActionResult<T = unknown> = {
 }
 
 // Helper type for serialized customer (handling Decimals)
-export type SerializedCustomer = Omit<Customer, 'balance' | 'creditLimit'> & {
+export type SerializedCustomer = Omit<Customer, 'balance' | 'creditLimit' | 'discountPercent' | 'openingBalance'> & {
   balance: number
   creditLimit: number
+  discountPercent: number
+  openingBalance: number
 }
 
 // Helper to serialize customer data (convert Decimals to numbers)
@@ -32,6 +34,8 @@ function serializeCustomer(customer: Customer): SerializedCustomer {
     ...customer,
     balance: Number(customer.balance),
     creditLimit: Number(customer.creditLimit),
+    discountPercent: Number(customer.discountPercent || 0),
+    openingBalance: Number(customer.openingBalance || 0),
   }
 }
 
@@ -196,6 +200,15 @@ export async function createCustomer(
         balance: '0', // Initial balance is 0
         notes: validatedData.notes || null,
         isActive: true,
+        // Peachtree-standard fields
+        customerType: validatedData.customerType || 'RETAIL',
+        paymentTerms: validatedData.paymentTerms || 'NET_30',
+        contactName: validatedData.contactName || null,
+        discountPercent: String(validatedData.discountPercent || 0),
+        taxExempt: validatedData.taxExempt || false,
+        taxExemptNumber: validatedData.taxExemptNumber || null,
+        priceLevel: validatedData.priceLevel || '1',
+        customerSince: new Date(),
       })
       .returning()
 
@@ -254,6 +267,14 @@ export async function updateCustomer(
           : validatedData.shippingAddress,
         creditLimit: String(validatedData.creditLimit || 0),
         notes: validatedData.notes || null,
+        // Peachtree-standard fields
+        customerType: validatedData.customerType || 'RETAIL',
+        paymentTerms: validatedData.paymentTerms || 'NET_30',
+        contactName: validatedData.contactName || null,
+        discountPercent: String(validatedData.discountPercent || 0),
+        taxExempt: validatedData.taxExempt || false,
+        taxExemptNumber: validatedData.taxExemptNumber || null,
+        priceLevel: validatedData.priceLevel || '1',
         updatedAt: new Date(),
       })
       .where(eq(customers.id, id))

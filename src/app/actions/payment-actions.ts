@@ -203,6 +203,12 @@ export async function createPayment(
       }
 
       // Update customer balance (decrement by payment amount)
+      console.log('[Payment] Updating customer balance:', {
+        customerId: validatedData.customerId,
+        paymentAmount: validatedData.amount,
+        action: 'balance - amount'
+      })
+
       await tx
         .update(customers)
         .set({
@@ -210,6 +216,8 @@ export async function createPayment(
           updatedAt: new Date(),
         })
         .where(eq(customers.id, validatedData.customerId))
+
+      console.log('[Payment] Customer balance updated successfully')
 
       return newPayment
     })
