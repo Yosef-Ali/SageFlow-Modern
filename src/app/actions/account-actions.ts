@@ -12,8 +12,7 @@ const accountSchema = z.object({
   accountNumber: z.string().min(1, 'Account number is required'),
   accountName: z.string().min(1, 'Account name is required'),
   type: z.enum(['ASSET', 'LIABILITY', 'EQUITY', 'REVENUE', 'EXPENSE']),
-  description: z.string().optional(),
-  parentAccountId: z.string().optional(),
+  parentId: z.string().optional(),
   isActive: z.boolean().default(true),
 })
 
@@ -120,8 +119,7 @@ export async function createAccount(data: AccountFormValues): Promise<ActionResu
       accountNumber: validated.accountNumber,
       accountName: validated.accountName,
       type: validated.type,
-      description: validated.description || null,
-      parentAccountId: validated.parentAccountId || null,
+      parentId: validated.parentId || null,
       isActive: validated.isActive,
       balance: '0',
     }).returning()
@@ -164,10 +162,8 @@ export async function updateAccount(id: string, data: AccountFormValues): Promis
         accountNumber: validated.accountNumber,
         accountName: validated.accountName,
         type: validated.type,
-        description: validated.description || null,
-        parentAccountId: validated.parentAccountId || null,
+        parentId: validated.parentId || null,
         isActive: validated.isActive,
-        updatedAt: new Date(),
       })
       .where(eq(chartOfAccounts.id, id))
       .returning()
