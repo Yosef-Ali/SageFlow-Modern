@@ -3,7 +3,7 @@
 import { DashboardHeader } from '@/components/dashboard/header'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import Link from 'next/link'
-import { Database, User, CreditCard, Building } from 'lucide-react'
+import { Database, User, CreditCard, Building, Key } from 'lucide-react'
 
 const settingsLinks = [
   {
@@ -17,6 +17,12 @@ const settingsLinks = [
     description: 'Update company details, address, and branding.',
     href: '/dashboard/settings/company',
     icon: Building,
+  },
+  {
+    title: 'API Keys',
+    description: 'Manage API keys for AI assistant and payment gateways.',
+    href: '/dashboard/settings/api-keys',
+    icon: Key,
   },
   {
     title: 'Import & Export',
