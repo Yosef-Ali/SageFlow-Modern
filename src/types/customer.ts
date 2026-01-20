@@ -13,9 +13,11 @@ export interface Address {
 export type Customer = DrizzleCustomer
 
 // Serialized customer type (with Decimals converted to numbers for client-side use)
-export type SerializedCustomer = Omit<Customer, 'balance' | 'creditLimit'> & {
+export type SerializedCustomer = Omit<Customer, 'balance' | 'creditLimit' | 'discountPercent' | 'openingBalance'> & {
   balance: number
   creditLimit: number
+  discountPercent: number
+  openingBalance: number
 }
 
 // Customer form data (used for create/update operations)
