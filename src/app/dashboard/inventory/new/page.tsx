@@ -15,7 +15,7 @@ export default function NewItemPage() {
         </Link>
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Add New Item</h1>
-          <p className="text-slate-500">Create a new inventory item</p>
+          <p className="text-muted-foreground">Create a new inventory item</p>
         </div>
       </div>
 

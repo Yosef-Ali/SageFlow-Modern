@@ -216,43 +216,43 @@ export default function InvoiceDetailPage({ params }: InvoiceDetailPageProps) {
       </div>
 
       {/* Invoice Content */}
-      <div className="bg-white p-8 rounded-lg border border-slate-200 space-y-8">
+      <div className="bg-card p-8 rounded-lg border space-y-8">
         {/* Header Section */}
         <div className="flex justify-between">
           <div>
-            <h2 className="text-2xl font-bold text-slate-900">INVOICE</h2>
-            <p className="text-lg font-mono text-slate-600">{invoice.invoiceNumber}</p>
+            <h2 className="text-2xl font-bold">INVOICE</h2>
+            <p className="text-lg font-mono text-muted-foreground">{invoice.invoiceNumber}</p>
           </div>
           <div className="text-right">
-            <p className="text-sm text-slate-500">Invoice Date</p>
+            <p className="text-sm text-muted-foreground">Invoice Date</p>
             <p className="font-medium">{formatDate(new Date(invoice.date))}</p>
-            <p className="text-sm text-slate-500 mt-2">Due Date</p>
+            <p className="text-sm text-muted-foreground mt-2">Due Date</p>
             <p className="font-medium">{formatDate(new Date(invoice.dueDate))}</p>
           </div>
         </div>
-
+ 
         {/* Bill To */}
         <div className="border-t pt-6">
-          <p className="text-sm text-slate-500 mb-1">Bill To</p>
+          <p className="text-sm text-muted-foreground mb-1">Bill To</p>
           <p className="font-semibold text-lg">{invoice.customer?.name}</p>
           {invoice.customer?.email && (
-            <p className="text-slate-600">{invoice.customer.email}</p>
+            <p className="text-muted-foreground">{invoice.customer.email}</p>
           )}
           {invoice.customer?.phone && (
-            <p className="text-slate-600">{invoice.customer.phone}</p>
+            <p className="text-muted-foreground">{invoice.customer.phone}</p>
           )}
         </div>
-
+ 
         {/* Line Items */}
         <div className="border-t pt-6">
           <table className="w-full">
             <thead>
               <tr className="border-b">
-                <th className="text-left py-3 text-sm font-medium text-slate-500">Description</th>
-                <th className="text-right py-3 text-sm font-medium text-slate-500">Qty</th>
-                <th className="text-right py-3 text-sm font-medium text-slate-500">Unit Price</th>
-                <th className="text-right py-3 text-sm font-medium text-slate-500">VAT</th>
-                <th className="text-right py-3 text-sm font-medium text-slate-500">Total</th>
+                <th className="text-left py-3 text-sm font-medium text-muted-foreground">Description</th>
+                <th className="text-right py-3 text-sm font-medium text-muted-foreground">Qty</th>
+                <th className="text-right py-3 text-sm font-medium text-muted-foreground">Unit Price</th>
+                <th className="text-right py-3 text-sm font-medium text-muted-foreground">VAT</th>
+                <th className="text-right py-3 text-sm font-medium text-muted-foreground">Total</th>
               </tr>
             </thead>
             <tbody>
@@ -268,31 +268,31 @@ export default function InvoiceDetailPage({ params }: InvoiceDetailPageProps) {
             </tbody>
           </table>
         </div>
-
+ 
         {/* Totals */}
         <div className="flex justify-end">
           <div className="w-72 space-y-2">
             <div className="flex justify-between text-sm">
-              <span className="text-slate-500">Subtotal:</span>
+              <span className="text-muted-foreground">Subtotal:</span>
               <span>{formatCurrency(subtotal)}</span>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-slate-500">VAT (15%):</span>
+              <span className="text-muted-foreground">VAT (15%):</span>
               <span>{formatCurrency(taxAmount)}</span>
             </div>
             <div className="flex justify-between text-lg font-semibold border-t pt-2">
               <span>Total:</span>
-              <span>{formatCurrency(total)}</span>
+              <span className="text-emerald-500">{formatCurrency(total)}</span>
             </div>
             {paidAmount > 0 && (
               <>
-                <div className="flex justify-between text-sm text-emerald-600">
+                <div className="flex justify-between text-sm text-emerald-500">
                   <span>Amount Paid:</span>
                   <span>-{formatCurrency(paidAmount)}</span>
                 </div>
                 <div className="flex justify-between text-lg font-semibold border-t pt-2">
                   <span>Balance Due:</span>
-                  <span className={balance > 0 ? 'text-red-600' : 'text-emerald-600'}>
+                  <span className={balance > 0 ? 'text-destructive' : 'text-emerald-500'}>
                     {formatCurrency(balance)}
                   </span>
                 </div>
@@ -300,36 +300,36 @@ export default function InvoiceDetailPage({ params }: InvoiceDetailPageProps) {
             )}
           </div>
         </div>
-
+ 
         {/* Notes & Terms */}
         {(invoice.notes || invoice.terms) && (
           <div className="border-t pt-6 grid grid-cols-2 gap-8">
             {invoice.notes && (
               <div>
-                <p className="text-sm font-medium text-slate-500 mb-1">Notes</p>
-                <p className="text-slate-700 whitespace-pre-wrap">{invoice.notes}</p>
+                <p className="text-sm font-medium text-muted-foreground mb-1">Notes</p>
+                <p className="text-foreground/80 whitespace-pre-wrap">{invoice.notes}</p>
               </div>
             )}
             {invoice.terms && (
               <div>
-                <p className="text-sm font-medium text-slate-500 mb-1">Terms & Conditions</p>
-                <p className="text-slate-700 whitespace-pre-wrap">{invoice.terms}</p>
+                <p className="text-sm font-medium text-muted-foreground mb-1">Terms & Conditions</p>
+                <p className="text-foreground/80 whitespace-pre-wrap">{invoice.terms}</p>
               </div>
             )}
           </div>
         )}
       </div>
-
+ 
       {/* Chapa Payment Section */}
       {chapaAvailable && !['PAID', 'CANCELLED'].includes(invoice.status) && balance > 0 && (
-        <div className="bg-gradient-to-r from-purple-50 to-indigo-50 p-6 rounded-lg border border-purple-200">
+        <div className="bg-purple-500/10 p-6 rounded-lg border border-purple-500/20">
           <div className="flex items-start justify-between">
             <div>
-              <h3 className="text-lg font-semibold text-purple-900 flex items-center gap-2">
+              <h3 className="text-lg font-semibold text-purple-600 flex items-center gap-2 dark:text-purple-400">
                 <CreditCard className="h-5 w-5" />
                 Online Payment
               </h3>
-              <p className="text-purple-700 text-sm mt-1">
+              <p className="text-purple-600/80 text-sm mt-1 dark:text-purple-400/80">
                 Accept payment via Telebirr, CBE Birr, M-Pesa, or Card
               </p>
             </div>
@@ -337,7 +337,7 @@ export default function InvoiceDetailPage({ params }: InvoiceDetailPageProps) {
               <Button
                 onClick={handleCreatePaymentLink}
                 disabled={paymentLinkLoading}
-                className="bg-purple-600 hover:bg-purple-700"
+                className="bg-purple-600 hover:bg-purple-700 text-white"
               >
                 {paymentLinkLoading ? (
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -353,10 +353,10 @@ export default function InvoiceDetailPage({ params }: InvoiceDetailPageProps) {
                     variant="outline"
                     size="sm"
                     onClick={handleCopyLink}
-                    className="border-purple-300 text-purple-700 hover:bg-purple-100"
+                    className="border-purple-300 text-purple-700 hover:bg-purple-100 dark:border-purple-500/30 dark:text-purple-400 dark:hover:bg-purple-500/10"
                   >
                     {linkCopied ? (
-                      <CheckCircle className="h-4 w-4 mr-2 text-green-600" />
+                      <CheckCircle className="h-4 w-4 mr-2 text-emerald-500" />
                     ) : (
                       <Copy className="h-4 w-4 mr-2" />
                     )}
@@ -365,22 +365,22 @@ export default function InvoiceDetailPage({ params }: InvoiceDetailPageProps) {
                   <Button
                     size="sm"
                     onClick={() => window.open(paymentLink, '_blank')}
-                    className="bg-purple-600 hover:bg-purple-700"
+                    className="bg-purple-600 hover:bg-purple-700 text-white"
                   >
                     <ExternalLink className="h-4 w-4 mr-2" />
                     Open Payment Page
                   </Button>
                 </div>
-                <p className="text-xs text-purple-600">
+                <p className="text-xs text-purple-600 dark:text-purple-400">
                   Share this link with your customer to receive payment
                 </p>
               </div>
             )}
           </div>
           {paymentLink && (
-            <div className="mt-4 p-3 bg-white/50 rounded border border-purple-200">
-              <p className="text-xs text-purple-600 mb-1">Payment Link:</p>
-              <code className="text-xs text-purple-800 break-all">{paymentLink}</code>
+            <div className="mt-4 p-3 bg-white/5 dark:bg-black/20 rounded border border-purple-500/20">
+              <p className="text-xs text-purple-600 dark:text-purple-400 mb-1">Payment Link:</p>
+              <code className="text-xs text-purple-800 dark:text-purple-300 break-all">{paymentLink}</code>
             </div>
           )}
         </div>

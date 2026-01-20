@@ -60,9 +60,9 @@ export default function Loading() {
       </div>
 
       {/* Table Skeleton */}
-      <div className="border rounded-lg overflow-hidden bg-white">
+      <div className="border rounded-lg overflow-hidden bg-card">
         {/* Table Header */}
-        <div className="flex items-center px-4 py-3 bg-slate-50 border-b">
+        <div className="flex items-center px-4 py-3 bg-muted/50 border-b">
           <div className="w-[120px] pr-4">
             <Skeleton className="h-4 w-16" />
           </div>

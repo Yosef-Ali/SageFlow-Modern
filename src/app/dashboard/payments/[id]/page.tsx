@@ -84,63 +84,63 @@ export default function PaymentDetailPage({ params }: PaymentDetailPageProps) {
       </div>
 
       {/* Payment Details Card */}
-      <div className="bg-white p-8 rounded-lg border border-slate-200 space-y-6">
+      <div className="bg-card p-8 rounded-lg border space-y-6">
         <div className="grid grid-cols-2 gap-8">
           {/* Left Column */}
           <div className="space-y-4">
             <div>
-              <p className="text-sm text-slate-500">Amount</p>
-              <p className="text-3xl font-bold text-emerald-600">
+              <p className="text-sm text-muted-foreground">Amount</p>
+              <p className="text-3xl font-bold text-emerald-500">
                 {formatCurrency(Number(payment.amount))}
               </p>
             </div>
-
+ 
             <div>
-              <p className="text-sm text-slate-500">Payment Date</p>
+              <p className="text-sm text-muted-foreground">Payment Date</p>
               <p className="font-medium">{formatDate(new Date(payment.paymentDate))}</p>
             </div>
-
+ 
             <div>
-              <p className="text-sm text-slate-500">Payment Method</p>
+              <p className="text-sm text-muted-foreground">Payment Method</p>
               <span className={cn('inline-flex px-3 py-1 rounded-full text-sm font-medium', methodColors.bg, methodColors.text)}>
                 {getPaymentMethodLabel(payment.paymentMethod)}
               </span>
             </div>
-
+ 
             {payment.reference && (
               <div>
-                <p className="text-sm text-slate-500">Reference</p>
+                <p className="text-sm text-muted-foreground">Reference</p>
                 <p className="font-mono">{payment.reference}</p>
               </div>
             )}
           </div>
-
+ 
           {/* Right Column */}
           <div className="space-y-4">
             <div>
-              <p className="text-sm text-slate-500">Customer</p>
+              <p className="text-sm text-muted-foreground">Customer</p>
               <p className="font-semibold text-lg">{payment.customer?.name}</p>
               {payment.customer?.email && (
-                <p className="text-slate-600">{payment.customer.email}</p>
+                <p className="text-muted-foreground">{payment.customer.email}</p>
               )}
             </div>
-
+ 
             {payment.invoice && (
               <div>
-                <p className="text-sm text-slate-500">Applied to Invoice</p>
+                <p className="text-sm text-muted-foreground">Applied to Invoice</p>
                 <Link
                   href={`/invoices/${payment.invoice.id}`}
-                  className="text-emerald-600 hover:underline font-medium"
+                  className="text-emerald-500 hover:underline font-medium"
                 >
                   {payment.invoice.invoiceNumber}
                 </Link>
               </div>
             )}
-
+ 
             {payment.notes && (
               <div>
-                <p className="text-sm text-slate-500">Notes</p>
-                <p className="text-slate-700 whitespace-pre-wrap">{payment.notes}</p>
+                <p className="text-sm text-muted-foreground">Notes</p>
+                <p className="text-foreground/80 whitespace-pre-wrap">{payment.notes}</p>
               </div>
             )}
           </div>

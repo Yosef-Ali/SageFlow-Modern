@@ -149,16 +149,16 @@ export function InvoiceForm({ invoice, onSuccess }: InvoiceFormProps) {
     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
       {/* Error Banner */}
       {formError && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3">
-          <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+        <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 flex items-start gap-3">
+          <AlertCircle className="w-5 h-5 text-destructive flex-shrink-0 mt-0.5" />
           <div className="flex-1">
-            <h4 className="font-medium text-red-800">Error</h4>
-            <p className="text-red-700 text-sm mt-1">{formError}</p>
+            <h4 className="font-medium text-destructive">Error</h4>
+            <p className="text-destructive/80 text-sm mt-1">{formError}</p>
           </div>
           <button
             type="button"
             onClick={() => setFormError(null)}
-            className="text-red-500 hover:text-red-700"
+            className="text-destructive/60 hover:text-destructive"
           >
             <X className="w-5 h-5" />
           </button>
@@ -166,7 +166,7 @@ export function InvoiceForm({ invoice, onSuccess }: InvoiceFormProps) {
       )}
 
       {/* Customer & Dates */}
-      <div className="bg-white p-6 rounded-lg border border-slate-200 space-y-6">
+      <div className="bg-card p-6 rounded-lg border space-y-6">
         <h3 className="text-lg font-semibold">Invoice Details</h3>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -204,7 +204,7 @@ export function InvoiceForm({ invoice, onSuccess }: InvoiceFormProps) {
                 const available = limit - balance
                 const isNearLimit = available < limit * 0.2 // Less than 20% available
                 return (
-                  <div className={`text-xs mt-1 p-2 rounded ${isNearLimit ? 'bg-amber-50 text-amber-700' : 'bg-slate-50 text-slate-600'}`}>
+                  <div className={`text-xs mt-1 p-2 rounded ${isNearLimit ? 'bg-amber-500/10 text-amber-500' : 'bg-muted/50 text-muted-foreground'}`}>
                     Credit: ETB {balance.toLocaleString()} / {limit.toLocaleString()}
                     <span className={isNearLimit ? 'font-medium' : ''}>
                       {' '}(ETB {available.toLocaleString()} available)
@@ -245,7 +245,7 @@ export function InvoiceForm({ invoice, onSuccess }: InvoiceFormProps) {
       </div>
 
       {/* Line Items */}
-      <div className="bg-white p-6 rounded-lg border border-slate-200 space-y-4">
+      <div className="bg-card p-6 rounded-lg border space-y-4">
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-semibold">Line Items</h3>
           <Button type="button" variant="outline" size="sm" onClick={handleAddItem}>
@@ -259,11 +259,11 @@ export function InvoiceForm({ invoice, onSuccess }: InvoiceFormProps) {
           <table className="w-full">
             <thead>
               <tr className="border-b">
-                <th className="text-left py-3 px-2 text-sm font-medium text-slate-500">Description</th>
-                <th className="text-right py-3 px-2 text-sm font-medium text-slate-500 w-24">Qty</th>
-                <th className="text-right py-3 px-2 text-sm font-medium text-slate-500 w-32">Unit Price</th>
-                <th className="text-right py-3 px-2 text-sm font-medium text-slate-500 w-24">VAT %</th>
-                <th className="text-right py-3 px-2 text-sm font-medium text-slate-500 w-32">Total</th>
+                <th className="text-left py-3 px-2 text-sm font-medium text-muted-foreground">Description</th>
+                <th className="text-right py-3 px-2 text-sm font-medium text-muted-foreground w-24">Qty</th>
+                <th className="text-right py-3 px-2 text-sm font-medium text-muted-foreground w-32">Unit Price</th>
+                <th className="text-right py-3 px-2 text-sm font-medium text-muted-foreground w-24">VAT %</th>
+                <th className="text-right py-3 px-2 text-sm font-medium text-muted-foreground w-32">Total</th>
                 <th className="w-12"></th>
               </tr>
             </thead>
@@ -343,23 +343,23 @@ export function InvoiceForm({ invoice, onSuccess }: InvoiceFormProps) {
         <div className="flex justify-end pt-4 border-t">
           <div className="w-64 space-y-2">
             <div className="flex justify-between text-sm">
-              <span className="text-slate-500">Subtotal:</span>
+              <span className="text-muted-foreground">Subtotal:</span>
               <span>{formatCurrency(totals.subtotal)}</span>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-slate-500">VAT (15%):</span>
+              <span className="text-muted-foreground">VAT (15%):</span>
               <span>{formatCurrency(totals.taxAmount)}</span>
             </div>
             <div className="flex justify-between text-lg font-semibold border-t pt-2">
               <span>Total:</span>
-              <span className="text-emerald-600">{formatCurrency(totals.total)}</span>
+              <span className="text-emerald-500">{formatCurrency(totals.total)}</span>
             </div>
           </div>
         </div>
       </div>
 
       {/* Shipping & PO Info (Peachtree) */}
-      <div className="bg-white p-6 rounded-lg border border-slate-200 space-y-6">
+      <div className="bg-card p-6 rounded-lg border space-y-6">
         <h3 className="text-lg font-semibold">Shipping & PO Details</h3>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -411,7 +411,7 @@ export function InvoiceForm({ invoice, onSuccess }: InvoiceFormProps) {
       </div>
 
       {/* Notes & Terms */}
-      <div className="bg-white p-6 rounded-lg border border-slate-200 space-y-6">
+      <div className="bg-card p-6 rounded-lg border space-y-6">
         <h3 className="text-lg font-semibold">Terms & Notes</h3>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -446,7 +446,7 @@ export function InvoiceForm({ invoice, onSuccess }: InvoiceFormProps) {
         <Button
           type="submit"
           disabled={isLoading}
-          className="bg-emerald-600 hover:bg-emerald-700"
+          className="bg-emerald-500 hover:bg-emerald-600"
         >
           {isLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
           {isEditing ? 'Update Invoice' : 'Create Invoice'}

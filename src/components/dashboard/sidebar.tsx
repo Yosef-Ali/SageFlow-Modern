@@ -36,6 +36,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { ModeToggle } from '@/components/mode-toggle'
 import { cn } from '@/lib/utils'
 
 // Navigation item type
@@ -210,15 +211,19 @@ export function DashboardSidebar() {
     <aside className="w-64 bg-sidebar text-sidebar-foreground flex flex-col border-r border-sidebar-border h-screen overflow-hidden">
       <div className="p-4 flex-1 overflow-y-auto">
         {/* Logo */}
-        <Link href="/dashboard" className="flex items-center gap-3 mb-6 px-2">
-          <div className="w-9 h-9 bg-sidebar-primary rounded-lg flex items-center justify-center">
-            <TrendingUp className="w-5 h-5 text-sidebar-primary-foreground" />
-          </div>
-          <div>
-            <h1 className="text-lg font-bold leading-tight">SageFlow</h1>
-            <p className="text-sidebar-foreground/60 text-xs">Modern Accounting</p>
-          </div>
-        </Link>
+        {/* Logo & Toggle */}
+        <div className="flex items-center justify-between mb-6 px-2">
+          <Link href="/dashboard" className="flex items-center gap-3">
+            <div className="w-9 h-9 bg-sidebar-primary rounded-lg flex items-center justify-center">
+              <TrendingUp className="w-5 h-5 text-sidebar-primary-foreground" />
+            </div>
+            <div>
+              <h1 className="text-lg font-bold leading-tight">SageFlow</h1>
+              <p className="text-sidebar-foreground/60 text-xs">Modern Accounting</p>
+            </div>
+          </Link>
+          <ModeToggle />
+        </div>
 
         {/* Navigation */}
         <nav className="space-y-1">

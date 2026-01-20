@@ -63,8 +63,8 @@ export default function VendorsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900">Vendors</h1>
-          <p className="text-slate-600 mt-1">Manage your suppliers and vendors</p>
+          <h1 className="text-3xl font-bold">Vendors</h1>
+          <p className="text-muted-foreground mt-1">Manage your suppliers and vendors</p>
         </div>
         <Link href="/dashboard/vendors/new">
           <Button>
@@ -84,7 +84,7 @@ export default function VendorsPage() {
           <>
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-slate-500 flex items-center gap-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                   <Building2 className="h-4 w-4 text-blue-500" />
                   Total Vendors
                 </CardTitle>
@@ -96,7 +96,7 @@ export default function VendorsPage() {
             
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-slate-500 flex items-center gap-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                   <Users className="h-4 w-4 text-green-500" />
                   Active Vendors
                 </CardTitle>
@@ -108,7 +108,7 @@ export default function VendorsPage() {
             
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-slate-500 flex items-center gap-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                   <DollarSign className="h-4 w-4 text-orange-500" />
                   Total Payable
                 </CardTitle>
@@ -133,20 +133,20 @@ export default function VendorsPage() {
       </div>
       
       {/* Vendors Table */}
-      <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
+      <div className="bg-card rounded-lg border overflow-hidden">
         <table className="w-full">
-          <thead className="bg-slate-50 border-b border-slate-200">
+          <thead className="bg-muted/50 border-b">
             <tr>
-              <th className="text-left text-xs font-medium text-slate-500 uppercase tracking-wider px-6 py-3">Vendor #</th>
-              <th className="text-left text-xs font-medium text-slate-500 uppercase tracking-wider px-6 py-3">Name</th>
-              <th className="text-left text-xs font-medium text-slate-500 uppercase tracking-wider px-6 py-3">Type</th>
-              <th className="text-left text-xs font-medium text-slate-500 uppercase tracking-wider px-6 py-3">Terms</th>
-              <th className="text-right text-xs font-medium text-slate-500 uppercase tracking-wider px-6 py-3">Balance</th>
-              <th className="text-center text-xs font-medium text-slate-500 uppercase tracking-wider px-6 py-3">Status</th>
-              <th className="text-right text-xs font-medium text-slate-500 uppercase tracking-wider px-6 py-3">Actions</th>
+              <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-6 py-3">Vendor #</th>
+              <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-6 py-3">Name</th>
+              <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-6 py-3">Type</th>
+              <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-6 py-3">Terms</th>
+              <th className="text-right text-xs font-medium text-muted-foreground uppercase tracking-wider px-6 py-3">Balance</th>
+              <th className="text-center text-xs font-medium text-muted-foreground uppercase tracking-wider px-6 py-3">Status</th>
+              <th className="text-right text-xs font-medium text-muted-foreground uppercase tracking-wider px-6 py-3">Actions</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y">
             {isLoading ? (
               Array(5).fill(0).map((_, i) => (
                 <tr key={i}>
@@ -161,10 +161,10 @@ export default function VendorsPage() {
               ))
             ) : vendors && vendors.length > 0 ? (
               vendors.map((vendor) => (
-                <tr key={vendor.id} className="hover:bg-slate-50">
-                  <td className="px-6 py-4 font-mono text-sm text-slate-900">{vendor.vendorNumber}</td>
+                <tr key={vendor.id} className="hover:bg-muted/50 transition-colors">
+                  <td className="px-6 py-4 font-mono text-sm">{vendor.vendorNumber}</td>
                   <td className="px-6 py-4">
-                    <Link href={`/dashboard/vendors/${vendor.id}`} className="font-medium text-slate-900 hover:text-blue-600">
+                    <Link href={`/dashboard/vendors/${vendor.id}`} className="font-medium hover:underline">
                       {vendor.name}
                     </Link>
                     {vendor.contactName && (
@@ -172,12 +172,12 @@ export default function VendorsPage() {
                     )}
                   </td>
                   <td className="px-6 py-4">
-                    <span className="text-xs px-2 py-1 bg-blue-50 text-blue-700 rounded">
+                    <span className="text-xs px-2 py-1 bg-blue-500/10 text-blue-500 rounded">
                       {getTypeLabel(vendor.vendorType ?? undefined)}
                     </span>
                   </td>
                   <td className="px-6 py-4">
-                    <span className="text-xs px-2 py-1 bg-slate-100 rounded">
+                    <span className="text-xs px-2 py-1 bg-muted/50 text-muted-foreground rounded">
                       {getTermsLabel(vendor.paymentTerms ?? undefined)}
                     </span>
                   </td>

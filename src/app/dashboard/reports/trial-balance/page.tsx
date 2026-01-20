@@ -89,16 +89,16 @@ export default function TrialBalancePage() {
                                 <TableRow key={item.accountId}>
                                     <TableCell className="font-medium">{item.accountName}</TableCell>
                                     <TableCell className="text-xs text-muted-foreground">{item.accountType}</TableCell>
-                                    <TableCell className="text-right text-slate-600">
+                                    <TableCell className="text-right text-muted-foreground">
                                         {Number(item.debit) > 0 ? formatCurrency(item.debit) : '-'}
                                     </TableCell>
-                                    <TableCell className="text-right text-slate-600">
+                                    <TableCell className="text-right text-muted-foreground">
                                         {Number(item.credit) > 0 ? formatCurrency(item.credit) : '-'}
                                     </TableCell>
                                 </TableRow>
                             ))}
                             {/* Totals */}
-                            <TableRow className="bg-slate-50 font-bold border-t-2">
+                            <TableRow className="bg-muted/50 font-bold border-t-2">
                                 <TableCell colSpan={2} className="text-right">Totals</TableCell>
                                 <TableCell className="text-right">{formatCurrency(report.totalDebit)}</TableCell>
                                 <TableCell className="text-right">{formatCurrency(report.totalCredit)}</TableCell>

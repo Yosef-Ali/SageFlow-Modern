@@ -207,14 +207,14 @@ export function ReconciliationFlow({
 
     if (step === 'SUCCESS') {
          return (
-             <div className="max-w-md mx-auto mt-8 text-center space-y-4 p-8 bg-white rounded-lg border">
+             <div className="max-w-md mx-auto mt-8 text-center space-y-4 p-8 bg-card rounded-lg border">
                  <div className="flex justify-center">
                     <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center">
-                        <CheckCircle2 className="w-8 h-8 text-emerald-600" />
+                        <CheckCircle2 className="w-8 h-8 text-emerald-500" />
                     </div>
                  </div>
-                 <h2 className="text-2xl font-bold text-slate-900">Reconciliation Complete!</h2>
-                 <p className="text-slate-500">
+                 <h2 className="text-2xl font-bold">Reconciliation Complete!</h2>
+                 <p className="text-muted-foreground">
                      Balance has been updated and transactions marked as reconciled.
                  </p>
                  <Button onClick={() => router.push(`/dashboard/banking/${accountId}`)}>
@@ -227,19 +227,19 @@ export function ReconciliationFlow({
     return (
         <div className="space-y-6">
             {/* Header / Summary Bar */}
-            <div className="bg-white p-4 rounded-lg border border-slate-200 shadow-sm sticky top-4 z-10">
+            <div className="bg-card p-4 rounded-lg border shadow-sm sticky top-4 z-10">
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 items-center">
                     <div>
-                        <p className="text-xs text-slate-500 font-medium uppercase">Statement Balance</p>
+                        <p className="text-xs text-muted-foreground font-medium uppercase">Statement Balance</p>
                         <p className="text-lg font-bold">{formatCurrency(Number(statementBalance))}</p>
                     </div>
                     <div>
-                        <p className="text-xs text-slate-500 font-medium uppercase">Cleared Balance</p>
+                        <p className="text-xs text-muted-foreground font-medium uppercase">Cleared Balance</p>
                         <p className="text-lg font-bold">{formatCurrency(clearedBalance)}</p>
                     </div>
                     <div>
-                        <p className="text-xs text-slate-500 font-medium uppercase">Difference</p>
-                        <p className={`text-lg font-bold ${difference === 0 ? 'text-emerald-600' : 'text-red-500'}`}>
+                        <p className="text-xs text-muted-foreground font-medium uppercase">Difference</p>
+                        <p className={`text-lg font-bold ${difference === 0 ? 'text-emerald-500' : 'text-destructive'}`}>
                             {formatCurrency(difference)}
                         </p>
                     </div>
@@ -256,7 +256,7 @@ export function ReconciliationFlow({
                 </div>
             </div>
 
-            <div className="bg-white rounded-lg border border-slate-200">
+            <div className="bg-card rounded-lg border">
                 <Table>
                     <TableHeader>
                         <TableRow>
@@ -269,13 +269,13 @@ export function ReconciliationFlow({
                     </TableHeader>
                     <TableBody>
                         {unclearedTransactions.map((tx) => (
-                            <TableRow key={tx.id} onClick={() => toggleCleared(tx.id)} className="cursor-pointer hover:bg-slate-50">
+                            <TableRow key={tx.id} onClick={() => toggleCleared(tx.id)} className="cursor-pointer hover:bg-muted/50">
                                 <TableCell>
                                     <Checkbox checked={clearedIds.has(tx.id)} onCheckedChange={() => toggleCleared(tx.id)} />
                                 </TableCell>
                                 <TableCell>{formatDate(new Date(tx.date))}</TableCell>
                                 <TableCell>
-                                    <span className="text-xs font-medium px-2 py-1 rounded bg-slate-100 text-slate-600">
+                                    <span className="text-xs font-medium px-2 py-1 rounded bg-muted/50 text-muted-foreground">
                                         {tx.type}
                                     </span>
                                 </TableCell>
@@ -287,7 +287,7 @@ export function ReconciliationFlow({
                         ))}
                          {unclearedTransactions.length === 0 && (
                             <TableRow>
-                                <TableCell colSpan={5} className="text-center py-8 text-slate-500">
+                                <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
                                     No uncleared transactions found.
                                 </TableCell>
                             </TableRow>

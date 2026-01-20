@@ -292,7 +292,7 @@ function StatsWidgetComponent({ items }: { items: StatItem[] }) {
           {item.change && (
             <div className={cn(
               "flex items-center gap-1 mt-1 text-xs",
-              item.change.startsWith('+') ? "text-emerald-600" : "text-destructive"
+              item.change.startsWith('+') ? "text-emerald-500" : "text-destructive"
             )}>
               {item.change.startsWith('+') ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
               {item.change}
@@ -691,7 +691,7 @@ function ComparisonWidgetComponent({ title, items }: Omit<ComparisonWidget, 'typ
             {item.change && (
               <p className={cn(
                 'text-[10px] text-right',
-                item.change.startsWith('+') ? 'text-emerald-600' : item.change.startsWith('-') ? 'text-red-600' : 'text-muted-foreground'
+                item.change.startsWith('+') ? 'text-emerald-500' : item.change.startsWith('-') ? 'text-red-500' : 'text-muted-foreground'
               )}>
                 {item.change}
               </p>
@@ -715,7 +715,7 @@ function MetricWidgetComponent({ value, label, description, trend, trendValue }:
         {trend && (
           <div className={cn(
             'flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium',
-            trend === 'up' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' :
+            trend === 'up' ? 'bg-emerald-500/10 text-emerald-500 dark:bg-emerald-500/10 dark:text-emerald-400' :
             trend === 'down' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' :
             'bg-muted text-muted-foreground'
           )}>
@@ -913,7 +913,7 @@ function KPICardWidgetComponent({ icon, label, value, trend, color = 'blue' }: O
   const IconComponent = iconMap[icon]
 
   const colorClasses = {
-    green: 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400',
+    green: 'bg-emerald-500/10 text-emerald-500 dark:bg-emerald-500/10 dark:text-emerald-400',
     red: 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400',
     blue: 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400',
     amber: 'bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400'
@@ -931,7 +931,7 @@ function KPICardWidgetComponent({ icon, label, value, trend, color = 'blue' }: O
           {trend && (
             <div className={cn(
               'flex items-center gap-1 mt-1 text-xs',
-              trend.direction === 'up' ? 'text-emerald-600' : 'text-red-600'
+              trend.direction === 'up' ? 'text-emerald-500' : 'text-red-600'
             )}>
               {trend.direction === 'up' ? (
                 <TrendingUp className="h-3 w-3" />

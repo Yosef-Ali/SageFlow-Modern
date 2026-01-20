@@ -69,7 +69,7 @@ export default function BalanceSheetPage() {
                 <div className="space-y-6 print:space-y-4">
                     {/* Assets */}
                     <Card>
-                        <CardHeader className="bg-slate-50 border-b">
+                        <CardHeader className="bg-muted/50 border-b">
                             <CardTitle className="text-lg flex justify-between">
                                 <span>Assets</span>
                                 <span>{formatCurrency(report.totalAssets)}</span>
@@ -78,7 +78,7 @@ export default function BalanceSheetPage() {
                         <CardContent className="pt-6">
                             <div className="space-y-2">
                                 {report.assets.map((item: any) => (
-                                    <div key={item.accountId} className="flex justify-between py-1 hover:bg-slate-50 px-2 rounded">
+                                    <div key={item.accountId} className="flex justify-between py-1 hover:bg-muted/50 px-2 rounded">
                                         <span>{item.accountName}</span>
                                         <span className="font-medium">{formatCurrency(item.balance)}</span>
                                     </div>
@@ -90,16 +90,16 @@ export default function BalanceSheetPage() {
 
                     {/* Liabilities & Equity */}
                      <Card>
-                        <CardHeader className="bg-slate-50 border-b">
+                        <CardHeader className="bg-muted/50 border-b">
                             <CardTitle className="text-lg flex justify-between">
                                 <span>Liabilities & Equity</span>
                                 <span>{formatCurrency(report.totalLiabilitiesAndEquity)}</span>
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="pt-6 space-y-8">
-                             <div>
-                                <h3 className="font-semibold text-slate-700 mb-2 uppercase text-sm">Liabilities</h3>
-                                <div className="space-y-1 pl-2 border-l-2 border-slate-100">
+                              <div>
+                                <h3 className="font-semibold text-muted-foreground mb-2 uppercase text-sm">Liabilities</h3>
+                                <div className="space-y-1 pl-2 border-l-2 border-border">
                                      {report.liabilities.map((item: any) => (
                                         <div key={item.accountId} className="flex justify-between py-1">
                                             <span>{item.accountName}</span>
@@ -113,9 +113,9 @@ export default function BalanceSheetPage() {
                                 </div>
                              </div>
 
-                             <div>
-                                <h3 className="font-semibold text-slate-700 mb-2 uppercase text-sm">Equity</h3>
-                                <div className="space-y-1 pl-2 border-l-2 border-slate-100">
+                              <div>
+                                <h3 className="font-semibold text-muted-foreground mb-2 uppercase text-sm">Equity</h3>
+                                <div className="space-y-1 pl-2 border-l-2 border-border">
                                      {report.equity.map((item: any) => (
                                         <div key={item.accountId} className="flex justify-between py-1">
                                             <span>{item.accountName}</span>

@@ -13,7 +13,7 @@ function ReportSectionSkeleton({ rows = 4 }: { rows?: number }) {
   return (
     <div className="space-y-2">
       <Skeleton className="h-5 w-24 mb-3" />
-      <div className="bg-white rounded-lg border border-slate-200">
+      <div className="bg-card rounded-lg border">
         {Array.from({ length: rows }).map((_, i) => (
           <ReportRowSkeleton key={i} />
         ))}
@@ -54,7 +54,7 @@ export default function Loading() {
       <ReportSectionSkeleton rows={5} />
 
       {/* Net Income */}
-      <div className="bg-emerald-50 rounded-lg p-4 flex justify-between items-center border border-emerald-200">
+      <div className="bg-emerald-500/10 rounded-lg p-4 flex justify-between items-center border border-emerald-500/20">
         <Skeleton className="h-5 w-28" />
         <Skeleton className="h-6 w-32" />
       </div>

@@ -89,7 +89,7 @@ export function BillForm({ vendors, openPOs }: BillFormProps) {
 
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-      <div className="bg-white p-6 rounded-lg border border-slate-200 space-y-6">
+      <div className="bg-card p-6 rounded-lg border space-y-6">
         <h3 className="text-lg font-semibold">Bill Details</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           
@@ -196,7 +196,7 @@ export function BillForm({ vendors, openPOs }: BillFormProps) {
        {/* Actions */}
        <div className="flex justify-end gap-4">
           <Button type="button" variant="outline" onClick={() => router.back()}>Cancel</Button>
-          <Button type="submit" disabled={isSubmitting} className="bg-emerald-600 hover:bg-emerald-700">
+          <Button type="submit" disabled={isSubmitting} className="bg-emerald-500 hover:bg-emerald-600">
              {isSubmitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
              Enter Bill
           </Button>

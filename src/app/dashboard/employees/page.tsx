@@ -79,7 +79,7 @@ export default function EmployeesPage() {
         </div>
       </div>
 
-      <div className="rounded-md border bg-white">
+      <div className="rounded-md border bg-card">
         <Table>
           <TableHeader>
             <TableRow>
@@ -120,7 +120,7 @@ export default function EmployeesPage() {
                   </TableCell>
                   <TableCell>{employee.jobTitle || '-'}</TableCell>
                   <TableCell>
-                    <span className="text-xs px-2 py-1 bg-slate-100 rounded">
+                    <span className="text-xs px-2 py-1 bg-muted rounded">
                       {employee.employeeType === 'CONTRACT' ? 'Contract' :
                        employee.employeeType === 'TEMPORARY' ? 'Temporary' : 'Regular'}
                     </span>

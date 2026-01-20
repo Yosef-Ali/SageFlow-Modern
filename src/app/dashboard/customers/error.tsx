@@ -20,7 +20,7 @@ export default function Error({
       <div className="rounded-full bg-red-100 p-6 mb-4">
         <AlertCircle className="h-12 w-12 text-red-600" />
       </div>
-      <h3 className="text-lg font-semibold text-slate-900 mb-2">
+      <h3 className="text-lg font-semibold text-foreground mb-2">
         Something went wrong
       </h3>
       <p className="text-sm text-slate-500 text-center mb-6 max-w-sm">

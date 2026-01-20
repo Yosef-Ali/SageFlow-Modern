@@ -12,7 +12,7 @@ export default function Loading() {
       {/* Import/Export Cards */}
       <div className="grid gap-6 md:grid-cols-2">
         {/* Import Card */}
-        <div className="bg-white rounded-lg border border-slate-200 p-6">
+        <div className="bg-card rounded-lg border p-6">
           <div className="flex items-center gap-3 mb-4">
             <Skeleton className="h-10 w-10 rounded-lg" />
             <div className="space-y-1">
@@ -27,7 +27,7 @@ export default function Loading() {
         </div>
 
         {/* Export Card */}
-        <div className="bg-white rounded-lg border border-slate-200 p-6">
+        <div className="bg-card rounded-lg border p-6">
           <div className="flex items-center gap-3 mb-4">
             <Skeleton className="h-10 w-10 rounded-lg" />
             <div className="space-y-1">
@@ -50,7 +50,7 @@ export default function Loading() {
       </div>
 
       {/* Peachtree Import Section */}
-      <div className="bg-white rounded-lg border border-slate-200 p-6">
+      <div className="bg-card rounded-lg border p-6">
         <div className="flex items-center gap-3 mb-4">
           <Skeleton className="h-10 w-10 rounded-lg" />
           <div className="space-y-1">

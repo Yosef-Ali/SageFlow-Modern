@@ -164,10 +164,10 @@ export function InvoiceTable({ invoices, isLoading }: InvoiceTableProps) {
 
   if (!isLoading && invoices.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-16 px-4 bg-white rounded-lg border border-slate-200">
-        <FileText className="w-12 h-12 text-slate-400 mb-4" />
-        <h3 className="text-lg font-medium text-slate-900 mb-1">No invoices yet</h3>
-        <p className="text-slate-500 mb-4">Get started by creating your first invoice</p>
+      <div className="flex flex-col items-center justify-center py-16 px-4 bg-card rounded-lg border">
+        <FileText className="w-12 h-12 text-muted-foreground mb-4" />
+        <h3 className="text-lg font-medium mb-1">No invoices yet</h3>
+        <p className="text-muted-foreground mb-4">Get started by creating your first invoice</p>
         <Link href="/dashboard/invoices/new">
           <Button>Create Invoice</Button>
         </Link>
@@ -176,7 +176,7 @@ export function InvoiceTable({ invoices, isLoading }: InvoiceTableProps) {
   }
 
   return (
-    <div className="border rounded-lg overflow-hidden bg-white">
+    <div className="border rounded-lg overflow-hidden bg-card">
       <Table>
         <TableHeader>
           <TableRow>
@@ -201,7 +201,7 @@ export function InvoiceTable({ invoices, isLoading }: InvoiceTableProps) {
                 <TableCell className="font-mono text-sm font-medium">
                   <Link 
                     href={`/dashboard/invoices/${invoice.id}`}
-                    className="text-emerald-600 hover:text-emerald-700 hover:underline"
+                    className="text-emerald-500 hover:text-emerald-600 hover:underline"
                   >
                     {invoice.invoiceNumber}
                   </Link>
@@ -215,7 +215,7 @@ export function InvoiceTable({ invoices, isLoading }: InvoiceTableProps) {
                   <div>
                     <div className="font-medium">{formatCurrency(total)}</div>
                     {paidAmount > 0 && paidAmount < total && (
-                      <div className="text-xs text-slate-500">
+                      <div className="text-xs text-muted-foreground">
                         Paid: {formatCurrency(paidAmount)}
                       </div>
                     )}

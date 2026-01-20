@@ -36,8 +36,8 @@ interface Bill {
 export function BillTable({ bills }: { bills: Bill[] }) {
   if (bills.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-16 px-4 bg-white rounded-lg border border-slate-200">
-        <h3 className="text-lg font-medium text-slate-900 mb-1">No Bills Found</h3>
+      <div className="flex flex-col items-center justify-center py-16 px-4 bg-card rounded-lg border border-slate-200 dark:border-border">
+        <h3 className="text-lg font-medium text-foreground mb-1">No Bills Found</h3>
         <p className="text-slate-500 mb-4">Record your first vendor bill to get started.</p>
         <Link href="/dashboard/purchases/bills/new">
           <Button>Enter Bill</Button>
@@ -47,7 +47,7 @@ export function BillTable({ bills }: { bills: Bill[] }) {
   }
 
   return (
-    <div className="border rounded-lg overflow-hidden bg-white">
+    <div className="border rounded-lg overflow-hidden bg-card">
       <Table>
         <TableHeader>
           <TableRow>

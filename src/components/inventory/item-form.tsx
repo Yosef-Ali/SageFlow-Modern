@@ -128,16 +128,16 @@ export function ItemForm({ item, onSuccess }: ItemFormProps) {
     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
       {/* Error Banner */}
       {formError && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3">
-          <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+        <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 flex items-start gap-3">
+          <AlertCircle className="w-5 h-5 text-destructive flex-shrink-0 mt-0.5" />
           <div className="flex-1">
-            <h4 className="font-medium text-red-800">Error</h4>
-            <p className="text-red-700 text-sm mt-1">{formError}</p>
+            <h4 className="font-medium text-destructive">Error</h4>
+            <p className="text-destructive/80 text-sm mt-1">{formError}</p>
           </div>
           <button
             type="button"
             onClick={() => setFormError(null)}
-            className="text-red-500 hover:text-red-700"
+            className="text-destructive/60 hover:text-destructive"
           >
             <X className="w-5 h-5" />
           </button>
@@ -145,7 +145,7 @@ export function ItemForm({ item, onSuccess }: ItemFormProps) {
       )}
 
       {/* Basic Information */}
-      <div className="bg-white p-6 rounded-lg border border-slate-200 space-y-6">
+      <div className="bg-card p-6 rounded-lg border space-y-6">
         <h3 className="text-lg font-semibold">Basic Information</h3>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -243,7 +243,7 @@ export function ItemForm({ item, onSuccess }: ItemFormProps) {
       </div>
 
       {/* Pricing */}
-      <div className="bg-white p-6 rounded-lg border border-slate-200 space-y-6">
+      <div className="bg-card p-6 rounded-lg border space-y-6">
         <h3 className="text-lg font-semibold">Pricing</h3>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -315,7 +315,7 @@ export function ItemForm({ item, onSuccess }: ItemFormProps) {
       </div>
 
       {/* Additional Info (Peachtree) */}
-      <div className="bg-white p-6 rounded-lg border border-slate-200 space-y-6">
+      <div className="bg-card p-6 rounded-lg border space-y-6">
         <h3 className="text-lg font-semibold">Additional Information</h3>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -367,7 +367,7 @@ export function ItemForm({ item, onSuccess }: ItemFormProps) {
       </div>
 
       {/* Inventory */}
-      <div className="bg-white p-6 rounded-lg border border-slate-200 space-y-6">
+      <div className="bg-card p-6 rounded-lg border space-y-6">
         <h3 className="text-lg font-semibold">Inventory</h3>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

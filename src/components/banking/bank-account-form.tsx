@@ -84,7 +84,7 @@ export function BankAccountForm({ account, onSuccess }: BankAccountFormProps) {
 
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-      <div className="bg-white p-6 rounded-lg border border-slate-200 space-y-6">
+      <div className="bg-card p-6 rounded-lg border space-y-6">
         <h3 className="text-lg font-semibold">Account Details</h3>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

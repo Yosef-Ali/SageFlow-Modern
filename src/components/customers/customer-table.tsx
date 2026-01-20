@@ -122,9 +122,9 @@ export function CustomerTable({ customers, isLoading }: CustomerTableProps) {
                 </TableCell>
                 <TableCell className="text-sm">{customer.phone || '-'}</TableCell>
                 <TableCell>
-                  <span className="text-xs px-2 py-1 bg-slate-100 rounded-md">
+                  <Badge variant="outline" className="font-normal">
                     {getTermsLabel((customer as any).paymentTerms)}
-                  </span>
+                  </Badge>
                 </TableCell>
                 <TableCell>
                   <span

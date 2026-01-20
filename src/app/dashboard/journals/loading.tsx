@@ -41,14 +41,14 @@ export default function Loading() {
       </div>
 
       {/* Card with Table */}
-      <div className="bg-white rounded-lg border border-slate-200">
+      <div className="bg-card rounded-lg border">
         {/* Card Header */}
         <div className="p-6 border-b">
           <Skeleton className="h-6 w-32" />
         </div>
 
         {/* Table Header */}
-        <div className="flex items-center px-4 py-3 bg-slate-50 border-b">
+        <div className="flex items-center px-4 py-3 bg-muted/50 border-b">
           <div className="w-[140px] pr-4"><Skeleton className="h-4 w-10" /></div>
           <div className="w-[120px] pr-4"><Skeleton className="h-4 w-16" /></div>
           <div className="flex-1 min-w-[200px] pr-4"><Skeleton className="h-4 w-20" /></div>

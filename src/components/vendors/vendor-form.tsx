@@ -104,11 +104,11 @@ export function VendorForm({ vendor, onSuccess }: VendorFormProps) {
     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
       {/* Error Banner */}
       {formError && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3">
-          <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+        <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 flex items-start gap-3">
+          <AlertCircle className="w-5 h-5 text-destructive flex-shrink-0 mt-0.5" />
           <div className="flex-1">
-            <h4 className="font-medium text-red-800">Error</h4>
-            <p className="text-red-700 text-sm mt-1">{formError}</p>
+            <h4 className="font-medium text-destructive">Error</h4>
+            <p className="text-destructive/80 text-sm mt-1">{formError}</p>
           </div>
           <button
             type="button"
@@ -121,7 +121,7 @@ export function VendorForm({ vendor, onSuccess }: VendorFormProps) {
       )}
 
       {/* Vendor Details */}
-      <div className="bg-white p-6 rounded-lg border border-slate-200 space-y-6">
+      <div className="bg-card p-6 rounded-lg border space-y-6">
         <h3 className="text-lg font-semibold">Vendor Details</h3>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -207,7 +207,7 @@ export function VendorForm({ vendor, onSuccess }: VendorFormProps) {
       </div>
 
       {/* Account Settings (Peachtree-style) */}
-      <div className="bg-white p-6 rounded-lg border border-slate-200 space-y-6">
+      <div className="bg-card p-6 rounded-lg border space-y-6">
         <h3 className="text-lg font-semibold">Account Settings</h3>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -280,7 +280,7 @@ export function VendorForm({ vendor, onSuccess }: VendorFormProps) {
       </div>
 
       {/* Address */}
-      <div className="bg-white p-6 rounded-lg border border-slate-200 space-y-6">
+      <div className="bg-card p-6 rounded-lg border space-y-6">
         <h3 className="text-lg font-semibold">Address</h3>
 
         <div className="space-y-2">
@@ -328,7 +328,7 @@ export function VendorForm({ vendor, onSuccess }: VendorFormProps) {
       </div>
 
       {/* Notes */}
-      <div className="bg-white p-6 rounded-lg border border-slate-200 space-y-6">
+      <div className="bg-card p-6 rounded-lg border space-y-6">
         <div className="space-y-2">
           <Label>Notes</Label>
           <Textarea

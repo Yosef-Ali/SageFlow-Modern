@@ -41,7 +41,7 @@ export default function Loading() {
       {/* Summary Cards */}
       <div className="grid gap-4 md:grid-cols-4">
         {[1, 2, 3, 4].map((i) => (
-          <div key={i} className="bg-white rounded-lg border border-slate-200 p-6">
+          <div key={i} className="bg-card rounded-lg border p-6">
             <div className="flex items-center justify-between mb-2">
               <Skeleton className="h-4 w-20" />
               <Skeleton className="h-5 w-5 rounded" />
@@ -58,8 +58,8 @@ export default function Loading() {
       </div>
 
       {/* Table */}
-      <div className="border rounded-lg overflow-hidden bg-white">
-        <div className="flex items-center px-4 py-3 bg-slate-50 border-b">
+      <div className="border rounded-lg overflow-hidden bg-card">
+        <div className="flex items-center px-4 py-3 bg-muted/50 border-b">
           <div className="w-[100px] pr-4"><Skeleton className="h-4 w-12" /></div>
           <div className="flex-1 min-w-[180px] pr-4"><Skeleton className="h-4 w-12" /></div>
           <div className="w-[100px] pr-4"><Skeleton className="h-4 w-12" /></div>

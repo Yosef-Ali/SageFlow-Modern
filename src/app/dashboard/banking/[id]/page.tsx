@@ -42,11 +42,11 @@ export default async function BankAccountPage({ params }: { params: { id: string
       </div>
 
       {/* Account Summary Card */}
-       <div className="bg-white p-6 rounded-lg border border-slate-200">
-             <h3 className="text-sm font-medium text-slate-500 uppercase tracking-wider mb-2">Current Balance</h3>
-             <div className="text-4xl font-bold text-slate-900">
+       <div className="bg-card p-6 rounded-lg border">
+             <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-2">Current Balance</h3>
+             <div className="text-4xl font-bold">
                  {formatCurrency(Number(account.currentBalance))} 
-                 <span className="text-lg text-slate-500 font-normal ml-2">{account.currency}</span>
+                 <span className="text-lg text-muted-foreground font-normal ml-2">{account.currency}</span>
              </div>
        </div>
 

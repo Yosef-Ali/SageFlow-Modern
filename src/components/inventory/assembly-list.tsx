@@ -73,8 +73,8 @@ export function AssemblyList({ assemblies }: AssemblyListProps) {
 
   if (assemblies.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-16 px-4 bg-white rounded-lg border border-slate-200">
-        <h3 className="text-lg font-medium text-slate-900 mb-1">No Assemblies Defined</h3>
+      <div className="flex flex-col items-center justify-center py-16 px-4 bg-card rounded-lg border">
+        <h3 className="text-lg font-medium text-foreground mb-1">No Assemblies Defined</h3>
         <p className="text-slate-500 mb-4">Create your first Bill of Materials to start building items.</p>
         <Link href="/dashboard/inventory/assemblies/new">
           <Button>Create Assembly</Button>
@@ -85,7 +85,7 @@ export function AssemblyList({ assemblies }: AssemblyListProps) {
 
   return (
     <>
-    <div className="border rounded-lg overflow-hidden bg-white">
+    <div className="border rounded-lg overflow-hidden bg-card">
       <Table>
         <TableHeader>
           <TableRow>

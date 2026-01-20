@@ -71,7 +71,7 @@ export default function GeneralLedgerPage() {
             <div className="space-y-2">
               <Label>To Date</Label>
               <div className="relative">
-                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   type="date"
                   value={endDate}
@@ -117,7 +117,7 @@ export default function GeneralLedgerPage() {
       <div className="grid gap-4 md:grid-cols-3">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-slate-500">Total Debits</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total Debits</CardTitle>
           </CardHeader>
           <CardContent>
             {summaryLoading ? (
@@ -131,7 +131,7 @@ export default function GeneralLedgerPage() {
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-slate-500">Total Credits</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total Credits</CardTitle>
           </CardHeader>
           <CardContent>
             {summaryLoading ? (
@@ -145,13 +145,13 @@ export default function GeneralLedgerPage() {
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-slate-500">Net Movement</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Net Movement</CardTitle>
           </CardHeader>
           <CardContent>
             {summaryLoading ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
-              <p className={`text-2xl font-bold ${(summary?.netBalance || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              <p className={`text-2xl font-bold ${(summary?.netBalance || 0) >= 0 ? 'text-emerald-500' : 'text-red-600'}`}>
                 {formatCurrency(summary?.netBalance || 0)}
               </p>
             )}
@@ -164,7 +164,7 @@ export default function GeneralLedgerPage() {
         <CardContent className="p-0">
           <div className="relative overflow-x-auto">
             <table className="w-full text-sm text-left">
-              <thead className="text-xs uppercase bg-slate-50 border-b">
+              <thead className="text-xs uppercase bg-muted/50 border-b">
                 <tr>
                   <th className="px-6 py-4">Date</th>
                   <th className="px-6 py-4">Reference</th>
@@ -185,11 +185,11 @@ export default function GeneralLedgerPage() {
                   ))
                 ) : reportData && reportData.length > 0 ? (
                   reportData.map((line: any) => (
-                    <tr key={line.id} className="hover:bg-slate-50">
+                    <tr key={line.id} className="hover:bg-muted/50">
                       <td className="px-6 py-4 whitespace-nowrap">
                         {formatDate(line.date)}
                       </td>
-                      <td className="px-6 py-4 font-medium text-slate-900">
+                      <td className="px-6 py-4 font-medium text-foreground">
                         <div className="flex flex-col">
                           <span>{line.reference}</span>
                         </div>
@@ -197,7 +197,7 @@ export default function GeneralLedgerPage() {
                       <td className="px-6 py-4">
                         <div className="flex flex-col">
                           <span className="font-medium">{line.accountName}</span>
-                          <span className="text-xs text-slate-500">{line.accountNumber}</span>
+                          <span className="text-xs text-muted-foreground">{line.accountNumber}</span>
                         </div>
                       </td>
                       <td className="px-6 py-4 text-slate-500">
@@ -213,8 +213,8 @@ export default function GeneralLedgerPage() {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={6} className="px-6 py-12 text-center text-slate-500">
-                      <FileText className="h-12 w-12 mx-auto mb-4 text-slate-200" />
+                    <td colSpan={6} className="px-6 py-12 text-center text-muted-foreground">
+                      <FileText className="h-12 w-12 mx-auto mb-4 text-muted" />
                       <p>No transactions found for the selected filters.</p>
                     </td>
                   </tr>

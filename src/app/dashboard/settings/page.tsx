@@ -49,10 +49,10 @@ export default function SettingsPage() {
       <div className="grid gap-6 md:grid-cols-2">
         {settingsLinks.map((link) => (
           <Link key={link.href} href={link.href}>
-            <Card className="hover:bg-slate-50 transition-colors cursor-pointer h-full">
+            <Card className="hover:bg-muted/50 transition-colors cursor-pointer h-full">
               <CardHeader className="flex flex-row items-center gap-4 space-y-0">
-                <div className="p-2 bg-slate-100 rounded-lg">
-                  <link.icon className="h-6 w-6 text-slate-600" />
+                <div className="p-2 bg-muted rounded-lg">
+                  <link.icon className="h-6 w-6 text-muted-foreground" />
                 </div>
                 <div className="space-y-1">
                   <CardTitle className="text-base">{link.title}</CardTitle>
