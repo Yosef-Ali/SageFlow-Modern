@@ -30,7 +30,11 @@ const PEACHTREE_MAP = {
 /**
  * Generate Full Backup PTB (ZIP of CSVs)
  */
-export async function generatePtbBackup(): Promise<ActionResult<string>> {
+/**
+ * Generate Full Backup PTB (ZIP of CSVs)
+ * Optional: Filter transactions by Fiscal Year (Ethiopian Calendar approximated ranges)
+ */
+export async function generatePtbBackup(fiscalYear?: string): Promise<ActionResult<string>> {
   try {
     const companyId = await getCurrentCompanyId()
     const zip = new AdmZip()
@@ -54,7 +58,7 @@ export async function generatePtbBackup(): Promise<ActionResult<string>> {
     const custCsv = [
       'Customer ID,Name,Contact,Active',
       ...custList.map(c =>
-        `"${c.customerNumber || ''}","${c.customerName}","${c.email || ''}",${c.isActive ? 'TRUE' : 'FALSE'}`
+        `"${c.customerNumber || ''}","${c.name}","${c.email || ''}",${c.isActive ? 'TRUE' : 'FALSE'}`
       )
     ].join('\n')
     zip.addFile(PEACHTREE_MAP.customer, Buffer.from(custCsv))
@@ -82,22 +86,39 @@ export async function generatePtbBackup(): Promise<ActionResult<string>> {
     zip.addFile(PEACHTREE_MAP.employee, Buffer.from(empCsv))
 
     // 5. Journal Entries (Transaction History)
-    const journals = await db.query.journalEntries.findMany({
+    // Filter by fiscal year if provided
+    let journalQuery = await db.query.journalEntries.findMany({
       where: eq(journalEntries.companyId, companyId),
       with: { lines: { with: { account: true } } }
     })
+
+    if (fiscalYear && fiscalYear !== 'all') {
+      const year = parseInt(fiscalYear)
+      // Approximation of Ethiopian Fiscal Year ranges in Gregorian
+      // Meskerem 1 (Sep 11 or 12) to Pagume 5/6 (Sep 10/11)
+      const startYear = year + 7 // e.g. 2016 EC ~ 2023/24 GC
+      const startDate = new Date(`${startYear}-09-11`)
+      const endDate = new Date(`${startYear + 1}-09-10`)
+
+      journalQuery = journalQuery.filter(entry => {
+        const entryDate = new Date(entry.date)
+        return entryDate >= startDate && entryDate <= endDate
+      })
+    }
+
+    const journals = journalQuery
+
     // Flatten journal lines for CSV
     const journalRows = []
     journalRows.push('Date,Reference,Description,Account ID,Amount,Debit/Credit')
 
     for (const entry of journals) {
       for (const line of entry.lines) {
-        // Simple representation: + for Debit, - for Credit to match some formats,
-        // or just listed columns. Let's do standard CSV structure.
         const amt = parseFloat(line.debit) > 0 ? line.debit : `-${line.credit}`
         const dc = parseFloat(line.debit) > 0 ? 'Debit' : 'Credit'
+        const dateStr = entry.date.toISOString().split('T')[0]
         journalRows.push(
-          `"${entry.date.toISOString().split('T')[0]}","${entry.reference || ''}","${entry.description}","${line.account.accountNumber}","${amt}","${dc}"`
+          `"${dateStr}","${entry.reference || ''}","${entry.description}","${line.account.accountNumber}","${amt}","${dc}"`
         )
       }
     }

@@ -1,8 +1,19 @@
 'use server'
 
 import { db } from '@/db'
-import { customers, vendors, chartOfAccounts } from '@/db/schema'
-import { eq, and } from 'drizzle-orm'
+import {
+  customers,
+  vendors,
+  chartOfAccounts,
+  items,
+  users,
+  journalEntries,
+  journalLines,
+  employees,
+  auditLogs,
+  accountTypeEnum
+} from '@/db/schema'
+import { eq, and, count } from 'drizzle-orm'
 import { getCurrentCompanyId } from '@/lib/customer-utils'
 import { revalidatePath } from 'next/cache'
 import AdmZip from 'adm-zip'
@@ -14,134 +25,319 @@ type ActionResult<T = unknown> = {
   error?: string
 }
 
-/**
- * Parse customer data from Peachtree .DAT file (extracted from .ptb)
- * Uses string extraction from binary Btrieve format
- */
-function extractCustomersFromDat(buffer: Buffer): string[] {
-  // Extract readable strings from binary data - Peachtree stores names as plain text
-  const content = buffer.toString('latin1')
-  const names: string[] = []
-
-  // Find sequences of printable characters that look like names
-  const regex = /[\x20-\x7E]{3,50}/g
-  const matches = content.match(regex) || []
-
-  // Filter to likely customer names (exclude system strings)
-  const systemStrings = ['Customer', 'AirborneQ', 'CUSTOMER', 'DAT', 'Sage', 'Peachtree']
-  for (const match of matches) {
-    const trimmed = match.trim()
-    if (
-      trimmed.length >= 3 &&
-      !systemStrings.some(s => trimmed.includes(s)) &&
-      /^[A-Za-z]/.test(trimmed) &&
-      !/^[A-Z]{4,}$/.test(trimmed) // Exclude all-caps codes
-    ) {
-      if (!names.includes(trimmed)) {
-        names.push(trimmed)
-      }
-    }
-  }
-
-  return names
+type ImportCounts = {
+  customers: number
+  vendors: number
+  accounts: number
+  items: number
+  employees: number
+  journals: number
+  auditLogs: number
 }
 
 /**
- * Import customers from Peachtree .ptb backup file
+ * Helper to extract readable strings from binary data
  */
-export async function importFromPtbFile(
-  fileBuffer: Buffer
-): Promise<ActionResult<{ customers: number; vendors: number }>> {
+function extractStrings(buffer: Buffer, minLen = 3, maxLen = 100): string[] {
+  const content = buffer.toString('latin1')
+  // enhanced regex to captures strings of printable characters
+  const regex = /[\x20-\x7E]{3,}/g
+  const matches = content.match(regex) || []
+
+  return matches
+    .map(m => m.trim())
+    .filter(m =>
+      m.length >= minLen &&
+      m.length <= maxLen &&
+      !m.includes('Btrieve') &&
+      !m.includes('Peachtree')
+    )
+}
+
+/**
+ * Parse Account Data from Strings
+ * Heuristic approach to identify account number/name pairs
+ */
+function parseAccountData(strings: string[]) {
+  const accounts: { number: string; name: string; type: typeof accountTypeEnum.enumValues[number] }[] = []
+
+  // Peachtree accounts often look like: "1000 Cash on Hand", or split "1000", "Cash"
+  // We'll look for strings that start with 4+ digits
+
+  for (const s of strings) {
+    // Check for Account Number pattern (at least 4 digits)
+    const match = s.match(/^(\d{4,})-?(\d*)\s+(.*)/)
+    if (match) {
+      const number = match[1] + (match[2] ? '-' + match[2] : '')
+      const name = match[3]
+
+      let type: typeof accountTypeEnum.enumValues[number] = 'EXPENSE'
+      const startDigit = number[0]
+      if (startDigit === '1') type = 'ASSET'
+      else if (startDigit === '2') type = 'LIABILITY'
+      else if (startDigit === '3') type = 'EQUITY'
+      else if (startDigit === '4') type = 'REVENUE'
+
+      accounts.push({ number, name, type })
+    }
+  }
+  return accounts
+}
+
+/**
+ * Main Import Action
+ */
+export async function importPtbAction(formData: FormData): Promise<ActionResult<ImportCounts>> {
   try {
+    const file = formData.get('file') as File
+    if (!file) return { success: false, error: 'No file uploaded' }
+
+    const buffer = Buffer.from(await file.arrayBuffer())
     const companyId = await getCurrentCompanyId()
 
-    // Parse the ZIP archive
-    const zip = new AdmZip(fileBuffer)
+    // Parse ZIP
+    let zip: AdmZip
+    try {
+      zip = new AdmZip(buffer)
+    } catch (e) {
+      return { success: false, error: 'Invalid PTB/ZIP file format' }
+    }
+
     const entries = zip.getEntries()
+    const counts: ImportCounts = {
+      customers: 0,
+      vendors: 0,
+      accounts: 0,
+      items: 0,
+      employees: 0,
+      journals: 0,
+      auditLogs: 0
+    }
 
-    let customerCount = 0
-    let vendorCount = 0
+    // --- 1. CHART OF ACCOUNTS (CHART.DAT) ---
+    const chartEntry = entries.find(e => e.entryName.toUpperCase().includes('CHART.DAT'))
+    if (chartEntry) {
+      const strings = extractStrings(chartEntry.getData())
+      const parsedAccounts = parseAccountData(strings)
 
-    // Look for CUSTOMER.DAT
-    const customerEntry = entries.find(e => e.entryName.toUpperCase() === 'CUSTOMER.DAT')
-    if (customerEntry) {
-      const customerData = customerEntry.getData()
-      const customerNames = extractCustomersFromDat(customerData)
-
-      // Import each customer
-      for (const name of customerNames) {
-        // Check if customer already exists
-        const existing = await db.query.customers.findFirst({
+      for (const acc of parsedAccounts) {
+        // Check existence
+        const existing = await db.query.chartOfAccounts.findFirst({
           where: and(
-            eq(customers.companyId, companyId),
-            eq(customers.name, name)
-          ),
+            eq(chartOfAccounts.companyId, companyId),
+            eq(chartOfAccounts.accountNumber, acc.number)
+          )
         })
 
         if (!existing) {
-          // Generate customer number
-          const count = await db.select().from(customers).where(eq(customers.companyId, companyId))
-          const customerNumber = `CUST-${String(count.length + 1).padStart(4, '0')}`
-
-          await db.insert(customers).values({
+          await db.insert(chartOfAccounts).values({
             companyId,
-            customerNumber,
-            name,
-            isActive: true,
+            accountNumber: acc.number,
+            accountName: acc.name,
+            type: acc.type,
+            isActive: true
           })
-          customerCount++
+          counts.accounts++
         }
       }
     }
 
-    // Look for VENDOR.DAT
-    const vendorEntry = entries.find(e => e.entryName.toUpperCase() === 'VENDOR.DAT')
-    if (vendorEntry) {
-      const vendorData = vendorEntry.getData()
-      const vendorNames = extractCustomersFromDat(vendorData) // Same extraction logic
+    // --- 2. CUSTOMERS (CUSTOMER.DAT) ---
+    const customerEntry = entries.find(e => e.entryName.toUpperCase().includes('CUSTOMER.DAT'))
+    if (customerEntry) {
+      // Basic extraction of names
+      const strings = extractStrings(customerEntry.getData())
+      const names = strings.filter(s =>
+        /^[A-Z][a-z]+/.test(s) &&
+        !s.includes('DAT') &&
+        s.length > 3
+      )
 
-      for (const name of vendorNames) {
-        const existing = await db.query.vendors.findFirst({
-          where: and(
-            eq(vendors.companyId, companyId),
-            eq(vendors.name, name)
-          ),
+      const uniqueNames = [...new Set(names)]
+
+      for (const name of uniqueNames.slice(0, 50)) { // Limit to avoid garbage
+        const existing = await db.query.customers.findFirst({
+          where: and(eq(customers.companyId, companyId), eq(customers.name, name))
         })
 
         if (!existing) {
-          const count = await db.select().from(vendors).where(eq(vendors.companyId, companyId))
-          const vendorNumber = `VEND-${String(count.length + 1).padStart(4, '0')}`
+          const [res] = await db.select({ count: count() }).from(customers).where(eq(customers.companyId, companyId))
+          const num = `CUST-${String(res.count + 1).padStart(4, '0')}`
+
+          await db.insert(customers).values({
+            companyId,
+            customerNumber: num,
+            name,
+            isActive: true
+          })
+          counts.customers++
+        }
+      }
+    }
+
+    // --- 3. VENDORS (VENDOR.DAT) ---
+    const vendorEntry = entries.find(e => e.entryName.toUpperCase().includes('VENDOR.DAT'))
+    if (vendorEntry) {
+      // Similar logic to customers
+      const strings = extractStrings(vendorEntry.getData())
+      const names = strings.filter(s =>
+        /^[A-Z][a-z]+/.test(s) &&
+        !s.includes('DAT') &&
+        !s.includes('Vendor') &&
+        s.length > 3
+      )
+
+      const uniqueNames = [...new Set(names)]
+
+      for (const name of uniqueNames.slice(0, 50)) {
+        const existing = await db.query.vendors.findFirst({
+          where: and(eq(vendors.companyId, companyId), eq(vendors.name, name))
+        })
+
+        if (!existing) {
+          const [res] = await db.select({ count: count() }).from(vendors).where(eq(vendors.companyId, companyId))
+          const num = `VEND-${String(res.count + 1).padStart(4, '0')}`
 
           await db.insert(vendors).values({
             companyId,
-            vendorNumber,
+            vendorNumber: num,
             name,
-            isActive: true,
+            isActive: true
           })
-          vendorCount++
+          counts.vendors++
+        }
+      }
+    }
+
+    // --- 4. INVENTORY ITEMS (ITEM.DAT or INVENTORY.DAT) ---
+    const itemEntry = entries.find(e =>
+      e.entryName.toUpperCase().includes('ITEM.DAT') ||
+      e.entryName.toUpperCase().includes('INVENTORY.DAT')
+    )
+    if (itemEntry) {
+      const strings = extractStrings(itemEntry.getData())
+      // Items usually have an ID (uppercase) and Name
+      const probableItems = strings.filter(s =>
+        /^[A-Z0-9-]{3,}$/.test(s) || // potential SKU
+        (/^[A-Z][a-z]/.test(s) && s.length > 4) // potential Name
+      )
+
+      // Simple toggle heuristic: SKU then Name
+      for (let i = 0; i < probableItems.length - 1; i++) {
+        const s1 = probableItems[i]
+        const s2 = probableItems[i + 1]
+
+        if (/^[A-Z0-9-]{3,}$/.test(s1) && /^[A-Z][a-z]/.test(s2)) {
+          // Looks like SKU -> Name pair
+          const existing = await db.query.items.findFirst({
+            where: and(eq(items.companyId, companyId), eq(items.sku, s1))
+          })
+
+          if (!existing) {
+            await db.insert(items).values({
+              companyId,
+              sku: s1,
+              name: s2,
+              unitOfMeasure: 'PCS',
+              costPrice: '0',
+              sellingPrice: '0',
+              isActive: true
+            })
+            counts.items++
+            i++ // Skip next
+          }
+        }
+      }
+    }
+
+    // --- 5. EMPLOYEES (EMPLOYEE.DAT) ---
+    const empEntry = entries.find(e => e.entryName.toUpperCase().includes('EMPLOYEE.DAT'))
+    if (empEntry) {
+      const strings = extractStrings(empEntry.getData())
+      const names = strings.filter(s =>
+        /^[A-Z][a-z]+/.test(s) && s.includes(' ') && s.length > 5 && !s.includes('DAT')
+      )
+
+      const uniqueNames = [...new Set(names)]
+
+      for (const name of uniqueNames.slice(0, 20)) {
+        // Create user record for login
+        const email = `${name.toLowerCase().replace(/[^a-z]/g, '.')}@example.com`
+
+        const existingUser = await db.query.users.findFirst({
+          where: eq(users.email, email)
+        })
+
+        if (!existingUser) {
+          const userId = crypto.randomUUID()
+          await db.insert(users).values({
+            id: userId,
+            companyId,
+            email,
+            name,
+            passwordHash: '$2b$10$placeholderexamplehash', // Placeholder
+            role: 'EMPLOYEE',
+          })
+
+          await db.insert(employees).values({
+            companyId,
+            userId,
+            employeeCode: `EMP-${name.substring(0, 3).toUpperCase()}`,
+            firstName: name.split(' ')[0],
+            lastName: name.split(' ').slice(1).join(' ') || 'Employee',
+          })
+          counts.employees++
+        }
+      }
+    }
+
+    // --- 6. JOURNAL ENTRIES (JRNLHDR.DAT / JRNLROW.DAT) ---
+    // This is complex for binary parsing. We'll implement a basic header importer for now.
+    const jrnlEntry = entries.find(e => e.entryName.toUpperCase().includes('JRNLHDR.DAT'))
+    if (jrnlEntry) {
+      const strings = extractStrings(jrnlEntry.getData())
+      // References often look like "REF123" or dates
+      const refs = strings.filter(s => s.length > 4 && /[0-9]/.test(s))
+      const uniqueRefs = [...new Set(refs)].slice(0, 50)
+
+      for (const ref of uniqueRefs) {
+        // Create a dummy journal for each ref found
+        const existing = await db.query.journalEntries.findFirst({
+          where: and(eq(journalEntries.companyId, companyId), eq(journalEntries.reference, ref))
+        })
+
+        if (!existing) {
+          await db.insert(journalEntries).values({
+            companyId,
+            date: new Date(),
+            description: `Imported Journal: ${ref}`,
+            reference: ref,
+            status: 'POSTED',
+            sourceType: 'MANUAL'
+          })
+          counts.journals++
         }
       }
     }
 
     revalidatePath('/dashboard/customers')
+    revalidatePath('/dashboard/invoices')
     revalidatePath('/dashboard/settings/import-export')
+    revalidatePath('/dashboard/journals')
+    revalidatePath('/dashboard/audit-trail')
 
-    return {
-      success: true,
-      data: { customers: customerCount, vendors: vendorCount },
-    }
+    return { success: true, data: counts }
+
   } catch (error) {
-    console.error('Error importing from PTB:', error)
+    console.error('Import Error:', error)
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Failed to import PTB file',
+      error: error instanceof Error ? error.message : 'Import failed'
     }
   }
 }
 
-/**
- * Export customers to Peachtree-compatible CSV format
- */
+// Keep export functions
 export async function exportCustomersToCSV(): Promise<ActionResult<string>> {
   try {
     const companyId = await getCurrentCompanyId()
@@ -197,9 +393,6 @@ export async function exportCustomersToCSV(): Promise<ActionResult<string>> {
   }
 }
 
-/**
- * Export vendors to Peachtree-compatible CSV format
- */
 export async function exportVendorsToCSV(): Promise<ActionResult<string>> {
   try {
     const companyId = await getCurrentCompanyId()
@@ -254,9 +447,6 @@ export async function exportVendorsToCSV(): Promise<ActionResult<string>> {
   }
 }
 
-/**
- * Export chart of accounts to Peachtree-compatible CSV format
- */
 export async function exportChartOfAccountsToCSV(): Promise<ActionResult<string>> {
   try {
     const companyId = await getCurrentCompanyId()
@@ -290,118 +480,6 @@ export async function exportChartOfAccountsToCSV(): Promise<ActionResult<string>
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to export chart of accounts',
-    }
-  }
-}
-
-/**
- * Import customers from CSV file
- */
-export async function importCustomersFromCSV(
-  csvContent: string
-): Promise<ActionResult<{ imported: number; skipped: number }>> {
-  try {
-    const companyId = await getCurrentCompanyId()
-
-    // Parse CSV
-    const lines = csvContent.split('\n').filter(l => l.trim())
-    if (lines.length < 2) {
-      return { success: false, error: 'CSV file is empty or missing data rows' }
-    }
-
-    const headers = lines[0].split(',').map(h => h.replace(/"/g, '').trim().toLowerCase())
-    const nameIndex = headers.findIndex(h => h.includes('name') && h.includes('customer'))
-    const idIndex = headers.findIndex(h => h.includes('id') && h.includes('customer'))
-
-    if (nameIndex === -1) {
-      return { success: false, error: 'Could not find Customer Name column' }
-    }
-
-    let imported = 0
-    let skipped = 0
-
-    for (let i = 1; i < lines.length; i++) {
-      const values = lines[i].split(',').map(v => v.replace(/"/g, '').trim())
-      const name = values[nameIndex]
-      const customerId = idIndex >= 0 ? values[idIndex] : undefined
-
-      if (!name) {
-        skipped++
-        continue
-      }
-
-      // Check if exists
-      const existing = await db.query.customers.findFirst({
-        where: and(
-          eq(customers.companyId, companyId),
-          eq(customers.name, name)
-        ),
-      })
-
-      if (existing) {
-        skipped++
-        continue
-      }
-
-      // Generate customer number if not provided
-      const count = await db.select().from(customers).where(eq(customers.companyId, companyId))
-      const customerNumber = customerId || `CUST-${String(count.length + 1).padStart(4, '0')}`
-
-      await db.insert(customers).values({
-        companyId,
-        customerNumber,
-        name,
-        isActive: true,
-      })
-      imported++
-    }
-
-    revalidatePath('/dashboard/customers')
-
-    return { success: true, data: { imported, skipped } }
-  } catch (error) {
-    console.error('Error importing customers from CSV:', error)
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Failed to import CSV',
-    }
-  }
-}
-
-/**
- * Get list of files in PTB archive for preview
- */
-export async function previewPtbFile(
-  fileBuffer: Buffer
-): Promise<ActionResult<{ files: string[]; customers: string[]; vendors: string[] }>> {
-  try {
-    const zip = new AdmZip(fileBuffer)
-    const entries = zip.getEntries()
-
-    const files = entries.map(e => e.entryName).filter(n => n.endsWith('.DAT') || n.endsWith('.dat'))
-
-    let customerNames: string[] = []
-    let vendorNames: string[] = []
-
-    const customerEntry = entries.find(e => e.entryName.toUpperCase() === 'CUSTOMER.DAT')
-    if (customerEntry) {
-      customerNames = extractCustomersFromDat(customerEntry.getData()).slice(0, 20)
-    }
-
-    const vendorEntry = entries.find(e => e.entryName.toUpperCase() === 'VENDOR.DAT')
-    if (vendorEntry) {
-      vendorNames = extractCustomersFromDat(vendorEntry.getData()).slice(0, 20)
-    }
-
-    return {
-      success: true,
-      data: { files, customers: customerNames, vendors: vendorNames },
-    }
-  } catch (error) {
-    console.error('Error previewing PTB:', error)
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Failed to preview PTB file',
     }
   }
 }

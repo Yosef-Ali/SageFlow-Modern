@@ -1,8 +1,8 @@
 'use server'
 
 import { db } from '@/db'
-import { invoices, invoiceItems, customers, items, InvoiceStatus } from '@/db/schema'
-import { eq, and, or, ilike, gte, lte, desc, asc, count } from 'drizzle-orm'
+import { invoices, invoiceItems, customers, items, stockMovements, InvoiceStatus } from '@/db/schema'
+import { eq, and, or, ilike, gte, lte, desc, asc, count, sql } from 'drizzle-orm'
 import { getCurrentCompanyId } from '@/lib/customer-utils'
 import {
   invoiceSchema,
@@ -202,10 +202,78 @@ export async function getInvoice(id: string): Promise<ActionResult<any>> {
 }
 
 /**
+ * Check if invoice would exceed customer credit limit
+ * Returns warning message if exceeded, null if OK
+ */
+export async function checkCreditLimit(
+  customerId: string,
+  invoiceTotal: number
+): Promise<ActionResult<{ exceeded: boolean; message?: string; currentBalance: number; creditLimit: number; newBalance: number }>> {
+  try {
+    const companyId = await getCurrentCompanyId()
+
+    const customer = await db.query.customers.findFirst({
+      where: and(
+        eq(customers.id, customerId),
+        eq(customers.companyId, companyId)
+      ),
+      columns: {
+        name: true,
+        balance: true,
+        creditLimit: true,
+      },
+    })
+
+    if (!customer) {
+      return { success: false, error: 'Customer not found' }
+    }
+
+    const currentBalance = Number(customer.balance)
+    const creditLimit = Number(customer.creditLimit || 0)
+    const newBalance = currentBalance + invoiceTotal
+
+    // Credit limit of 0 means unlimited
+    if (creditLimit === 0) {
+      return {
+        success: true,
+        data: {
+          exceeded: false,
+          currentBalance,
+          creditLimit,
+          newBalance,
+        },
+      }
+    }
+
+    const exceeded = newBalance > creditLimit
+
+    return {
+      success: true,
+      data: {
+        exceeded,
+        message: exceeded
+          ? `Credit limit exceeded for ${customer.name}. Current balance: ETB ${currentBalance.toFixed(2)}, Credit limit: ETB ${creditLimit.toFixed(2)}, New balance would be: ETB ${newBalance.toFixed(2)}`
+          : undefined,
+        currentBalance,
+        creditLimit,
+        newBalance,
+      },
+    }
+  } catch (error) {
+    console.error('Error checking credit limit:', error)
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to check credit limit',
+    }
+  }
+}
+
+/**
  * Create a new invoice with line items
  */
 export async function createInvoice(
-  data: InvoiceFormValues
+  data: InvoiceFormValues,
+  options?: { skipCreditCheck?: boolean }
 ): Promise<ActionResult<any>> {
   try {
     const companyId = await getCurrentCompanyId()
@@ -215,6 +283,17 @@ export async function createInvoice(
 
     // Calculate totals
     const { subtotal, taxAmount, total } = calculateInvoiceTotals(validatedData.items)
+
+    // Check credit limit for non-DRAFT invoices (unless skipped)
+    if (validatedData.status !== 'DRAFT' && !options?.skipCreditCheck) {
+      const creditCheck = await checkCreditLimit(validatedData.customerId, total)
+      if (creditCheck.success && creditCheck.data?.exceeded) {
+        return {
+          success: false,
+          error: creditCheck.data.message || 'Credit limit exceeded',
+        }
+      }
+    }
 
     // Generate invoice number
     const invoiceNumber = await generateInvoiceNumber(companyId)
@@ -236,10 +315,16 @@ export async function createInvoice(
           status: validatedData.status,
           notes: validatedData.notes || null,
           terms: validatedData.terms || null,
+          // Peachtree fields
+          salesRepId: validatedData.salesRepId || null,
+          poNumber: validatedData.poNumber || null,
+          shipMethod: validatedData.shipMethod || null,
+          shipDate: validatedData.shipDate || null,
+          dropShip: validatedData.dropShip,
         })
         .returning()
 
-      // Create invoice items
+      // Create invoice items and deduct stock
       for (const item of validatedData.items) {
         const lineTotal = item.quantity * item.unitPrice * (1 + (item.taxRate ?? 0.15))
         await tx.insert(invoiceItems).values({
@@ -251,6 +336,38 @@ export async function createInvoice(
           taxRate: String(item.taxRate ?? 0.15),
           total: String(lineTotal),
         })
+
+        // Deduct stock for non-DRAFT invoices
+        if (validatedData.status !== 'DRAFT' && item.itemId) {
+          // Update quantity on hand
+          await tx.update(items)
+            .set({
+              quantityOnHand: sql`${items.quantityOnHand} - ${item.quantity}`,
+              updatedAt: new Date()
+            })
+            .where(eq(items.id, item.itemId))
+
+          // Log stock movement
+          await tx.insert(stockMovements).values({
+            itemId: item.itemId,
+            type: 'SALE',
+            quantity: String(-item.quantity), // Negative for sales
+            cost: String(item.unitPrice),
+            referenceType: 'INVOICE',
+            referenceId: newInvoice.id,
+            date: validatedData.date,
+          })
+        }
+      }
+
+      // Update Customer Balance (Increase AR) for non-DRAFT invoices
+      if (validatedData.status !== 'DRAFT') {
+        await tx.update(customers)
+          .set({
+            balance: sql`${customers.balance} + ${total}`,
+            updatedAt: new Date()
+          })
+          .where(eq(customers.id, validatedData.customerId))
       }
 
       return newInvoice
@@ -324,6 +441,12 @@ export async function updateInvoice(
           notes: validatedData.notes || null,
           terms: validatedData.terms || null,
           updatedAt: new Date(),
+          // Peachtree fields
+          salesRepId: validatedData.salesRepId || null,
+          poNumber: validatedData.poNumber || null,
+          shipMethod: validatedData.shipMethod || null,
+          shipDate: validatedData.shipDate || null,
+          dropShip: validatedData.dropShip,
         })
         .where(eq(invoices.id, id))
         .returning()
@@ -365,19 +488,21 @@ export async function updateInvoice(
 }
 
 /**
- * Update invoice status
+ * Update invoice status (handles balance/stock when changing from DRAFT to SENT)
  */
 export async function updateInvoiceStatus(
   id: string,
-  status: InvoiceStatus
+  status: InvoiceStatus,
+  options?: { skipCreditCheck?: boolean }
 ): Promise<ActionResult> {
   try {
     const companyId = await getCurrentCompanyId()
 
-    // Verify ownership
+    // Get full invoice data for balance/stock updates
     const existingInvoice = await db.query.invoices.findFirst({
       where: eq(invoices.id, id),
-      columns: { companyId: true },
+      columns: { companyId: true, status: true, customerId: true, total: true },
+      with: { items: true }
     })
 
     if (!existingInvoice || existingInvoice.companyId !== companyId) {
@@ -387,13 +512,83 @@ export async function updateInvoiceStatus(
       }
     }
 
-    await db
-      .update(invoices)
-      .set({ status, updatedAt: new Date() })
-      .where(eq(invoices.id, id))
+    const wasDraft = existingInvoice.status === 'DRAFT'
+    const isNowActive = status === 'SENT' || status === 'OVERDUE'
 
-    revalidatePath('/invoices')
-    revalidatePath(`/invoices/${id}`)
+    // Check credit limit when activating a DRAFT invoice
+    if (wasDraft && isNowActive && !options?.skipCreditCheck) {
+      const creditCheck = await checkCreditLimit(
+        existingInvoice.customerId,
+        Number(existingInvoice.total)
+      )
+      if (creditCheck.success && creditCheck.data?.exceeded) {
+        return {
+          success: false,
+          error: creditCheck.data.message || 'Credit limit exceeded',
+        }
+      }
+    }
+
+    await db.transaction(async (tx) => {
+      // Update status
+      await tx
+        .update(invoices)
+        .set({ status, updatedAt: new Date() })
+        .where(eq(invoices.id, id))
+
+      // If changing from DRAFT to an active status, update balance and stock
+      if (wasDraft && isNowActive) {
+        console.log('[Invoice Status Change] DRAFT -> SENT detected')
+        console.log('[Invoice Status Change] Updating customer balance:', {
+          customerId: existingInvoice.customerId,
+          total: existingInvoice.total,
+          itemsCount: existingInvoice.items.length
+        })
+
+        // Update customer balance (+AR)
+        await tx.update(customers)
+          .set({
+            balance: sql`${customers.balance} + ${Number(existingInvoice.total)}`,
+            updatedAt: new Date()
+          })
+          .where(eq(customers.id, existingInvoice.customerId))
+
+        console.log('[Invoice Status Change] Customer balance updated')
+
+        // Deduct stock for each item
+        for (const item of existingInvoice.items) {
+          if (item.itemId) {
+            await tx.update(items)
+              .set({
+                quantityOnHand: sql`${items.quantityOnHand} - ${Number(item.quantity)}`,
+                updatedAt: new Date()
+              })
+              .where(eq(items.id, item.itemId))
+
+            await tx.insert(stockMovements).values({
+              itemId: item.itemId,
+              type: 'SALE',
+              quantity: String(-Number(item.quantity)),
+              cost: String(item.unitPrice),
+              referenceType: 'INVOICE',
+              referenceId: id,
+              date: new Date(),
+            })
+          }
+        }
+      } else {
+        console.log('[Invoice Status Change] Not a DRAFT->SENT change:', {
+          wasDraft,
+          isNowActive,
+          currentStatus: existingInvoice.status,
+          newStatus: status
+        })
+      }
+    })
+
+    revalidatePath('/dashboard/invoices')
+    revalidatePath(`/dashboard/invoices/${id}`)
+    revalidatePath('/dashboard/customers')
 
     return {
       success: true,
@@ -408,7 +603,7 @@ export async function updateInvoiceStatus(
 }
 
 /**
- * Cancel an invoice
+ * Cancel an invoice (and reverse balance/stock updates)
  */
 export async function cancelInvoice(id: string): Promise<ActionResult> {
   try {
@@ -416,7 +611,8 @@ export async function cancelInvoice(id: string): Promise<ActionResult> {
 
     const existingInvoice = await db.query.invoices.findFirst({
       where: eq(invoices.id, id),
-      columns: { companyId: true, paidAmount: true },
+      columns: { companyId: true, paidAmount: true, status: true, customerId: true, total: true },
+      with: { items: true }
     })
 
     if (!existingInvoice || existingInvoice.companyId !== companyId) {
@@ -434,12 +630,37 @@ export async function cancelInvoice(id: string): Promise<ActionResult> {
       }
     }
 
-    await db
-      .update(invoices)
-      .set({ status: 'CANCELLED', updatedAt: new Date() })
-      .where(eq(invoices.id, id))
+    await db.transaction(async (tx) => {
+      // Cancel the invoice
+      await tx
+        .update(invoices)
+        .set({ status: 'CANCELLED', updatedAt: new Date() })
+        .where(eq(invoices.id, id))
 
-    revalidatePath('/invoices')
+      // Reverse customer balance only if it was not DRAFT
+      if (existingInvoice.status !== 'DRAFT') {
+        await tx.update(customers)
+          .set({
+            balance: sql`${customers.balance} - ${Number(existingInvoice.total)}`,
+            updatedAt: new Date()
+          })
+          .where(eq(customers.id, existingInvoice.customerId))
+
+        // Restore stock for each item
+        for (const item of existingInvoice.items) {
+          if (item.itemId) {
+            await tx.update(items)
+              .set({
+                quantityOnHand: sql`${items.quantityOnHand} + ${Number(item.quantity)}`,
+                updatedAt: new Date()
+              })
+              .where(eq(items.id, item.itemId))
+          }
+        }
+      }
+    })
+
+    revalidatePath('/dashboard/invoices')
 
     return {
       success: true,
@@ -454,7 +675,7 @@ export async function cancelInvoice(id: string): Promise<ActionResult> {
 }
 
 /**
- * Get customers for dropdown (simplified)
+ * Get customers for dropdown (with Peachtree fields for invoice defaults)
  */
 export async function getCustomersForDropdown(): Promise<ActionResult<any[]>> {
   try {
@@ -467,6 +688,13 @@ export async function getCustomersForDropdown(): Promise<ActionResult<any[]>> {
         name: true,
         email: true,
         customerNumber: true,
+        // Peachtree fields for invoice defaults
+        paymentTerms: true,
+        taxExempt: true,
+        discountPercent: true,
+        priceLevel: true,
+        creditLimit: true,
+        balance: true,
       },
       orderBy: asc(customers.name),
     })

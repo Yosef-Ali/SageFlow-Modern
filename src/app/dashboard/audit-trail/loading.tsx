@@ -1,0 +1,68 @@
+import { Skeleton } from '@/components/ui/skeleton'
+
+function AuditRowSkeleton() {
+  return (
+    <div className="flex items-center px-4 py-4 border-b last:border-b-0">
+      {/* Timestamp */}
+      <div className="w-[180px] pr-4">
+        <Skeleton className="h-4 w-36" />
+      </div>
+      {/* User */}
+      <div className="w-[150px] pr-4">
+        <Skeleton className="h-4 w-28" />
+      </div>
+      {/* Action */}
+      <div className="w-[120px] pr-4">
+        <Skeleton className="h-6 w-16 rounded-full" />
+      </div>
+      {/* Entity */}
+      <div className="w-[120px] pr-4">
+        <Skeleton className="h-4 w-20" />
+      </div>
+      {/* Description */}
+      <div className="flex-1 min-w-[200px]">
+        <Skeleton className="h-4 w-48" />
+      </div>
+    </div>
+  )
+}
+
+export default function Loading() {
+  return (
+    <div className="flex-1 space-y-6 p-8 pt-6">
+      {/* Header */}
+      <div className="space-y-2">
+        <Skeleton className="h-9 w-28" />
+        <Skeleton className="h-5 w-56" />
+      </div>
+
+      {/* Filters */}
+      <div className="flex items-center gap-4">
+        <Skeleton className="h-10 w-64 rounded-md" />
+        <Skeleton className="h-10 w-40 rounded-md" />
+        <Skeleton className="h-10 w-40 rounded-md" />
+      </div>
+
+      {/* Table */}
+      <div className="border rounded-lg overflow-hidden bg-white">
+        {/* Table Header */}
+        <div className="flex items-center px-4 py-3 bg-slate-50 border-b">
+          <div className="w-[180px] pr-4"><Skeleton className="h-4 w-20" /></div>
+          <div className="w-[150px] pr-4"><Skeleton className="h-4 w-10" /></div>
+          <div className="w-[120px] pr-4"><Skeleton className="h-4 w-12" /></div>
+          <div className="w-[120px] pr-4"><Skeleton className="h-4 w-12" /></div>
+          <div className="flex-1 min-w-[200px]"><Skeleton className="h-4 w-20" /></div>
+        </div>
+
+        {/* Table Rows */}
+        <AuditRowSkeleton />
+        <AuditRowSkeleton />
+        <AuditRowSkeleton />
+        <AuditRowSkeleton />
+        <AuditRowSkeleton />
+        <AuditRowSkeleton />
+        <AuditRowSkeleton />
+      </div>
+    </div>
+  )
+}

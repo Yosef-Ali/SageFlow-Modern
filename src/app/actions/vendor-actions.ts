@@ -5,28 +5,7 @@ import { vendors } from '@/db/schema'
 import { eq, and, asc } from 'drizzle-orm'
 import { getCurrentCompanyId } from '@/lib/customer-utils'
 import { revalidatePath } from 'next/cache'
-import { z } from 'zod'
-
-// Validation schema
-const vendorSchema = z.object({
-  vendorNumber: z.string().optional(),
-  name: z.string().min(1, 'Vendor name is required'),
-  email: z.string().email().optional().or(z.literal('')),
-  phone: z.string().optional(),
-  address: z.object({
-    street: z.string().optional(),
-    city: z.string().optional(),
-    state: z.string().optional(),
-    zip: z.string().optional(),
-    country: z.string().optional(),
-  }).optional(),
-  taxId: z.string().optional(),
-  paymentTerms: z.string().optional(),
-  notes: z.string().optional(),
-  isActive: z.boolean().default(true),
-})
-
-export type VendorFormValues = z.infer<typeof vendorSchema>
+import { vendorSchema, type VendorFormValues } from '@/lib/validations/vendor'
 
 type ActionResult<T = unknown> = {
   success: boolean
@@ -125,10 +104,17 @@ export async function createVendor(data: VendorFormValues): Promise<ActionResult
       phone: validated.phone || null,
       address: validated.address || null,
       taxId: validated.taxId || null,
-      paymentTerms: validated.paymentTerms || null,
       notes: validated.notes || null,
       isActive: validated.isActive,
       balance: '0',
+      // Peachtree-standard fields
+      vendorType: validated.vendorType || 'SUPPLIER',
+      paymentTerms: validated.paymentTerms || 'NET_30',
+      contactName: validated.contactName || null,
+      discountPercent: validated.discountPercent?.toString() || '0',
+      creditLimit: validated.creditLimit?.toString() || null,
+      taxExempt: validated.taxExempt || false,
+      taxExemptNumber: validated.taxExemptNumber || null,
     }).returning()
 
     revalidatePath('/dashboard/vendors')
@@ -170,9 +156,16 @@ export async function updateVendor(id: string, data: VendorFormValues): Promise<
         phone: validated.phone || null,
         address: validated.address || null,
         taxId: validated.taxId || null,
-        paymentTerms: validated.paymentTerms || null,
         notes: validated.notes || null,
         isActive: validated.isActive,
+        // Peachtree-standard fields
+        vendorType: validated.vendorType || existing.vendorType,
+        paymentTerms: validated.paymentTerms || existing.paymentTerms,
+        contactName: validated.contactName || null,
+        discountPercent: validated.discountPercent?.toString() || '0',
+        creditLimit: validated.creditLimit?.toString() || null,
+        taxExempt: validated.taxExempt || false,
+        taxExemptNumber: validated.taxExemptNumber || null,
         updatedAt: new Date(),
       })
       .where(eq(vendors.id, id))

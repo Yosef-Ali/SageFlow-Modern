@@ -40,6 +40,16 @@ const employeeSchema = z.object({
   }).optional(),
   hireDate: z.string().optional().nullable(),
   isActive: z.boolean().default(true),
+  // Peachtree payroll fields
+  employeeType: z.string().default('REGULAR'),
+  payRate: z.number().min(0).optional(),
+  overtimeRate: z.number().min(1).default(1.5),
+  bankAccountNo: z.string().optional(),
+  bankName: z.string().optional(),
+  taxId: z.string().optional(),
+  emergencyContactName: z.string().optional(),
+  emergencyContactPhone: z.string().optional(),
+  terminationDate: z.string().optional().nullable(),
 })
 
 type EmployeeFormTypes = z.infer<typeof employeeSchema>
@@ -77,6 +87,16 @@ export function EmployeeForm({ employee, onSuccess }: EmployeeFormProps) {
       },
       hireDate: employee?.hireDate ? new Date(employee.hireDate).toISOString().split('T')[0] : '',
       isActive: employee?.isActive ?? true,
+      // Peachtree fields
+      employeeType: employee?.employeeType || 'REGULAR',
+      payRate: employee?.payRate ? Number(employee.payRate) : undefined,
+      overtimeRate: employee?.overtimeRate ? Number(employee.overtimeRate) : 1.5,
+      bankAccountNo: employee?.bankAccountNo || '',
+      bankName: employee?.bankName || '',
+      taxId: employee?.taxId || '',
+      emergencyContactName: employee?.emergencyContactName || '',
+      emergencyContactPhone: employee?.emergencyContactPhone || '',
+      terminationDate: employee?.terminationDate ? new Date(employee.terminationDate).toISOString().split('T')[0] : '',
     },
   })
 
@@ -166,15 +186,65 @@ export function EmployeeForm({ employee, onSuccess }: EmployeeFormProps) {
           </div>
         </div>
         
-        <h3 className="text-lg font-semibold pt-4 border-t">Payroll Info</h3>
+         <h3 className="text-lg font-semibold pt-4 border-t">Payroll & Banking</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
            <div className="space-y-2">
-            <Label>SSN / Tax ID</Label>
-            <Input {...form.register('ssn')} />
+            <Label>Employee Type</Label>
+            <Select
+              value={form.watch('employeeType')}
+              onValueChange={(value) => form.setValue('employeeType', value)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="REGULAR">Regular</SelectItem>
+                <SelectItem value="CONTRACT">Contract</SelectItem>
+                <SelectItem value="TEMPORARY">Temporary</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
            <div className="space-y-2">
-            <Label>Department</Label>
-            <Input {...form.register('department')} />
+            <Label>Tax ID (TIN)</Label>
+            <Input {...form.register('taxId')} placeholder="TIN Number" />
+          </div>
+           <div className="space-y-2">
+            <Label>Pay Rate</Label>
+            <Input 
+              type="number" 
+              step="0.01"
+              {...form.register('payRate', { valueAsNumber: true })} 
+              placeholder="0.00" 
+            />
+          </div>
+           <div className="space-y-2">
+            <Label>Overtime Rate (Multiplier)</Label>
+            <Input 
+              type="number" 
+              step="0.1"
+              {...form.register('overtimeRate', { valueAsNumber: true })} 
+              placeholder="1.5" 
+            />
+          </div>
+           <div className="space-y-2">
+            <Label>Bank Name</Label>
+            <Input {...form.register('bankName')} placeholder="e.g. CBE" />
+          </div>
+           <div className="space-y-2">
+            <Label>Account Number</Label>
+            <Input {...form.register('bankAccountNo')} />
+          </div>
+        </div>
+
+        <h3 className="text-lg font-semibold pt-4 border-t">Emergency Contact</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+           <div className="space-y-2">
+            <Label>Contact Name</Label>
+            <Input {...form.register('emergencyContactName')} />
+          </div>
+           <div className="space-y-2">
+            <Label>Contact Phone</Label>
+            <Input {...form.register('emergencyContactPhone')} />
           </div>
         </div>
 

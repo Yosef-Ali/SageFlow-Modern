@@ -22,6 +22,14 @@ export const invoiceSchema = z.object({
   notes: z.string().optional(),
   terms: z.string().optional(),
   status: z.enum(["DRAFT", "SENT", "PARTIALLY_PAID", "PAID", "OVERDUE", "CANCELLED"]).default("DRAFT"),
+  // Peachtree-standard fields
+  salesRepId: z.string().optional(),
+  poNumber: z.string().optional(),
+  shipMethod: z.string().optional(),
+  shipDate: z.date().optional().nullable(),
+  dropShip: z.boolean().default(false),
+  // We can add shipAddress validation later if needed structure is complex, 
+  // for now keep it simple or omitted from form validation if handled separately
 })
 
 // Invoice filters schema
