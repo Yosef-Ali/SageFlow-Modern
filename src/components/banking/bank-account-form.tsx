@@ -21,7 +21,7 @@ import { z } from 'zod'
 
 const bankAccountFormSchema = z.object({
   accountName: z.string().min(1, 'Account name is required'),
-  accountNumber: z.string().optional(),
+  accountNumber: z.string().min(1, 'Account Number is required'),
   bankName: z.string().optional(),
   accountType: z.enum(['CHECKING', 'SAVINGS', 'CASH', 'CREDIT_CARD', 'OTHER']).default('CHECKING'),
   currency: z.string().default('ETB'),

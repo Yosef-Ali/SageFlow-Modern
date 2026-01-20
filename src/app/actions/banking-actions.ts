@@ -25,7 +25,7 @@ export async function createBankAccount(data: BankAccountFormValues): Promise<Ac
     const companyId = await getCurrentCompanyId()
     await db.insert(bankAccounts).values({
       companyId,
-      accountName: data.name,
+      accountName: data.accountName,
       accountNumber: data.accountNumber,
       currency: data.currency,
       openingBalance: String(data.openingBalance),
@@ -235,7 +235,7 @@ export async function updateBankAccount(id: string, data: BankAccountFormValues)
 
     await db.update(bankAccounts)
       .set({
-        accountName: data.name,
+        accountName: data.accountName,
         accountNumber: data.accountNumber,
         currency: data.currency,
         isActive: data.isActive ?? true,

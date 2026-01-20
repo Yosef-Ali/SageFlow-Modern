@@ -245,3 +245,96 @@ export async function getBalanceSheet(asOfDate: Date): Promise<ActionResult<any>
     return { success: false, error: 'Failed to generate Balance Sheet' }
   }
 }
+
+/**
+ * Get General Ledger
+ * Detailed list of transactions for a specific time period.
+ */
+export interface GLFilterValues {
+  startDate?: Date
+  endDate?: Date
+  accountId?: string
+}
+
+export async function getGeneralLedger(
+  filters?: GLFilterValues
+): Promise<ActionResult<any>> {
+  try {
+    const companyId = await getCurrentCompanyId()
+
+    const conditions = [
+      eq(chartOfAccounts.companyId, companyId)
+    ]
+
+    if (filters?.startDate) {
+      conditions.push(gte(journalEntries.date, filters.startDate))
+    }
+    if (filters?.endDate) {
+      conditions.push(lte(journalEntries.date, filters.endDate))
+    }
+    if (filters?.accountId) {
+      conditions.push(eq(journalLines.accountId, filters.accountId))
+    }
+
+    const lines = await db
+      .select({
+        id: journalLines.id,
+        date: journalEntries.date,
+        reference: journalEntries.reference,
+        description: journalEntries.description,
+        accountId: journalLines.accountId,
+        accountName: chartOfAccounts.accountName,
+        accountNumber: chartOfAccounts.accountNumber,
+        debit: journalLines.debit,
+        credit: journalLines.credit,
+      })
+      .from(journalLines)
+      .leftJoin(journalEntries, eq(journalLines.journalEntryId, journalEntries.id))
+      .leftJoin(chartOfAccounts, eq(journalLines.accountId, chartOfAccounts.id))
+      .where(and(...conditions))
+      .orderBy(desc(journalEntries.date), asc(chartOfAccounts.accountNumber))
+      .limit(1000)
+
+    return { success: true, data: lines }
+  } catch (error) {
+    console.error('General Ledger Error:', error)
+    return { success: false, error: 'Failed to fetch General Ledger' }
+  }
+}
+
+export async function getGLSummary(filters?: GLFilterValues): Promise<ActionResult<any>> {
+  try {
+    const companyId = await getCurrentCompanyId()
+
+    // Reuse trial balance logic but flexible date
+    // Actually, summary just needs total debits/credits for the period
+
+    const conditions = [
+      eq(chartOfAccounts.companyId, companyId)
+    ]
+    if (filters?.startDate) conditions.push(gte(journalEntries.date, filters.startDate))
+    if (filters?.endDate) conditions.push(lte(journalEntries.date, filters.endDate))
+
+    const summary = await db
+      .select({
+        totalDebit: sum(journalLines.debit).mapWith(Number),
+        totalCredit: sum(journalLines.credit).mapWith(Number),
+        count: sql`count(*)`
+      })
+      .from(journalLines)
+      .leftJoin(journalEntries, eq(journalLines.journalEntryId, journalEntries.id))
+      .leftJoin(chartOfAccounts, eq(journalLines.accountId, chartOfAccounts.id))
+      .where(and(...conditions))
+
+    return {
+      success: true,
+      data: {
+        totalDebit: summary[0]?.totalDebit || 0,
+        totalCredit: summary[0]?.totalCredit || 0,
+        transactionCount: summary[0]?.count || 0
+      }
+    }
+  } catch (error) {
+    return { success: false, error: 'Failed to fetch GL summary' }
+  }
+}

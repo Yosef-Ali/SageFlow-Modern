@@ -25,8 +25,8 @@ export default function GeneralLedgerPage() {
   const [accountId, setAccountId] = useState<string>('all')
 
   const filters = {
-    startDate: startDate || undefined,
-    endDate: endDate || undefined,
+    startDate: startDate ? new Date(startDate) : undefined,
+    endDate: endDate ? new Date(endDate) : undefined,
     accountId: accountId === 'all' ? undefined : accountId,
   }
 
@@ -184,37 +184,32 @@ export default function GeneralLedgerPage() {
                     </tr>
                   ))
                 ) : reportData && reportData.length > 0 ? (
-                  reportData.map((entry: any) => (
-                    entry.lines.map((line: any, index: number) => (
-                      <tr key={line.id} className="hover:bg-slate-50">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          {index === 0 ? formatDate(entry.date) : ''}
-                        </td>
-                        <td className="px-6 py-4 font-medium text-slate-900">
-                          {index === 0 ? (
-                            <div className="flex flex-col">
-                              <span>{entry.reference}</span>
-                              <span className="text-xs text-slate-500 font-normal">{entry.description}</span>
-                            </div>
-                          ) : ''}
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex flex-col">
-                            <span className="font-medium">{line.account.accountName}</span>
-                            <span className="text-xs text-slate-500">{line.account.accountNumber}</span>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 text-slate-500">
-                          {line.description}
-                        </td>
-                        <td className="px-6 py-4 text-right font-mono">
-                          {parseFloat(line.debit) > 0 ? formatCurrency(parseFloat(line.debit)) : '-'}
-                        </td>
-                        <td className="px-6 py-4 text-right font-mono">
-                          {parseFloat(line.credit) > 0 ? formatCurrency(parseFloat(line.credit)) : '-'}
-                        </td>
-                      </tr>
-                    ))
+                  reportData.map((line: any) => (
+                    <tr key={line.id} className="hover:bg-slate-50">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        {formatDate(line.date)}
+                      </td>
+                      <td className="px-6 py-4 font-medium text-slate-900">
+                        <div className="flex flex-col">
+                          <span>{line.reference}</span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex flex-col">
+                          <span className="font-medium">{line.accountName}</span>
+                          <span className="text-xs text-slate-500">{line.accountNumber}</span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-slate-500">
+                        {line.description}
+                      </td>
+                      <td className="px-6 py-4 text-right font-mono">
+                        {parseFloat(line.debit) > 0 ? formatCurrency(parseFloat(line.debit)) : '-'}
+                      </td>
+                      <td className="px-6 py-4 text-right font-mono">
+                         {parseFloat(line.credit) > 0 ? formatCurrency(parseFloat(line.credit)) : '-'}
+                      </td>
+                    </tr>
                   ))
                 ) : (
                   <tr>

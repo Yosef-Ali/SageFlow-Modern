@@ -246,3 +246,6 @@ export async function getVendorsSummary(): Promise<ActionResult<{
     }
   }
 }
+
+export type { VendorFormValues }
+
