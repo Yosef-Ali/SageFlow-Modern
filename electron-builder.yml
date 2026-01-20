@@ -1,0 +1,56 @@
+appId: com.sageflow.accounting
+productName: SageFlow Accounting
+copyright: Copyright © 2026 SageFlow
+
+directories:
+  output: dist-electron
+  buildResources: electron
+
+files:
+  - electron/**/*
+  - "!electron/*.ts"
+
+extraMetadata:
+  main: electron/main.js
+
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+  icon: electron/icon.ico
+  artifactName: SageFlow-Setup-${version}.${ext}
+
+nsis:
+  oneClick: false
+  perMachine: true
+  allowToChangeInstallationDirectory: true
+  installerIcon: electron/icon.ico
+  uninstallerIcon: electron/icon.ico
+  installerHeaderIcon: electron/icon.ico
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: SageFlow Accounting
+  license: LICENSE
+
+mac:
+  target:
+    - target: dmg
+      arch:
+        - x64
+        - arm64
+  icon: electron/icon.icns
+  category: public.app-category.business
+
+linux:
+  target:
+    - target: AppImage
+      arch:
+        - x64
+  icon: electron/icon.png
+  category: Office
+
+publish:
+  provider: github
+  owner: Yosef-Ali
+  repo: SageFlow-Modern
