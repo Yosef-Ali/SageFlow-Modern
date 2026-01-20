@@ -221,3 +221,106 @@ export async function finishReconciliation(reconciliationId: string): Promise<Ac
     return { success: false, error: 'Failed to finish reconciliation' }
   }
 }
+
+// --- ADDITIONAL FUNCTIONS FOR HOOKS ---
+
+export async function updateBankAccount(id: string, data: BankAccountFormValues): Promise<ActionResult<any>> {
+  try {
+    const companyId = await getCurrentCompanyId()
+
+    const account = await db.query.bankAccounts.findFirst({
+      where: and(eq(bankAccounts.id, id), eq(bankAccounts.companyId, companyId))
+    })
+    if (!account) return { success: false, error: 'Account not found' }
+
+    await db.update(bankAccounts)
+      .set({
+        accountName: data.name,
+        accountNumber: data.accountNumber,
+        currency: data.currency,
+        isActive: data.isActive ?? true,
+        updatedAt: new Date()
+      })
+      .where(eq(bankAccounts.id, id))
+
+    revalidatePath('/dashboard/banking')
+    revalidatePath(`/dashboard/banking/${id}`)
+    return { success: true, data: { message: 'Bank Account Updated' } }
+  } catch (error) {
+    return { success: false, error: 'Failed to update bank account' }
+  }
+}
+
+export async function deleteBankAccount(id: string): Promise<ActionResult<any>> {
+  try {
+    const companyId = await getCurrentCompanyId()
+
+    const account = await db.query.bankAccounts.findFirst({
+      where: and(eq(bankAccounts.id, id), eq(bankAccounts.companyId, companyId))
+    })
+    if (!account) return { success: false, error: 'Account not found' }
+
+    // Soft delete by setting isActive to false
+    await db.update(bankAccounts)
+      .set({ isActive: false, updatedAt: new Date() })
+      .where(eq(bankAccounts.id, id))
+
+    revalidatePath('/dashboard/banking')
+    return { success: true, data: { message: 'Bank Account Deleted' } }
+  } catch (error) {
+    return { success: false, error: 'Failed to delete bank account' }
+  }
+}
+
+export async function getBankTransactions(accountId: string): Promise<ActionResult<any[]>> {
+  try {
+    const companyId = await getCurrentCompanyId()
+
+    // Verify account ownership
+    const account = await db.query.bankAccounts.findFirst({
+      where: and(eq(bankAccounts.id, accountId), eq(bankAccounts.companyId, companyId))
+    })
+    if (!account) return { success: false, error: 'Account not found' }
+
+    const txs = await db.select().from(bankTransactions)
+      .where(eq(bankTransactions.bankAccountId, accountId))
+      .orderBy(desc(bankTransactions.date))
+      .limit(200)
+
+    return { success: true, data: txs }
+  } catch (error) {
+    return { success: false, error: 'Failed to fetch transactions' }
+  }
+}
+
+export async function getBankingSummary(): Promise<ActionResult<{
+  totalAccounts: number
+  totalBalance: number
+  activeAccounts: number
+}>> {
+  try {
+    const companyId = await getCurrentCompanyId()
+
+    const accounts = await db.query.bankAccounts.findMany({
+      where: eq(bankAccounts.companyId, companyId)
+    })
+
+    const totalBalance = accounts.reduce((sum, acc) => sum + Number(acc.currentBalance || 0), 0)
+    const activeAccounts = accounts.filter(acc => acc.isActive).length
+
+    return {
+      success: true,
+      data: {
+        totalAccounts: accounts.length,
+        totalBalance,
+        activeAccounts
+      }
+    }
+  } catch (error) {
+    return { success: false, error: 'Failed to fetch banking summary' }
+  }
+}
+
+// Export types for hooks
+export type { BankAccountFormValues, BankTransactionFormValues }
+
