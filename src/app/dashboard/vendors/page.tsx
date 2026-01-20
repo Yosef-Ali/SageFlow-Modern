@@ -24,6 +24,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { useVendors, useVendorsSummary, useDeleteVendor } from '@/hooks/use-vendors'
+import { vendorTypes, paymentTerms } from '@/lib/validations/vendor'
 
 export default function VendorsPage() {
   const [search, setSearch] = useState('')
@@ -43,6 +44,18 @@ export default function VendorsPage() {
       style: 'currency',
       currency: 'ETB',
     }).format(value)
+  }
+
+  // Helper to get vendor type label
+  const getTypeLabel = (type: string | undefined) => {
+    const t = vendorTypes.find(v => v.value === type)
+    return t?.label || 'Supplier'
+  }
+
+  // Helper to get payment terms label
+  const getTermsLabel = (terms: string | undefined) => {
+    const t = paymentTerms.find(p => p.value === terms)
+    return t?.label || 'Net 30'
   }
   
   return (
@@ -126,8 +139,8 @@ export default function VendorsPage() {
             <tr>
               <th className="text-left text-xs font-medium text-slate-500 uppercase tracking-wider px-6 py-3">Vendor #</th>
               <th className="text-left text-xs font-medium text-slate-500 uppercase tracking-wider px-6 py-3">Name</th>
-              <th className="text-left text-xs font-medium text-slate-500 uppercase tracking-wider px-6 py-3">Email</th>
-              <th className="text-left text-xs font-medium text-slate-500 uppercase tracking-wider px-6 py-3">Phone</th>
+              <th className="text-left text-xs font-medium text-slate-500 uppercase tracking-wider px-6 py-3">Type</th>
+              <th className="text-left text-xs font-medium text-slate-500 uppercase tracking-wider px-6 py-3">Terms</th>
               <th className="text-right text-xs font-medium text-slate-500 uppercase tracking-wider px-6 py-3">Balance</th>
               <th className="text-center text-xs font-medium text-slate-500 uppercase tracking-wider px-6 py-3">Status</th>
               <th className="text-right text-xs font-medium text-slate-500 uppercase tracking-wider px-6 py-3">Actions</th>
@@ -154,9 +167,20 @@ export default function VendorsPage() {
                     <Link href={`/dashboard/vendors/${vendor.id}`} className="font-medium text-slate-900 hover:text-blue-600">
                       {vendor.name}
                     </Link>
+                    {vendor.contactName && (
+                      <p className="text-xs text-slate-500">{vendor.contactName}</p>
+                    )}
                   </td>
-                  <td className="px-6 py-4 text-slate-600">{vendor.email || '-'}</td>
-                  <td className="px-6 py-4 text-slate-600">{vendor.phone || '-'}</td>
+                  <td className="px-6 py-4">
+                    <span className="text-xs px-2 py-1 bg-blue-50 text-blue-700 rounded">
+                      {getTypeLabel(vendor.vendorType ?? undefined)}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4">
+                    <span className="text-xs px-2 py-1 bg-slate-100 rounded">
+                      {getTermsLabel(vendor.paymentTerms ?? undefined)}
+                    </span>
+                  </td>
                   <td className="px-6 py-4 text-right font-medium">
                     {formatCurrency(parseFloat(vendor.balance || '0'))}
                   </td>

@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Loader2 } from 'lucide-react'
+import { Loader2, AlertCircle, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -74,6 +74,7 @@ export function ItemForm({ item, onSuccess }: ItemFormProps) {
   const updateItem = useUpdateItem()
   const { data: categories } = useItemCategories()
   const isEditing = !!item
+  const [formError, setFormError] = useState<string | null>(null)
 
   const form = useForm<ItemFormValues>({
     resolver: zodResolver(itemFormSchema),
@@ -102,6 +103,7 @@ export function ItemForm({ item, onSuccess }: ItemFormProps) {
   })
 
   const onSubmit = async (data: ItemFormValues) => {
+    setFormError(null)
     try {
       if (isEditing) {
         await updateItem.mutateAsync({ id: item.id, data })
@@ -114,7 +116,9 @@ export function ItemForm({ item, onSuccess }: ItemFormProps) {
         router.push('/dashboard/inventory')
       }
     } catch (error) {
-      // Error handled by mutation hook
+      const errorMessage = error instanceof Error ? error.message : 'An error occurred'
+      setFormError(errorMessage)
+      window.scrollTo({ top: 0, behavior: 'smooth' })
     }
   }
 
@@ -122,6 +126,24 @@ export function ItemForm({ item, onSuccess }: ItemFormProps) {
 
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+      {/* Error Banner */}
+      {formError && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3">
+          <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <h4 className="font-medium text-red-800">Error</h4>
+            <p className="text-red-700 text-sm mt-1">{formError}</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setFormError(null)}
+            className="text-red-500 hover:text-red-700"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+      )}
+
       {/* Basic Information */}
       <div className="bg-white p-6 rounded-lg border border-slate-200 space-y-6">
         <h3 className="text-lg font-semibold">Basic Information</h3>

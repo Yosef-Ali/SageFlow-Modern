@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useForm, useFieldArray } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Plus, Trash2, Loader2 } from 'lucide-react'
+import { Plus, Trash2, Loader2, AlertCircle, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -42,6 +42,7 @@ export function InvoiceForm({ invoice, onSuccess }: InvoiceFormProps) {
     taxAmount: 0,
     total: 0,
   })
+  const [formError, setFormError] = useState<string | null>(null)
 
   const isEditing = !!invoice
 
@@ -112,6 +113,7 @@ export function InvoiceForm({ invoice, onSuccess }: InvoiceFormProps) {
   }, [invoice, form])
 
   const onSubmit = async (data: InvoiceFormValues) => {
+    setFormError(null) // Clear previous errors
     try {
       if (isEditing) {
         await updateInvoice.mutateAsync({ id: invoice.id, data })
@@ -124,7 +126,11 @@ export function InvoiceForm({ invoice, onSuccess }: InvoiceFormProps) {
         router.push('/dashboard/invoices')
       }
     } catch (error) {
-      // Error handled by mutation hooks
+      // Display error in the form banner
+      const errorMessage = error instanceof Error ? error.message : 'An error occurred'
+      setFormError(errorMessage)
+      // Scroll to top to show the error
+      window.scrollTo({ top: 0, behavior: 'smooth' })
     }
   }
 
@@ -141,6 +147,24 @@ export function InvoiceForm({ invoice, onSuccess }: InvoiceFormProps) {
 
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+      {/* Error Banner */}
+      {formError && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3">
+          <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <h4 className="font-medium text-red-800">Error</h4>
+            <p className="text-red-700 text-sm mt-1">{formError}</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setFormError(null)}
+            className="text-red-500 hover:text-red-700"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+      )}
+
       {/* Customer & Dates */}
       <div className="bg-white p-6 rounded-lg border border-slate-200 space-y-6">
         <h3 className="text-lg font-semibold">Invoice Details</h3>
@@ -151,7 +175,10 @@ export function InvoiceForm({ invoice, onSuccess }: InvoiceFormProps) {
             <Label>Customer *</Label>
             <Select
               value={form.watch('customerId')}
-              onValueChange={(value) => form.setValue('customerId', value)}
+              onValueChange={(value) => {
+                form.setValue('customerId', value)
+                setFormError(null) // Clear error when customer changes
+              }}
               disabled={customersLoading}
             >
               <SelectTrigger>
@@ -168,6 +195,25 @@ export function InvoiceForm({ invoice, onSuccess }: InvoiceFormProps) {
             {form.formState.errors.customerId && (
               <p className="text-sm text-red-500">{form.formState.errors.customerId.message}</p>
             )}
+            {/* Credit Limit Info */}
+            {form.watch('customerId') && (() => {
+              const selectedCustomer = customers?.find((c: any) => c.id === form.watch('customerId'))
+              if (selectedCustomer && Number(selectedCustomer.creditLimit) > 0) {
+                const balance = Number(selectedCustomer.balance) || 0
+                const limit = Number(selectedCustomer.creditLimit)
+                const available = limit - balance
+                const isNearLimit = available < limit * 0.2 // Less than 20% available
+                return (
+                  <div className={`text-xs mt-1 p-2 rounded ${isNearLimit ? 'bg-amber-50 text-amber-700' : 'bg-slate-50 text-slate-600'}`}>
+                    Credit: ETB {balance.toLocaleString()} / {limit.toLocaleString()}
+                    <span className={isNearLimit ? 'font-medium' : ''}>
+                      {' '}(ETB {available.toLocaleString()} available)
+                    </span>
+                  </div>
+                )
+              }
+              return null
+            })()}
           </div>
 
           {/* Invoice Date */}
