@@ -5,19 +5,200 @@ import { db } from '@/db'
 import {
   items, stockMovements,
   assemblies, assemblyItems,
-  inventoryAdjustments, adjustmentItems
+  inventoryAdjustments, adjustmentItems, itemCategories
 } from '@/db/schema'
-import { eq, desc, and, inArray, sql } from 'drizzle-orm'
+import { eq, desc, and, inArray, sql, asc, or, ilike } from 'drizzle-orm'
 import { getCurrentCompanyId } from '@/lib/customer-utils'
 import {
   AssemblyFormValues,
   BuildAssemblyFormValues,
-  InventoryAdjustmentFormValues
+  InventoryAdjustmentFormValues,
+  ItemFormValues,
+  ItemFiltersValues
 } from '@/lib/validations/inventory'
 
 export type ActionResult<T> =
   | { success: true; data: T }
   | { success: false; error: string }
+
+// --- ITEMS CRUD ---
+
+export async function createItem(data: ItemFormValues): Promise<ActionResult<any>> {
+  try {
+    const companyId = await getCurrentCompanyId()
+
+    // Check SKU uniqueness
+    const existing = await db.query.items.findFirst({
+      where: and(eq(items.companyId, companyId), eq(items.sku, data.sku))
+    })
+    if (existing) return { success: false, error: 'SKU already exists' }
+
+    await db.insert(items).values({
+      companyId,
+      sku: data.sku,
+      name: data.name,
+      description: data.description,
+      categoryId: data.categoryId,
+      unitOfMeasure: data.unitOfMeasure,
+      type: data.type,
+      costPrice: String(data.costPrice),
+      sellingPrice: String(data.sellingPrice),
+      sellingPrice2: data.sellingPrice2 ? String(data.sellingPrice2) : null,
+      sellingPrice3: data.sellingPrice3 ? String(data.sellingPrice3) : null,
+      reorderPoint: String(data.reorderPoint || 0),
+      reorderQuantity: String(data.reorderQuantity || 0),
+      preferredVendorId: data.preferredVendorId,
+      taxable: data.taxable,
+      weight: data.weight ? String(data.weight) : null,
+      weightUnit: data.weightUnit,
+      barcode: data.barcode,
+      location: data.location,
+      quantityOnHand: '0', // Initial is 0, use adjustment to set initial
+    })
+
+    revalidatePath('/dashboard/inventory/items')
+    return { success: true, data: { message: 'Item created successfully' } }
+  } catch (error) {
+    return { success: false, error: 'Failed to create item' }
+  }
+}
+
+export async function updateItem(id: string, data: ItemFormValues): Promise<ActionResult<any>> {
+  try {
+    const companyId = await getCurrentCompanyId()
+
+    const existing = await db.query.items.findFirst({
+      where: and(eq(items.id, id), eq(items.companyId, companyId))
+    })
+    if (!existing) return { success: false, error: 'Item not found' }
+
+    await db.update(items).set({
+      sku: data.sku,
+      name: data.name,
+      description: data.description,
+      categoryId: data.categoryId,
+      unitOfMeasure: data.unitOfMeasure,
+      type: data.type,
+      costPrice: String(data.costPrice),
+      sellingPrice: String(data.sellingPrice),
+      sellingPrice2: data.sellingPrice2 ? String(data.sellingPrice2) : null,
+      sellingPrice3: data.sellingPrice3 ? String(data.sellingPrice3) : null,
+      reorderPoint: String(data.reorderPoint || 0),
+      reorderQuantity: String(data.reorderQuantity || 0),
+      preferredVendorId: data.preferredVendorId,
+      taxable: data.taxable,
+      weight: data.weight ? String(data.weight) : null,
+      weightUnit: data.weightUnit,
+      barcode: data.barcode,
+      location: data.location,
+      updatedAt: new Date()
+    }).where(eq(items.id, id))
+
+    revalidatePath('/dashboard/inventory/items')
+    revalidatePath(`/dashboard/inventory/items/${id}`)
+    return { success: true, data: { message: 'Item updated successfully' } }
+  } catch (error) {
+    return { success: false, error: 'Failed to update item' }
+  }
+}
+
+export async function deleteItem(id: string): Promise<ActionResult<any>> {
+  try {
+    const companyId = await getCurrentCompanyId()
+    // Soft delete
+    await db.update(items)
+      .set({ isActive: false, updatedAt: new Date() })
+      .where(and(eq(items.id, id), eq(items.companyId, companyId)))
+
+    revalidatePath('/dashboard/inventory/items')
+    return { success: true, data: { message: 'Item deleted' } }
+  } catch (error) {
+    return { success: false, error: 'Failed to delete item' }
+  }
+}
+
+export async function getItems(filters?: Partial<ItemFiltersValues>): Promise<ActionResult<any[]>> {
+  try {
+    const companyId = await getCurrentCompanyId()
+
+    const conditions = [
+      eq(items.companyId, companyId),
+      eq(items.isActive, true)
+    ]
+
+    if (filters?.search) {
+      const search = `%${filters.search}%`
+      conditions.push(or(
+        ilike(items.sku, search),
+        ilike(items.name, search)
+      )!)
+    }
+
+    const list = await db.query.items.findMany({
+      where: and(...conditions),
+      with: { category: true },
+      orderBy: desc(items.createdAt)
+    })
+    return { success: true, data: list }
+  } catch (error) {
+    return { success: false, error: 'Failed to fetch items' }
+  }
+}
+
+export async function getItem(id: string): Promise<ActionResult<any>> {
+  try {
+    const companyId = await getCurrentCompanyId()
+    const item = await db.query.items.findFirst({
+      where: and(eq(items.id, id), eq(items.companyId, companyId)),
+      with: {
+        category: true,
+        stockMovements: {
+          orderBy: desc(stockMovements.date),
+          limit: 50
+        }
+      }
+    })
+    if (!item) return { success: false, error: 'Item not found' }
+    return { success: true, data: item }
+  } catch (error) {
+    return { success: false, error: 'Failed to fetch item' }
+  }
+}
+
+export async function getItemCategories(): Promise<ActionResult<any[]>> {
+  try {
+    const companyId = await getCurrentCompanyId()
+    const categories = await db.query.itemCategories.findMany({
+      where: eq(itemCategories.companyId, companyId),
+      orderBy: asc(itemCategories.name)
+    })
+    return { success: true, data: categories }
+  } catch (error) {
+    return { success: false, error: 'Failed to fetch categories' }
+  }
+}
+
+export async function getInventorySummary(): Promise<ActionResult<any>> {
+  try {
+    const companyId = await getCurrentCompanyId()
+    const list = await db.query.items.findMany({
+      where: and(eq(items.companyId, companyId), eq(items.isActive, true))
+    })
+
+    const totalItems = list.length
+    const totalValue = list.reduce((sum, i) => sum + (Number(i.quantityOnHand) * Number(i.costPrice)), 0)
+    const lowStock = list.filter(i => Number(i.quantityOnHand) <= Number(i.reorderPoint) && Number(i.quantityOnHand) > 0).length
+    const outOfStock = list.filter(i => Number(i.quantityOnHand) <= 0).length
+
+    return {
+      success: true,
+      data: { totalItems, totalValue, lowStock, outOfStock }
+    }
+  } catch (error) {
+    return { success: false, error: 'Failed to fetch summary' }
+  }
+}
+
 
 // --- ASSEMBLIES (BOM) ---
 
@@ -32,6 +213,7 @@ export async function createAssemblyDefinition(data: AssemblyFormValues): Promis
         itemId: data.itemId,
         description: data.description,
         yieldQuantity: String(data.yieldQuantity),
+        // createdAt: new Date() // defaultNow
       }).returning()
 
       // Create Assembly Items
@@ -106,25 +288,7 @@ export async function buildAssembly(data: BuildAssemblyFormValues): Promise<Acti
         await tx.insert(stockMovements).values({
           itemId: comp.itemId,
           type: 'ADJUSTMENT', // Using ADJUSTMENT for assembly consumption
-          quantity: String(qtyToConsume), // This should probably be negative for OUT? 
-          // Wait, stock_movements usually tracks signed quantity or has In/Out types. 
-          // If type is purely categorical, then quantity should be signed?
-          // Let's check schema. `quantity` is decimal. `type` is Enum.
-          // Usually 'SALE' has positive quantity in records but means deduction?
-          // Let's look at `createInvoice` or similar practices.
-          // For now, I'll store POSITIVE quantity but know that for ADJUSTMENT it might need sign.
-          // ACTUALLY, in `inventory-actions.ts` I wrote `quantityOnHand = quantityOnHand - qty`.
-          // If I use 'ADJUSTMENT', I should probably stick to a convention.
-          // Let's use NEGATIVE quantity for consumption if 'ADJUSTMENT' is generic.
-          // But wait, `stockMovements` table definition doesn't enforce sign.
-          // Re-reading `purchase-actions.ts`: `quantityOnHand + item.quantity`. `type: 'PURCHASE'`. Qty is positive.
-          // So 'PURCHASE' = Add.
-          // 'SALE' = Deduct.
-          // 'ADJUSTMENT' = ?? Could be either.
-          // Let's verify `stockMovements` usage elsewhere.
-          // Safest to valid enum. I will use 'ADJUSTMENT' and maybe rely on referenceType 'ASSEMBLY_BUILD'.
-          // Is there a 'PRODUCTION' enum? Schema said 'PURCHASE', 'SALE', 'ADJUSTMENT', 'TRANSFER', 'RETURN'.
-          // I'll use 'ADJUSTMENT'.
+          quantity: String(qtyToConsume),
           referenceType: 'ASSEMBLY_BUILD',
           referenceId: assembly.id,
           date: data.date,
@@ -201,10 +365,7 @@ export async function createInventoryAdjustment(data: InventoryAdjustmentFormVal
         await tx.insert(stockMovements).values({
           itemId: item.itemId,
           type: 'ADJUSTMENT',
-          quantity: String(absQty), // Storing absolute quantity, type implies direction? 
-          // Actually for ADJUSTMENT, if it's mixed, maybe I should use signed quantity?
-          // Or 'ADJUSTMENT' covers both. 
-          // Let's check if I can just use 'ADJUSTMENT' for both.
+          quantity: String(absQty),
           referenceType: 'ADJUSTMENT',
           referenceId: adj.id,
           date: data.date,
@@ -220,3 +381,7 @@ export async function createInventoryAdjustment(data: InventoryAdjustmentFormVal
     return { success: false, error: 'Failed to record adjustment' }
   }
 }
+
+// Export types for hooks
+export type { ItemFormValues, ItemFiltersValues }
+

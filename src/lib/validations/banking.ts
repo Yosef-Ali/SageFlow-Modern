@@ -1,7 +1,7 @@
 import { z } from 'zod'
 
 export const bankAccountSchema = z.object({
-  name: z.string().min(1, 'Account Name is required'),
+  accountName: z.string().min(1, 'Account Name is required'),
   accountNumber: z.string().min(1, 'Account Number is required'),
   openingBalance: z.number().default(0),
   currency: z.string().default('ETB'),

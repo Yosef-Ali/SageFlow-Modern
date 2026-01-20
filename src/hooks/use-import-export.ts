@@ -2,12 +2,10 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import {
-  importFromPtbFile,
+  importPtbAction,
   exportCustomersToCSV,
   exportVendorsToCSV,
   exportChartOfAccountsToCSV,
-  importCustomersFromCSV,
-  previewPtbFile,
 } from '@/app/actions/peachtree-import-export'
 import { useToast } from '@/components/ui/use-toast'
 
@@ -25,8 +23,9 @@ export function useImportPtb() {
 
   return useMutation({
     mutationFn: async (file: File) => {
-      const buffer = await file.arrayBuffer()
-      const result = await importFromPtbFile(Buffer.from(buffer))
+      const formData = new FormData()
+      formData.append('file', file)
+      const result = await importPtbAction(formData)
       if (!result.success) {
         throw new Error(result.error)
       }
@@ -50,30 +49,7 @@ export function useImportPtb() {
   })
 }
 
-/**
- * Hook to preview PTB file
- */
-export function usePreviewPtb() {
-  const { toast } = useToast()
 
-  return useMutation({
-    mutationFn: async (file: File) => {
-      const buffer = await file.arrayBuffer()
-      const result = await previewPtbFile(Buffer.from(buffer))
-      if (!result.success) {
-        throw new Error(result.error)
-      }
-      return result.data
-    },
-    onError: (error: Error) => {
-      toast({
-        title: 'Preview Failed',
-        description: error.message,
-        variant: 'destructive',
-      })
-    },
-  })
-}
 
 /**
  * Hook to export customers to CSV
@@ -197,39 +173,6 @@ export function useExportChartOfAccounts() {
 }
 
 /**
- * Hook to import customers from CSV
- */
-export function useImportCustomersCSV() {
-  const queryClient = useQueryClient()
-  const { toast } = useToast()
-
-  return useMutation({
-    mutationFn: async (file: File) => {
-      const text = await file.text()
-      const result = await importCustomersFromCSV(text)
-      if (!result.success) {
-        throw new Error(result.error)
-      }
-      return result.data
-    },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['customers'] })
-      toast({
-        title: 'Import Successful',
-        description: `Imported ${data?.imported} customers (${data?.skipped} skipped)`,
-      })
-    },
-    onError: (error: Error) => {
-      toast({
-        title: 'Import Failed',
-        description: error.message,
-        variant: 'destructive',
-      })
-    },
-  })
-}
-
-/**
  * Hook to export full PTB backup file
  */
 export function useExportToPtb() {
@@ -237,18 +180,24 @@ export function useExportToPtb() {
 
   return useMutation({
     mutationFn: async () => {
-      const { exportToPtb } = await import('@/app/actions/ptb-export')
-      const result = await exportToPtb()
+      // Dynamic import to avoid circular dependencies if any, or just direct import
+      const { generatePtbBackup } = await import('@/app/actions/backup-actions')
+      const result = await generatePtbBackup()
       if (!result.success) {
         throw new Error(result.error)
       }
       return result.data
     },
-    onSuccess: (zipBuffer) => {
-      // Download the PTB file - handle Buffer properly
-      const data = zipBuffer as unknown as { type: 'Buffer'; data: number[] }
-      const uint8Array = new Uint8Array(data.data || [])
-      const blob = new Blob([uint8Array], { type: 'application/zip' })
+    onSuccess: (zipBase64) => {
+      // Decode base64 to blob
+      const binaryString = window.atob(zipBase64 as string)
+      const len = binaryString.length
+      const bytes = new Uint8Array(len)
+      for (let i = 0; i < len; i++) {
+        bytes[i] = binaryString.charCodeAt(i)
+      }
+      const blob = new Blob([bytes], { type: 'application/zip' })
+
       const url = URL.createObjectURL(blob)
       const link = document.createElement('a')
       link.href = url

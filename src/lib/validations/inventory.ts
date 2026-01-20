@@ -36,3 +36,32 @@ export const inventoryAdjustmentSchema = z.object({
 })
 
 export type InventoryAdjustmentFormValues = z.infer<typeof inventoryAdjustmentSchema>
+
+export const itemSchema = z.object({
+  sku: z.string().min(1, 'SKU is required'),
+  name: z.string().min(1, 'Name is required'),
+  description: z.string().optional(),
+  categoryId: z.string().optional(),
+  unitOfMeasure: z.string().default('Each'),
+  type: z.enum(['PRODUCT', 'SERVICE', 'BUNDLE']).default('PRODUCT'),
+  costPrice: z.number().min(0).default(0),
+  sellingPrice: z.number().min(0).default(0),
+  sellingPrice2: z.number().optional(),
+  sellingPrice3: z.number().optional(),
+  reorderPoint: z.number().optional(),
+  reorderQuantity: z.number().optional(),
+  preferredVendorId: z.string().optional(),
+  taxable: z.boolean().default(true),
+  weight: z.number().optional(),
+  weightUnit: z.string().optional(),
+  barcode: z.string().optional(),
+  location: z.string().optional(),
+})
+
+export type ItemFormValues = z.infer<typeof itemSchema>
+
+export interface ItemFiltersValues {
+  search?: string
+  categoryId?: string
+  status?: string
+}

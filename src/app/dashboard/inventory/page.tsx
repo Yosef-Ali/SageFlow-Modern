@@ -112,7 +112,7 @@ export default function InventoryPage() {
           <Skeleton className="h-12 w-full" />
         </div>
       ) : (
-        <ItemTable items={data?.items || []} />
+        <ItemTable items={data || []} />
       )}
     </div>
   )
