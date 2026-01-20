@@ -5,6 +5,7 @@ export const bankAccountSchema = z.object({
   accountNumber: z.string().min(1, 'Account Number is required'),
   openingBalance: z.number().default(0),
   currency: z.string().default('ETB'),
+  isActive: z.boolean().optional(),
 })
 
 export type BankAccountFormValues = z.infer<typeof bankAccountSchema>
