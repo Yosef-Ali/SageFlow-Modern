@@ -51,9 +51,9 @@ export default function Loading() {
       </div>
 
       {/* Table */}
-      <div className="rounded-md border bg-white overflow-hidden">
+      <div className="rounded-md border bg-card overflow-hidden">
         {/* Table Header */}
-        <div className="flex items-center px-4 py-3 bg-slate-50 border-b">
+        <div className="flex items-center px-4 py-3 bg-muted/50 border-b">
           <div className="flex-1 min-w-[200px] pr-4"><Skeleton className="h-4 w-16" /></div>
           <div className="w-[150px] pr-4"><Skeleton className="h-4 w-16" /></div>
           <div className="w-[150px] pr-4"><Skeleton className="h-4 w-20" /></div>

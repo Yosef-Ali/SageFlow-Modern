@@ -12,7 +12,7 @@ export default function Loading() {
       {/* Settings Cards */}
       <div className="grid gap-6 md:grid-cols-2">
         {[1, 2, 3, 4].map((i) => (
-          <div key={i} className="bg-white rounded-lg border border-slate-200 p-6">
+          <div key={i} className="bg-card rounded-lg border p-6">
             <div className="flex items-center gap-4 mb-4">
               <Skeleton className="h-10 w-10 rounded-lg" />
               <Skeleton className="h-5 w-32" />

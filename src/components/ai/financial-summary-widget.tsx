@@ -39,7 +39,7 @@ export function FinancialSummaryWidget({ data }: FinancialSummaryWidgetProps) {
           <div className="h-px bg-border" />
           <div className="flex items-center justify-between">
              <span className="text-sm font-medium">Net Income</span>
-             <span className={`text-xl font-bold flex items-center gap-1 ${data.netIncome >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+             <span className={`text-xl font-bold flex items-center gap-1 ${data.netIncome >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
                 {data.netIncome >= 0 ? <TrendingUp className="h-5 w-5" /> : <TrendingDown className="h-5 w-5" />}
                 ${data.netIncome.toLocaleString()}
              </span>

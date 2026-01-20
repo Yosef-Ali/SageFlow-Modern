@@ -17,7 +17,7 @@ export default function Loading() {
       {/* Bank Account Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {[1, 2, 3].map((i) => (
-          <div key={i} className="bg-white rounded-lg border border-slate-200 p-6">
+          <div key={i} className="bg-card rounded-lg border p-6">
             <div className="flex items-center justify-between mb-4">
               <Skeleton className="h-4 w-28" />
               <Skeleton className="h-4 w-4" />

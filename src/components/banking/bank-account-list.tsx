@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Plus, Building, Loader2, CreditCard } from 'lucide-react'
+import { Plus, Building, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -17,6 +17,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { DashboardHeader } from '@/components/dashboard/header'
 import { createBankAccount } from '@/app/actions/banking-actions'
 import { formatCurrency } from '@/lib/utils'
 
@@ -63,7 +64,10 @@ export function BankAccountList({ accounts }: BankAccountListProps) {
 
   return (
     <div className="space-y-6">
-       <div className="flex justify-end">
+       <DashboardHeader 
+         heading="Banking" 
+         text="Manage bank accounts and transactions."
+       >
            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
               <DialogTrigger asChild>
                   <Button>
@@ -71,7 +75,7 @@ export function BankAccountList({ accounts }: BankAccountListProps) {
                       Add Bank Account
                   </Button>
               </DialogTrigger>
-              <DialogContent>
+              <DialogContent className="bg-card">
                   <DialogHeader>
                       <DialogTitle>Add Bank Account</DialogTitle>
                       <DialogDescription>
@@ -101,7 +105,7 @@ export function BankAccountList({ accounts }: BankAccountListProps) {
                   </form>
               </DialogContent>
            </Dialog>
-       </div>
+       </DashboardHeader>
 
        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
            {accounts.map(account => (
@@ -123,7 +127,7 @@ export function BankAccountList({ accounts }: BankAccountListProps) {
                </Link>
            ))}
            {accounts.length === 0 && (
-               <div className="col-span-full text-center py-12 text-slate-500 bg-white rounded-lg border border-dashed">
+               <div className="col-span-full text-center py-12 text-muted-foreground bg-card rounded-lg border border-dashed">
                    Banking accounts you add will appear here.
                </div>
            )}

@@ -97,7 +97,7 @@ function InvoiceListContent() {
         <div className="flex items-center justify-center py-16 px-4">
           <div className="text-center">
             <p className="text-red-600 font-medium mb-2">Error loading invoices</p>
-            <p className="text-sm text-slate-500">{error.message}</p>
+            <p className="text-sm text-muted-foreground">{error.message}</p>
           </div>
         </div>
       ) : (
@@ -106,7 +106,7 @@ function InvoiceListContent() {
 
           {/* Pagination Info */}
           {data && data.invoices.length > 0 && (
-            <div className="flex items-center justify-between text-sm text-slate-500">
+            <div className="flex items-center justify-between text-sm text-muted-foreground">
               <p>
                 Showing {data.invoices.length} of {data.total} invoices
               </p>

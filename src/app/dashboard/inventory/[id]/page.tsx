@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Badge } from '@/components/ui/badge'
 import { useItem, useDeleteItem } from '@/hooks/use-inventory'
-import { formatCurrency } from '@/lib/utils'
+import { formatCurrency, cn } from '@/lib/utils'
 
 interface ItemDetailPageProps {
   params: { id: string }
@@ -91,64 +91,68 @@ export default function ItemDetailPage({ params }: ItemDetailPageProps) {
 
       {/* Details */}
       <div className="grid gap-6 md:grid-cols-2">
-        <div className="bg-white p-6 rounded-lg border border-slate-200 space-y-4">
+        <div className="bg-card p-6 rounded-lg border space-y-4">
           <h3 className="text-lg font-semibold">Basic Information</h3>
           
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <p className="text-sm text-slate-500">Type</p>
+              <p className="text-sm text-muted-foreground">Type</p>
               <Badge variant="outline">{item.type}</Badge>
             </div>
             <div>
-              <p className="text-sm text-slate-500">Category</p>
+              <p className="text-sm text-muted-foreground">Category</p>
               <p className="font-medium">{item.category?.name || '—'}</p>
             </div>
             <div>
-              <p className="text-sm text-slate-500">Unit of Measure</p>
+              <p className="text-sm text-muted-foreground">Unit of Measure</p>
               <p className="font-medium">{item.unitOfMeasure}</p>
             </div>
             <div>
-              <p className="text-sm text-slate-500">Status</p>
-              <span className={`px-2 py-1 rounded-full text-xs font-medium ${stockStatus.color}`}>
+              <p className="text-sm text-muted-foreground">Status</p>
+              <span className={cn("px-2 py-1 rounded-full text-xs font-medium", 
+                qty === 0 ? "bg-destructive/10 text-destructive" : 
+                qty <= reorder ? "bg-yellow-500/10 text-yellow-500" : 
+                "bg-emerald-500/10 text-emerald-500"
+              )}>
                 {stockStatus.label}
               </span>
             </div>
           </div>
-
+ 
           {item.description && (
             <div>
-              <p className="text-sm text-slate-500">Description</p>
+              <p className="text-sm text-muted-foreground">Description</p>
               <p className="font-medium">{item.description}</p>
             </div>
           )}
         </div>
-
-        <div className="bg-white p-6 rounded-lg border border-slate-200 space-y-4">
+ 
+        <div className="bg-card p-6 rounded-lg border space-y-4">
           <h3 className="text-lg font-semibold">Pricing & Inventory</h3>
           
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <p className="text-sm text-slate-500">Cost Price</p>
+              <p className="text-sm text-muted-foreground">Cost Price</p>
               <p className="text-xl font-bold">{formatCurrency(Number(item.costPrice))}</p>
             </div>
             <div>
-              <p className="text-sm text-slate-500">Selling Price</p>
-              <p className="text-xl font-bold text-emerald-600">{formatCurrency(Number(item.sellingPrice))}</p>
+              <p className="text-sm text-muted-foreground">Selling Price</p>
+              <p className="text-xl font-bold text-emerald-500">{formatCurrency(Number(item.sellingPrice))}</p>
             </div>
             <div>
-              <p className="text-sm text-slate-500">Quantity on Hand</p>
+              <p className="text-sm text-muted-foreground">Quantity on Hand</p>
               <p className="text-xl font-bold">{qty} {item.unitOfMeasure}</p>
             </div>
             <div>
-              <p className="text-sm text-slate-500">Reorder Point</p>
+              <p className="text-sm text-muted-foreground">Reorder Point</p>
               <p className="font-medium">{reorder} {item.unitOfMeasure}</p>
             </div>
             <div>
-              <p className="text-sm text-slate-500">Reorder Quantity</p>
+              <p className="text-sm text-muted-foreground">Reorder Quantity</p>
               <p className="font-medium">{Number(item.reorderQuantity)} {item.unitOfMeasure}</p>
             </div>
             <div>
-              <p className="text-sm text-slate-500">Total Value</p>
+              <p className="text-sm text-muted-foreground">Total Value</p>
               <p className="font-medium">{formatCurrency(qty * Number(item.costPrice))}</p>
             </div>
           </div>

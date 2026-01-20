@@ -200,7 +200,7 @@ export default function ImportExportPage() {
             </div>
             
             <Alert className="bg-muted/50 border-dashed">
-               <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+               <CheckCircle2 className="h-4 w-4 text-emerald-500" />
                <AlertTitle className="text-xs font-medium">Ready for Import</AlertTitle>
                <AlertDescription className="text-xs text-muted-foreground mt-1">
                  File size limit: 50MB. Ensure the file is not corrupted.

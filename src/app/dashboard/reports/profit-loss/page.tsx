@@ -86,10 +86,10 @@ export default function ProfitLossPage() {
             {report && (
                 <div className="space-y-6 print:space-y-4">
                      <Card>
-                        <CardHeader className="bg-slate-50 border-b">
+                        <CardHeader className="bg-muted/50 border-b">
                             <CardTitle className="text-lg flex justify-between">
                                 <span>Net Income</span>
-                                <span className={report.netIncome >= 0 ? 'text-emerald-600' : 'text-red-600'}>
+                                <span className={report.netIncome >= 0 ? 'text-emerald-500' : 'text-red-600'}>
                                     {formatCurrency(report.netIncome)}
                                 </span>
                             </CardTitle>
@@ -97,12 +97,12 @@ export default function ProfitLossPage() {
                         <CardContent className="pt-6 space-y-8">
                              {/* Income */}
                              <div>
-                                <h3 className="font-semibold text-slate-700 mb-2 uppercase text-sm">Income</h3>
-                                <div className="space-y-1 pl-2 border-l-2 border-emerald-100">
+                                <h3 className="font-semibold text-muted-foreground mb-2 uppercase text-sm">Income</h3>
+                                <div className="space-y-1 pl-2 border-l-2 border-emerald-500/20">
                                      {report.income.map((item: any) => (
-                                        <div key={item.accountId} className="flex justify-between py-1 hover:bg-slate-50 px-2 rounded">
+                                        <div key={item.accountId} className="flex justify-between py-1 hover:bg-muted/50 px-2 rounded">
                                             <span>{item.accountName}</span>
-                                            <span className="font-medium text-emerald-700">{formatCurrency(item.balance)}</span>
+                                            <span className="font-medium text-emerald-500">{formatCurrency(item.balance)}</span>
                                         </div>
                                     ))}
                                     {report.income.length === 0 && <div className="text-muted-foreground text-sm italic px-2">No income recorded.</div>}
@@ -115,12 +115,12 @@ export default function ProfitLossPage() {
 
                              {/* Expenses */}
                              <div>
-                                <h3 className="font-semibold text-slate-700 mb-2 uppercase text-sm">Expenses</h3>
-                                <div className="space-y-1 pl-2 border-l-2 border-red-100">
+                                <h3 className="font-semibold text-muted-foreground mb-2 uppercase text-sm">Expenses</h3>
+                                <div className="space-y-1 pl-2 border-l-2 border-red-500/20">
                                      {report.expense.map((item: any) => (
-                                        <div key={item.accountId} className="flex justify-between py-1 hover:bg-slate-50 px-2 rounded">
+                                        <div key={item.accountId} className="flex justify-between py-1 hover:bg-muted/50 px-2 rounded">
                                             <span>{item.accountName}</span>
-                                            <span className="font-medium text-red-700">{formatCurrency(item.balance)}</span>
+                                            <span className="font-medium text-red-500">{formatCurrency(item.balance)}</span>
                                         </div>
                                     ))}
                                     {report.expense.length === 0 && <div className="text-muted-foreground text-sm italic px-2">No expenses recorded.</div>}

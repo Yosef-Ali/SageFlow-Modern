@@ -149,7 +149,7 @@ export function TransactionList({ accountId, transactions }: TransactionListProp
         </Dialog>
       </div>
 
-      <div className="rounded-md border bg-white">
+      <div className="rounded-md border bg-card">
         <Table>
           <TableHeader>
             <TableRow>
@@ -171,11 +171,11 @@ export function TransactionList({ accountId, transactions }: TransactionListProp
                 </TableCell>
                 <TableCell>
                     {tx.type === 'DEPOSIT' ? (
-                        <Badge variant="outline" className="text-emerald-600 bg-emerald-50 border-emerald-200">
+                        <Badge variant="outline" className="text-emerald-500 bg-emerald-500/10 border-emerald-500/20">
                              Deposit
                         </Badge>
                     ) : (
-                         <Badge variant="outline" className="text-slate-600">
+                         <Badge variant="outline" className="text-muted-foreground">
                              {tx.type}
                         </Badge>
                     )}
@@ -183,12 +183,12 @@ export function TransactionList({ accountId, transactions }: TransactionListProp
                 <TableCell>{tx.category || '-'}</TableCell>
                 <TableCell>
                      {tx.isReconciled ? (
-                         <Badge variant="secondary" className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100">Reconciled</Badge>
+                         <Badge variant="secondary" className="bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20">Reconciled</Badge>
                      ) : (
-                         <span className="text-xs text-slate-500">Uncleared</span>
+                         <span className="text-xs text-muted-foreground">Uncleared</span>
                      )}
                 </TableCell>
-                <TableCell className={`text-right font-medium ${tx.type === 'DEPOSIT' ? 'text-emerald-600' : ''}`}>
+                <TableCell className={`text-right font-medium ${tx.type === 'DEPOSIT' ? 'text-emerald-500' : ''}`}>
                     {tx.type === 'DEPOSIT' ? '+' : '-'}{formatCurrency(Number(tx.amount))}
                 </TableCell>
               </TableRow>

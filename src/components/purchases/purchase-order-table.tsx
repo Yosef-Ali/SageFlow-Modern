@@ -35,8 +35,8 @@ interface PurchaseOrder {
 export function PurchaseOrderTable({ purchaseOrders }: { purchaseOrders: PurchaseOrder[] }) {
   if (purchaseOrders.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-16 px-4 bg-white rounded-lg border border-slate-200">
-        <h3 className="text-lg font-medium text-slate-900 mb-1">No Purchase Orders</h3>
+      <div className="flex flex-col items-center justify-center py-16 px-4 bg-card rounded-lg border">
+        <h3 className="text-lg font-medium text-foreground mb-1">No Purchase Orders</h3>
         <p className="text-slate-500 mb-4">Get started by creating your first PO</p>
         <Link href="/dashboard/purchases/orders/new">
           <Button>Create Purchase Order</Button>
@@ -46,7 +46,7 @@ export function PurchaseOrderTable({ purchaseOrders }: { purchaseOrders: Purchas
   }
 
   return (
-    <div className="border rounded-lg overflow-hidden bg-white">
+    <div className="border rounded-lg overflow-hidden bg-card">
       <Table>
         <TableHeader>
           <TableRow>

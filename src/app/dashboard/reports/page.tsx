@@ -50,7 +50,7 @@ export default function ReportsPage() {
       <div className="grid gap-6">
         {reports.map((section, idx) => (
           <div key={idx} className="space-y-4">
-             <h3 className="text-lg font-medium tracking-tight text-slate-900 border-b pb-2">
+             <h3 className="text-lg font-medium tracking-tight border-b pb-2">
                  {section.title}
              </h3>
              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">

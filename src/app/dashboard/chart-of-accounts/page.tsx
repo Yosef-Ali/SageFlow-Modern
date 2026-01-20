@@ -80,8 +80,8 @@ export default function ChartOfAccountsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900">Chart of Accounts</h1>
-          <p className="text-slate-600 mt-1">Manage your accounting structure</p>
+          <h1 className="text-3xl font-bold">Chart of Accounts</h1>
+          <p className="text-muted-foreground mt-1">Manage your accounting structure</p>
         </div>
         <Link href="/dashboard/chart-of-accounts/new">
           <Button>
@@ -101,66 +101,66 @@ export default function ChartOfAccountsPage() {
           <>
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-slate-500 flex items-center gap-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                   <Wallet className="h-4 w-4 text-blue-500" />
                   Assets
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-2xl font-bold">{summary?.assets.count || 0}</p>
-                <p className="text-xs text-slate-400">{formatCurrency(summary?.assets.balance || 0)}</p>
+                <p className="text-xs text-muted-foreground">{formatCurrency(summary?.assets.balance || 0)}</p>
               </CardContent>
             </Card>
             
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-slate-500 flex items-center gap-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                   <TrendingDown className="h-4 w-4 text-red-500" />
                   Liabilities
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-2xl font-bold">{summary?.liabilities.count || 0}</p>
-                <p className="text-xs text-slate-400">{formatCurrency(summary?.liabilities.balance || 0)}</p>
+                <p className="text-xs text-muted-foreground">{formatCurrency(summary?.liabilities.balance || 0)}</p>
               </CardContent>
             </Card>
             
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-slate-500 flex items-center gap-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                   <PiggyBank className="h-4 w-4 text-purple-500" />
                   Equity
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-2xl font-bold">{summary?.equity.count || 0}</p>
-                <p className="text-xs text-slate-400">{formatCurrency(summary?.equity.balance || 0)}</p>
+                <p className="text-xs text-muted-foreground">{formatCurrency(summary?.equity.balance || 0)}</p>
               </CardContent>
             </Card>
             
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-slate-500 flex items-center gap-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                   <TrendingUp className="h-4 w-4 text-green-500" />
                   Revenue
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-2xl font-bold">{summary?.revenue.count || 0}</p>
-                <p className="text-xs text-slate-400">{formatCurrency(summary?.revenue.balance || 0)}</p>
+                <p className="text-xs text-muted-foreground">{formatCurrency(summary?.revenue.balance || 0)}</p>
               </CardContent>
             </Card>
             
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-slate-500 flex items-center gap-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                   <Receipt className="h-4 w-4 text-orange-500" />
                   Expenses
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-2xl font-bold">{summary?.expenses.count || 0}</p>
-                <p className="text-xs text-slate-400">{formatCurrency(summary?.expenses.balance || 0)}</p>
+                <p className="text-xs text-muted-foreground">{formatCurrency(summary?.expenses.balance || 0)}</p>
               </CardContent>
             </Card>
           </>
@@ -194,19 +194,19 @@ export default function ChartOfAccountsPage() {
       </div>
       
       {/* Accounts Table */}
-      <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
+      <div className="bg-card rounded-lg border overflow-hidden">
         <table className="w-full">
-          <thead className="bg-slate-50 border-b border-slate-200">
+          <thead className="bg-muted/50 border-b">
             <tr>
-              <th className="text-left text-xs font-medium text-slate-500 uppercase tracking-wider px-6 py-3">Account #</th>
-              <th className="text-left text-xs font-medium text-slate-500 uppercase tracking-wider px-6 py-3">Name</th>
-              <th className="text-left text-xs font-medium text-slate-500 uppercase tracking-wider px-6 py-3">Type</th>
-              <th className="text-right text-xs font-medium text-slate-500 uppercase tracking-wider px-6 py-3">Balance</th>
-              <th className="text-center text-xs font-medium text-slate-500 uppercase tracking-wider px-6 py-3">Status</th>
-              <th className="text-right text-xs font-medium text-slate-500 uppercase tracking-wider px-6 py-3">Actions</th>
+              <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-6 py-3">Account #</th>
+              <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-6 py-3">Name</th>
+              <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-6 py-3">Type</th>
+              <th className="text-right text-xs font-medium text-muted-foreground uppercase tracking-wider px-6 py-3">Balance</th>
+              <th className="text-center text-xs font-medium text-muted-foreground uppercase tracking-wider px-6 py-3">Status</th>
+              <th className="text-right text-xs font-medium text-muted-foreground uppercase tracking-wider px-6 py-3">Actions</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y">
             {isLoading ? (
               Array(5).fill(0).map((_, i) => (
                 <tr key={i}>
@@ -220,10 +220,10 @@ export default function ChartOfAccountsPage() {
               ))
             ) : accounts && accounts.length > 0 ? (
               accounts.map((account) => (
-                <tr key={account.id} className="hover:bg-slate-50">
-                  <td className="px-6 py-4 font-mono text-sm text-slate-900">{account.accountNumber}</td>
+                <tr key={account.id} className="hover:bg-muted/50 transition-colors">
+                  <td className="px-6 py-4 font-mono text-sm">{account.accountNumber}</td>
                   <td className="px-6 py-4">
-                    <Link href={`/dashboard/chart-of-accounts/${account.id}`} className="font-medium text-slate-900 hover:text-blue-600">
+                    <Link href={`/dashboard/chart-of-accounts/${account.id}`} className="font-medium hover:underline">
                       {account.accountName}
                     </Link>
                   </td>

@@ -22,10 +22,10 @@ export default async function AdjustmentsPage() {
         </Link>
       </DashboardHeader>
 
-      <div className="border rounded-lg p-8 text-center text-slate-500 bg-white">
-        <AlertTriangle className="w-10 h-10 mx-auto mb-4 text-slate-400" />
-        <h3 className="text-lg font-medium text-slate-900">Adjustment History</h3>
-        <p className="mt-2 text-sm text-slate-500 max-w-sm mx-auto">
+      <div className="border rounded-lg p-8 text-center text-muted-foreground bg-card">
+        <AlertTriangle className="w-10 h-10 mx-auto mb-4 text-muted-foreground/60" />
+        <h3 className="text-lg font-medium text-foreground">Adjustment History</h3>
+        <p className="mt-2 text-sm text-muted-foreground max-w-sm mx-auto">
             History view is coming soon. You can record new adjustments using the button above, and they will reflect in item stock levels immediately.
         </p>
       </div>

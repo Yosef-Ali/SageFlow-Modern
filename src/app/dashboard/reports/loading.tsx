@@ -17,7 +17,7 @@ export default function Loading() {
         {/* Report Cards */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="bg-white rounded-lg border border-slate-200 p-6">
+            <div key={i} className="bg-card rounded-lg border p-6">
               <div className="flex items-center justify-between mb-4">
                 <Skeleton className="h-5 w-28" />
                 <Skeleton className="h-4 w-4" />

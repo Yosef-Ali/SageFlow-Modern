@@ -123,7 +123,7 @@ export function AIAutoScan({ open, onOpenChange, onScanComplete }: AIAutoScanPro
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Scan className="h-5 w-5 text-emerald-600" />
+            <Scan className="h-5 w-5 text-emerald-500" />
             AI Auto-Scan Invoice
           </DialogTitle>
           <DialogDescription>
@@ -137,14 +137,13 @@ export function AIAutoScan({ open, onOpenChange, onScanComplete }: AIAutoScanPro
             <div
               onDragOver={handleDragOver}
               onDrop={handleDrop}
-              className="border-2 border-dashed border-slate-300 rounded-lg p-12 text-center hover:border-emerald-500 transition-colors cursor-pointer"
-              onClick={() => fileInputRef.current?.click()}
+              className="border-2 border-dashed border-border rounded-lg p-12 text-center hover:border-emerald-500/50 transition-colors cursor-pointer bg-muted/30"
             >
-              <Upload className="h-12 w-12 mx-auto text-slate-400 mb-4" />
-              <p className="text-sm font-medium text-slate-700 mb-1">
+              <Upload className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+              <p className="text-sm font-medium mb-1">
                 Click to upload or drag and drop
               </p>
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-muted-foreground">
                 JPG, PNG, or PDF (max 10MB)
               </p>
               <input
@@ -184,8 +183,8 @@ export function AIAutoScan({ open, onOpenChange, onScanComplete }: AIAutoScanPro
           {/* Scanning Status */}
           {isScanning && (
             <div className="flex items-center justify-center gap-3 py-6">
-              <Loader2 className="h-6 w-6 animate-spin text-emerald-600" />
-              <p className="text-sm font-medium text-slate-700">
+              <Loader2 className="h-6 w-6 animate-spin text-emerald-500" />
+              <p className="text-sm font-medium">
                 Scanning invoice...
               </p>
             </div>
@@ -194,33 +193,33 @@ export function AIAutoScan({ open, onOpenChange, onScanComplete }: AIAutoScanPro
           {/* Scanned Data */}
           {scannedData && !isScanning && (
             <div className="space-y-4">
-              <div className="flex items-center gap-2 text-emerald-600">
+              <div className="flex items-center gap-2 text-emerald-500">
                 <CheckCircle className="h-5 w-5" />
                 <p className="font-medium">Scan Complete!</p>
               </div>
 
-              <div className="grid grid-cols-2 gap-4 p-4 bg-slate-50 rounded-lg">
+              <div className="grid grid-cols-2 gap-4 p-4 bg-muted/50 rounded-lg">
                 {scannedData.invoiceNumber && (
                   <div>
-                    <p className="text-xs text-slate-500 mb-1">Invoice Number</p>
+                    <p className="text-xs text-muted-foreground mb-1">Invoice Number</p>
                     <p className="font-medium">{scannedData.invoiceNumber}</p>
                   </div>
                 )}
                 {scannedData.date && (
                   <div>
-                    <p className="text-xs text-slate-500 mb-1">Date</p>
+                    <p className="text-xs text-muted-foreground mb-1">Date</p>
                     <p className="font-medium">{scannedData.date}</p>
                   </div>
                 )}
                 {scannedData.customerName && (
                   <div>
-                    <p className="text-xs text-slate-500 mb-1">Customer</p>
+                    <p className="text-xs text-muted-foreground mb-1">Customer</p>
                     <p className="font-medium">{scannedData.customerName}</p>
                   </div>
                 )}
                 {scannedData.total && (
                   <div>
-                    <p className="text-xs text-slate-500 mb-1">Total</p>
+                    <p className="text-xs text-muted-foreground mb-1">Total</p>
                     <p className="font-medium">
                       {scannedData.currency || 'ETB'} {scannedData.total.toFixed(2)}
                     </p>
@@ -235,7 +234,7 @@ export function AIAutoScan({ open, onOpenChange, onScanComplete }: AIAutoScanPro
                     {scannedData.items.map((item: any, index: number) => (
                       <div
                         key={index}
-                        className="flex justify-between p-2 bg-slate-50 rounded text-sm"
+                        className="flex justify-between p-2 bg-muted/50 rounded text-sm"
                       >
                         <span>{item.description}</span>
                         <span className="font-medium">
@@ -253,7 +252,7 @@ export function AIAutoScan({ open, onOpenChange, onScanComplete }: AIAutoScanPro
                 </Button>
                 <Button
                   onClick={handleUseData}
-                  className="bg-emerald-600 hover:bg-emerald-700"
+                  className="bg-emerald-500 hover:bg-emerald-600"
                 >
                   Use This Data
                 </Button>

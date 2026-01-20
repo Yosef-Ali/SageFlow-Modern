@@ -13,7 +13,7 @@ function ReportSectionSkeleton() {
   return (
     <div className="space-y-2">
       <Skeleton className="h-5 w-32 mb-3" />
-      <div className="bg-white rounded-lg border border-slate-200">
+      <div className="bg-card rounded-lg border">
         <ReportRowSkeleton />
         <ReportRowSkeleton />
         <ReportRowSkeleton />
@@ -60,7 +60,7 @@ export default function Loading() {
       <ReportSectionSkeleton />
 
       {/* Total */}
-      <div className="bg-slate-100 rounded-lg p-4 flex justify-between items-center">
+      <div className="bg-muted/50 rounded-lg p-4 flex justify-between items-center">
         <Skeleton className="h-5 w-48" />
         <Skeleton className="h-6 w-32" />
       </div>

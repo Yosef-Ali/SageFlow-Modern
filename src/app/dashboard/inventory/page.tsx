@@ -17,8 +17,8 @@ export default function InventoryPage() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900">Inventory</h1>
-          <p className="text-slate-600 mt-1">
+          <h1 className="text-3xl font-bold text-foreground">Inventory</h1>
+          <p className="text-muted-foreground mt-1">
             Manage your products and stock levels
           </p>
         </div>
@@ -32,7 +32,7 @@ export default function InventoryPage() {
 
       {/* Summary Cards */}
       <div className="grid gap-4 md:grid-cols-4">
-        <div className="bg-white rounded-lg border border-slate-200 p-6">
+        <div className="bg-card rounded-lg border p-6">
           <div className="flex items-center justify-between mb-2">
             <span className="text-slate-600 text-sm">Total Items</span>
             <BoxIcon className="h-5 w-5 text-slate-400" />
@@ -40,13 +40,13 @@ export default function InventoryPage() {
           {summaryLoading ? (
             <Skeleton className="h-8 w-20" />
           ) : (
-            <div className="text-2xl font-bold text-slate-900">
+            <div className="text-2xl font-bold">
               {summary?.totalItems || 0}
             </div>
           )}
         </div>
 
-        <div className="bg-white rounded-lg border border-slate-200 p-6">
+        <div className="bg-card rounded-lg border p-6">
           <div className="flex items-center justify-between mb-2">
             <span className="text-slate-600 text-sm">Total Value</span>
             <DollarSign className="h-5 w-5 text-slate-400" />
@@ -54,13 +54,13 @@ export default function InventoryPage() {
           {summaryLoading ? (
             <Skeleton className="h-8 w-24" />
           ) : (
-            <div className="text-2xl font-bold text-emerald-600">
+            <div className="text-2xl font-bold text-emerald-500">
               {formatCurrency(Number(summary?.totalValue) || 0)}
             </div>
           )}
         </div>
 
-        <div className="bg-white rounded-lg border border-slate-200 p-6">
+        <div className="bg-card rounded-lg border p-6">
           <div className="flex items-center justify-between mb-2">
             <span className="text-slate-600 text-sm">Low Stock</span>
             <AlertTriangle className="h-5 w-5 text-yellow-500" />
@@ -74,7 +74,7 @@ export default function InventoryPage() {
           )}
         </div>
 
-        <div className="bg-white rounded-lg border border-slate-200 p-6">
+        <div className="bg-card rounded-lg border p-6">
           <div className="flex items-center justify-between mb-2">
             <span className="text-slate-600 text-sm">Out of Stock</span>
             <Package className="h-5 w-5 text-red-500" />
