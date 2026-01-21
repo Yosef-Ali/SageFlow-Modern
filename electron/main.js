@@ -74,6 +74,29 @@ function createWindow() {
       ],
     },
     {
+      label: 'Data',
+      submenu: [
+        {
+          label: 'Import from Peachtree',
+          accelerator: 'CmdOrCtrl+Shift+P',
+          click: () => mainWindow.webContents.send('navigate', '/dashboard/settings/peachtree-sync'),
+        },
+        {
+          label: 'Sync Status',
+          click: () => mainWindow.webContents.send('navigate', '/dashboard/settings/sync-history'),
+        },
+        { type: 'separator' },
+        {
+          label: 'Import/Export',
+          click: () => mainWindow.webContents.send('navigate', '/dashboard/settings/import-export'),
+        },
+        {
+          label: 'Backup Database',
+          click: () => mainWindow.webContents.send('navigate', '/dashboard/settings/backup'),
+        },
+      ],
+    },
+    {
       label: 'Go',
       submenu: [
         {
