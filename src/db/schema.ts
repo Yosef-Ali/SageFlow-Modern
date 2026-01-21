@@ -810,3 +810,86 @@ export type NewBankReconciliation = typeof bankReconciliations.$inferInsert;
 
 export type ReconciliationItem = typeof reconciliationItems.$inferSelect;
 export type NewReconciliationItem = typeof reconciliationItems.$inferInsert;
+
+// ============= PEACHTREE SYNC TRACKING =============
+
+// Sync Status Enum
+export const syncStatusEnum = pgEnum('sync_status', ['PENDING', 'IN_PROGRESS', 'COMPLETED', 'FAILED', 'PARTIAL']);
+
+// Sync Jobs - Track each migration/sync operation
+export const syncJobs = pgTable('sync_jobs', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  companyId: text('company_id').notNull(),
+  jobType: text('job_type').notNull(), // 'FULL_MIGRATION' | 'SELECTIVE_SYNC' | 'INCREMENTAL_SYNC'
+  status: syncStatusEnum('status').notNull().default('PENDING'),
+  entities: json('entities').$type<string[]>(), // ['customers', 'invoices', 'items']
+  dateRangeStart: timestamp('date_range_start'),
+  dateRangeEnd: timestamp('date_range_end'),
+  startedAt: timestamp('started_at'),
+  completedAt: timestamp('completed_at'),
+  totalRecords: decimal('total_records', { precision: 10, scale: 0 }).default('0'),
+  processedRecords: decimal('processed_records', { precision: 10, scale: 0 }).default('0'),
+  failedRecords: decimal('failed_records', { precision: 10, scale: 0 }).default('0'),
+  errorLog: json('error_log').$type<Array<{ entity: string; id: string; error: string }>>(),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+});
+
+// Sync Entity Map - Track individual record mappings
+export const syncEntityMap = pgTable('sync_entity_map', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  companyId: text('company_id').notNull(),
+  entityType: text('entity_type').notNull(), // 'customer', 'invoice', 'item', 'vendor', etc.
+  peachtreeId: text('peachtree_id').notNull(), // Original ID in Peachtree
+  sageflowId: text('sageflow_id').notNull(), // New ID in SageFlow
+  lastSyncedAt: timestamp('last_synced_at').notNull().defaultNow(),
+  syncChecksum: text('sync_checksum'), // MD5 hash of data for change detection
+  isDeleted: boolean('is_deleted').notNull().default(false),
+});
+
+// Sync Configuration - Store connection settings
+export const syncConfigs = pgTable('sync_configs', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  companyId: text('company_id').notNull().unique(),
+  connectionType: text('connection_type').notNull().default('ODBC'), // 'ODBC' | 'FILE_IMPORT'
+  dsn: text('dsn'),
+  username: text('username'),
+  password: text('password'), // Should be encrypted in production
+  lastConnectionTest: timestamp('last_connection_test'),
+  connectionStatus: text('connection_status'), // 'CONNECTED' | 'FAILED' | 'UNTESTED'
+  autoSyncEnabled: boolean('auto_sync_enabled').notNull().default(false),
+  autoSyncInterval: text('auto_sync_interval').default('DAILY'), // 'HOURLY', 'DAILY', 'WEEKLY'
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+});
+
+// Relations for sync tables
+export const syncJobsRelations = relations(syncJobs, ({ one }) => ({
+  company: one(companies, {
+    fields: [syncJobs.companyId],
+    references: [companies.id],
+  }),
+}));
+
+export const syncEntityMapRelations = relations(syncEntityMap, ({ one }) => ({
+  company: one(companies, {
+    fields: [syncEntityMap.companyId],
+    references: [companies.id],
+  }),
+}));
+
+export const syncConfigsRelations = relations(syncConfigs, ({ one }) => ({
+  company: one(companies, {
+    fields: [syncConfigs.companyId],
+    references: [companies.id],
+  }),
+}));
+
+// Types
+export type SyncJob = typeof syncJobs.$inferSelect;
+export type NewSyncJob = typeof syncJobs.$inferInsert;
+
+export type SyncEntityMap = typeof syncEntityMap.$inferSelect;
+export type NewSyncEntityMap = typeof syncEntityMap.$inferInsert;
+
+export type SyncConfig = typeof syncConfigs.$inferSelect;
+export type NewSyncConfig = typeof syncConfigs.$inferInsert;

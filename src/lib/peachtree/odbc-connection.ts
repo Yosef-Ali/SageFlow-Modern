@@ -3,7 +3,7 @@
 
 import odbc from 'odbc';
 
-interface PeachtreeConfig {
+export interface PeachtreeConfig {
   dsn: string; // Data Source Name configured in ODBC
   username?: string;
   password?: string;
