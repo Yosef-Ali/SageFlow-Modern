@@ -22,7 +22,7 @@
     "electron:dev": "concurrently \"pnpm dev\" \"wait-on http://localhost:3000 && electron .\"",
     "electron:build": "pnpm build && pnpm electron:assemble && electron-builder --win --x64",
     "electron:build:mac": "pnpm build && pnpm electron:assemble && electron-builder --mac",
-    "electron:assemble": "rm -rf electron/standalone && cp -r .next/standalone electron/standalone && cp -r .next/static electron/standalone/.next/static && cp -r public electron/standalone/public"
+    "electron:assemble": "node scripts/assemble.js"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
