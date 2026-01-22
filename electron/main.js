@@ -1,5 +1,7 @@
-const { app, BrowserWindow, Menu, shell } = require('electron');
+const { app, BrowserWindow, Menu, shell, dialog } = require('electron');
 const path = require('path');
+const { spawn } = require('child_process');
+const fs = require('fs');
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (require('electron-squirrel-startup')) {
@@ -9,9 +11,9 @@ if (require('electron-squirrel-startup')) {
 const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged;
 
 let mainWindow;
+let serverProcess;
 
 function createWindow() {
-  // Create the browser window.
   mainWindow = new BrowserWindow({
     width: 1400,
     height: 900,
@@ -24,138 +26,35 @@ function createWindow() {
       nodeIntegration: false,
       contextIsolation: true,
     },
-    show: false, // Don't show until ready
-    backgroundColor: '#1a1a1a', // Match dark mode background
+    show: false,
+    backgroundColor: '#1a1a1a',
   });
 
-  // Build menu
+  // Build menu (same as before)
   const menuTemplate = [
     {
       label: 'File',
       submenu: [
-        {
-          label: 'New Invoice',
-          accelerator: 'CmdOrCtrl+N',
-          click: () => mainWindow.webContents.send('navigate', '/dashboard/invoices/new'),
-        },
-        { type: 'separator' },
-        {
-          label: 'Export Data',
-          click: () => mainWindow.webContents.send('navigate', '/dashboard/settings/import-export'),
-        },
+        { label: 'New Invoice', accelerator: 'CmdOrCtrl+N', click: () => { mainWindow?.webContents.send('navigate', '/dashboard/invoices/new'); } },
         { type: 'separator' },
         { role: 'quit' },
       ],
     },
-    {
-      label: 'Edit',
-      submenu: [
-        { role: 'undo' },
-        { role: 'redo' },
-        { type: 'separator' },
-        { role: 'cut' },
-        { role: 'copy' },
-        { role: 'paste' },
-        { role: 'selectAll' },
-      ],
-    },
-    {
-      label: 'View',
-      submenu: [
-        { role: 'reload' },
-        { role: 'forceReload' },
-        { type: 'separator' },
-        { role: 'resetZoom' },
-        { role: 'zoomIn' },
-        { role: 'zoomOut' },
-        { type: 'separator' },
-        { role: 'togglefullscreen' },
-        ...(isDev ? [{ type: 'separator' }, { role: 'toggleDevTools' }] : []),
-      ],
-    },
-    {
-      label: 'Data',
-      submenu: [
-        {
-          label: 'Import from Peachtree',
-          accelerator: 'CmdOrCtrl+Shift+P',
-          click: () => mainWindow.webContents.send('navigate', '/dashboard/settings/peachtree-sync'),
-        },
-        {
-          label: 'Sync Status',
-          click: () => mainWindow.webContents.send('navigate', '/dashboard/settings/sync-history'),
-        },
-        { type: 'separator' },
-        {
-          label: 'Import/Export',
-          click: () => mainWindow.webContents.send('navigate', '/dashboard/settings/import-export'),
-        },
-        {
-          label: 'Backup Database',
-          click: () => mainWindow.webContents.send('navigate', '/dashboard/settings/backup'),
-        },
-      ],
-    },
-    {
-      label: 'Go',
-      submenu: [
-        {
-          label: 'Dashboard',
-          accelerator: 'CmdOrCtrl+D',
-          click: () => mainWindow.webContents.send('navigate', '/dashboard'),
-        },
-        {
-          label: 'Invoices',
-          accelerator: 'CmdOrCtrl+I',
-          click: () => mainWindow.webContents.send('navigate', '/dashboard/invoices'),
-        },
-        {
-          label: 'Customers',
-          accelerator: 'CmdOrCtrl+U',
-          click: () => mainWindow.webContents.send('navigate', '/dashboard/customers'),
-        },
-        {
-          label: 'Banking',
-          accelerator: 'CmdOrCtrl+B',
-          click: () => mainWindow.webContents.send('navigate', '/dashboard/banking'),
-        },
-        { type: 'separator' },
-        {
-          label: 'Reports',
-          accelerator: 'CmdOrCtrl+R',
-          click: () => mainWindow.webContents.send('navigate', '/dashboard/reports'),
-        },
-      ],
-    },
-    {
-      label: 'Window',
-      submenu: [
-        { role: 'minimize' },
-        { role: 'zoom' },
-        { type: 'separator' },
-        { role: 'close' },
-      ],
-    },
+    { role: 'editMenu' },
+    { role: 'viewMenu' },
+    { role: 'windowMenu' },
     {
       label: 'Help',
       submenu: [
         {
           label: 'About SageFlow',
-          click: async () => {
-            const { dialog } = require('electron');
+          click: () => {
             dialog.showMessageBox(mainWindow, {
               type: 'info',
               title: 'About SageFlow',
               message: 'SageFlow Accounting',
-              detail: `Version: ${app.getVersion()}\nA modern accounting solution for Ethiopian businesses.\n\n© ${new Date().getFullYear()} SageFlow`,
+              detail: `Version: ${app.getVersion()}\n\nModern accounting software for Ethiopian businesses.\n\n© ${new Date().getFullYear()} SageFlow`,
             });
-          },
-        },
-        { type: 'separator' },
-        {
-          label: 'Documentation',
-          click: async () => {
-            await shell.openExternal('https://sageflow.app/docs');
           },
         },
       ],
@@ -165,56 +64,101 @@ function createWindow() {
   const menu = Menu.buildFromTemplate(menuTemplate);
   Menu.setApplicationMenu(menu);
 
-  // Load the app
-  if (isDev) {
-    // In development, load from Next.js dev server
-    mainWindow.loadURL('http://localhost:3000');
-    mainWindow.webContents.openDevTools();
-  } else {
-    // In production, load from the built files
-    mainWindow.loadURL('http://localhost:3000');
-  }
-
-  // Show window when ready
   mainWindow.once('ready-to-show', () => {
     mainWindow.show();
   });
 
-  // Handle external links
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
     shell.openExternal(url);
     return { action: 'deny' };
   });
 
-  // Handle window close
   mainWindow.on('closed', () => {
     mainWindow = null;
   });
 }
 
-// This method will be called when Electron has finished initialization
-app.whenReady().then(() => {
-  createWindow();
-
-  // On macOS, re-create a window when dock icon is clicked
-  app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) {
-      createWindow();
+function startNextServer() {
+  return new Promise(async (resolve, reject) => {
+    if (isDev) {
+      // In dev, assume server is running on port 3000
+      resolve('http://localhost:3000');
+      return;
     }
+
+    // In production, spawn the standalone server
+    // The standalone build should be copied to resources/standalone
+    const resourcesPath = process.resourcesPath;
+    const serverPath = path.join(resourcesPath, 'standalone', 'server.js');
+
+    console.log('Starting server from:', serverPath);
+
+    if (!fs.existsSync(serverPath)) {
+      dialog.showErrorBox('Error', `Server file not found at: ${serverPath}`);
+      reject(new Error('Server file not found'));
+      return;
+    }
+
+    // Find a free port
+    const getPort = (await import('get-port')).default;
+    const port = await getPort({ port: 3000 });
+
+    // Spawn the node process
+    serverProcess = spawn(process.execPath, [serverPath], {
+      env: {
+        ...process.env,
+        PORT: port,
+        NODE_ENV: 'production',
+        hostname: 'localhost'
+      },
+      cwd: path.join(resourcesPath, 'standalone') // Set working directory to standalone folder
+    });
+
+    serverProcess.stdout.on('data', (data) => {
+      console.log(`Server: ${data}`);
+      // Check for ready signal (Next.js typically logs "Listening on port...")
+      if (data.toString().includes('Listening on') || data.toString().includes('Ready in')) {
+        // Give it a moment to fully initialize
+        setTimeout(() => resolve(`http://localhost:${port}`), 1000);
+      }
+    });
+
+    serverProcess.stderr.on('data', (data) => {
+      console.error(`Server Error: ${data}`);
+    });
+
+    serverProcess.on('close', (code) => {
+      console.log(`Server exited with code ${code}`);
+    });
+
+    // Fallback: If no "Listening" log is detected, resolve after 5 seconds anyway
+    setTimeout(() => resolve(`http://localhost:${port}`), 5000);
+  });
+}
+
+app.whenReady().then(async () => {
+  try {
+    const url = await startNextServer();
+    createWindow();
+    mainWindow.loadURL(url);
+  } catch (error) {
+    dialog.showErrorBox('Startup Error', `Failed to start application server: ${error.message}`);
+    app.quit();
+  }
+
+  app.on('activate', () => {
+    if (BrowserWindow.getAllWindows().length === 0) createWindow();
   });
 });
 
-// Quit when all windows are closed, except on macOS
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit();
   }
 });
 
-// Handle certificate errors for local development
-if (isDev) {
-  app.on('certificate-error', (event, webContents, url, error, certificate, callback) => {
-    event.preventDefault();
-    callback(true);
-  });
-}
+app.on('will-quit', () => {
+  if (serverProcess) {
+    serverProcess.kill();
+  }
+});

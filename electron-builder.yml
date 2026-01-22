@@ -13,6 +13,10 @@ files:
 extraMetadata:
   main: electron/main.js
 
+extraResources:
+  - from: electron/standalone
+    to: standalone
+
 win:
   target:
     - target: nsis
