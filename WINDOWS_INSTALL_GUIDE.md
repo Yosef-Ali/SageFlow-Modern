@@ -52,16 +52,49 @@ npm install -g pnpm
 winget install Rustlang.Rustup
 ```
 
-### 1.5 Install Visual Studio Build Tools
+### 1.5 Install Visual Studio Build Tools (CRITICAL - Required for Rust)
 
-1. Download from: https://visualstudio.microsoft.com/visual-cpp-build-tools/
+This is the most important step. Without it, Rust cannot compile.
+
+**Option A: Full Visual Studio (Recommended if you have the space)**
+
+1. Download from: https://visualstudio.microsoft.com/vs/community/
 2. Run the installer
-3. Select "Desktop development with C++"
-4. Click "Install"
+3. Select **"Desktop development with C++"** workload
+4. Make sure these are checked:
+   - MSVC v143 - VS 2022 C++ x64/x86 build tools
+   - Windows 10/11 SDK
+   - C++ CMake tools for Windows
+5. Click "Install" (requires about 7GB)
+
+**Option B: Build Tools Only (Smaller download)**
+
+1. Download from: https://aka.ms/vs/17/release/vs_BuildTools.exe
+2. Run the installer
+3. Click "Modify" or "Install"
+4. Select **"Desktop development with C++"**
+5. In the right panel, make sure these are checked:
+   - ✅ MSVC v143 - VS 2022 C++ x64/x86 build tools (Latest)
+   - ✅ Windows 11 SDK (or Windows 10 SDK)
+6. Click "Install"
+
+**After Installation:**
+```powershell
+# Restart your computer or PowerShell
+# Then verify MSVC is installed:
+where.exe link.exe
+# Should show: C:\Program Files\Microsoft Visual Studio\...\link.exe
+```
 
 ### 1.6 Verify WebView2 (Usually pre-installed on Windows 10/11)
 
 If not installed, download from: https://developer.microsoft.com/microsoft-edge/webview2/
+
+---
+
+## ⚠️ IMPORTANT: After Installing All Tools
+
+**You MUST restart your computer** (or at minimum close and reopen PowerShell) before proceeding. This ensures all PATH variables are properly set.
 
 ---
 
