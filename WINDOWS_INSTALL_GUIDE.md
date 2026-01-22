@@ -127,9 +127,9 @@ New-Item -Path ".env.local" -ItemType File
 Open `.env.local` in Notepad and add:
 
 ```
-DATABASE_URL=postgresql://username:password@hostname:5432/database
-NEXTAUTH_SECRET=your-secret-key-here
-NEXTAUTH_URL=http://localhost:3000
+DATABASE_URL="postgresql://neondb_owner:npg_SHaWjyn4Q5Ts@ep-tiny-cell-ahwvfmq7-pooler.c-3.us-east-1.aws.neon.tech/neondb?sslmode=require"
+NEXTAUTH_SECRET="sageflow-secret-key-change-in-production-2024"
+NEXTAUTH_URL="http://localhost:3000"
 ```
 
 **Replace the values with your actual database credentials.**
