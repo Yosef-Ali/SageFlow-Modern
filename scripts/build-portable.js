@@ -16,7 +16,10 @@ const staticDest = path.join(standaloneDest, '.next', 'static');
 const publicSource = path.join(projectRoot, 'public');
 const publicDest = path.join(standaloneDest, 'public');
 
-function copyDir(src, dest) {
+// Directories to skip (cause permission issues on Windows)
+const SKIP_DIRS = ['node_modules', '.pnpm'];
+
+function copyDir(src, dest, skipNodeModules = false) {
   if (!fs.existsSync(src)) {
     console.log(`  Skipping ${src} (not found)`);
     return;
@@ -28,10 +31,24 @@ function copyDir(src, dest) {
     const srcPath = path.join(src, entry.name);
     const destPath = path.join(dest, entry.name);
 
-    if (entry.isDirectory()) {
-      copyDir(srcPath, destPath);
-    } else {
-      fs.copyFileSync(srcPath, destPath);
+    // Skip node_modules to avoid Windows permission issues
+    if (skipNodeModules && SKIP_DIRS.includes(entry.name)) {
+      console.log(`  Skipping ${entry.name} (not needed for portable)`);
+      continue;
+    }
+
+    try {
+      if (entry.isDirectory()) {
+        copyDir(srcPath, destPath, skipNodeModules);
+      } else {
+        fs.copyFileSync(srcPath, destPath);
+      }
+    } catch (err) {
+      if (err.code === 'EPERM' || err.code === 'EBUSY') {
+        console.log(`  Warning: Skipped locked file: ${entry.name}`);
+      } else {
+        throw err;
+      }
     }
   }
 }
@@ -62,9 +79,9 @@ if (!fs.existsSync(standaloneSource)) {
   process.exit(1);
 }
 
-// Step 3: Copy standalone build
+// Step 3: Copy standalone build (skip node_modules)
 console.log('2. Copying standalone server...');
-copyDir(standaloneSource, standaloneDest);
+copyDir(standaloneSource, standaloneDest, true);
 
 // Step 4: Copy static files
 console.log('3. Copying static files...');
