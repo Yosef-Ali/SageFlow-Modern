@@ -1,20 +1,99 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# SageFlow Modern
 
-# Run and deploy your AI Studio app
+Modern accounting software for Ethiopian businesses - Desktop application with Electron.
 
-This contains everything you need to run your app locally.
+## Installation
 
-View your app in AI Studio: https://ai.studio/apps/drive/1lO8gusnN8zsIxgIU5R2UX8ATA4loI8uz
+### Windows
 
-## Run Locally
+1. Download the latest `SageFlow-Windows-Setup.exe` from [Releases](https://github.com/Yosef-Ali/SageFlow-Modern/releases)
+2. Double-click to install
+3. Launch SageFlow from the Start Menu
 
-**Prerequisites:**  Node.js
+**No additional software required** - everything is bundled in the installer.
 
+### macOS
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+1. Download the latest `.dmg` from [Releases](https://github.com/Yosef-Ali/SageFlow-Modern/releases)
+2. Open the DMG and drag SageFlow to Applications
+3. Launch from Applications folder
+
+## Development
+
+### Prerequisites
+
+- Node.js 20+
+- pnpm 9+
+
+### Setup
+
+```bash
+# Install dependencies
+pnpm install
+
+# Set up environment
+cp .env.local.example .env.local
+# Edit .env.local with your DATABASE_URL
+
+# Run development server
+pnpm dev
+
+# Run Electron in development
+pnpm electron:dev
+```
+
+### Build Desktop App
+
+```bash
+# Build for Windows
+pnpm electron:build
+
+# Build for macOS
+pnpm electron:build:mac
+```
+
+### Database
+
+```bash
+# Push schema changes
+pnpm db:push
+
+# Open database studio
+pnpm db:studio
+
+# Seed demo data
+pnpm db:seed
+```
+
+## Features
+
+- Multi-tenant accounting
+- Customer & vendor management
+- Invoicing with PDF generation
+- Inventory tracking
+- Financial reports (P&L, Balance Sheet, Trial Balance)
+- Ethiopian Birr (ETB) currency
+- Peachtree/Sage 50 data migration (optional ODBC)
+
+## Environment Variables
+
+```env
+DATABASE_URL=postgresql://...
+NEXTAUTH_SECRET=your-secret
+NEXTAUTH_URL=http://localhost:3000
+```
+
+## Peachtree Migration (Optional)
+
+To enable direct Peachtree ODBC sync:
+
+```bash
+# Install ODBC driver (Windows only)
+pnpm add odbc
+```
+
+This feature is optional - CSV import is always available.
+
+## License
+
+Proprietary - SageFlow
