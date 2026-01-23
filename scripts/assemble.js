@@ -74,7 +74,7 @@ console.log('Installing production dependencies in standalone...');
 try {
   // Only install if package.json exists (it should from standalone build)
   if (fs.existsSync(path.join(dest, 'package.json'))) {
-    execSync('npm install --production --no-bin-links', { cwd: dest, stdio: 'inherit' });
+    execSync('npm install --omit=dev --legacy-peer-deps --no-bin-links', { cwd: dest, stdio: 'inherit' });
   }
 } catch (error) {
   console.error('Failed to install dependencies:', error);
