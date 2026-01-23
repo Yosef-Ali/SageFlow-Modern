@@ -1,7 +1,16 @@
 // Peachtree Hybrid Sync Service
 // Supports one-time migration + selective re-sync on demand
 
-import { createPeachtreeConnection, defaultPeachtreeConfig, PeachtreeODBCConnection } from './odbc-connection';
+// ODBC imports are lazy-loaded to prevent build-time errors when ODBC is unavailable
+type ODBCModule = typeof import('./odbc-connection');
+let odbcModule: ODBCModule | null = null;
+
+async function getODBCModule(): Promise<ODBCModule> {
+  if (!odbcModule) {
+    odbcModule = await import('./odbc-connection');
+  }
+  return odbcModule;
+}
 import { db } from '@/db';
 import {
   companies,
@@ -48,7 +57,7 @@ export interface SyncResult {
 }
 
 export class PeachtreeHybridSync {
-  private peachtree: PeachtreeODBCConnection | null = null;
+  private peachtree: any = null;
   private companyId: string;
   private jobId: string | null = null;
   private errors: Array<{ entity: string; id: string; error: string }> = [];
@@ -59,9 +68,27 @@ export class PeachtreeHybridSync {
   }
 
   /**
+   * Check if ODBC is available for Peachtree sync
+   */
+  static async isODBCAvailable(): Promise<boolean> {
+    try {
+      const odbc = await getODBCModule();
+      return odbc.PeachtreeODBCConnection.isAvailable();
+    } catch {
+      return false;
+    }
+  }
+
+  /**
    * Initialize connection from stored config or defaults
    */
   async initialize(): Promise<void> {
+    const odbc = await getODBCModule();
+
+    if (!odbc.PeachtreeODBCConnection.isAvailable()) {
+      throw new Error('ODBC driver not available. Peachtree sync requires the odbc package.');
+    }
+
     // Get stored config
     const [storedConfig] = await db
       .select()
@@ -71,13 +98,13 @@ export class PeachtreeHybridSync {
 
     if (storedConfig) {
       this.config = storedConfig;
-      this.peachtree = createPeachtreeConnection({
-        dsn: storedConfig.dsn || defaultPeachtreeConfig.dsn,
+      this.peachtree = odbc.createPeachtreeConnection({
+        dsn: storedConfig.dsn || odbc.defaultPeachtreeConfig.dsn,
         username: storedConfig.username || undefined,
         password: storedConfig.password || undefined,
       });
     } else {
-      this.peachtree = createPeachtreeConnection(defaultPeachtreeConfig);
+      this.peachtree = odbc.createPeachtreeConnection(odbc.defaultPeachtreeConfig);
     }
   }
 

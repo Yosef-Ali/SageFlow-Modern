@@ -9,6 +9,9 @@ const staticDest = path.join(dest, '.next/static');
 const publicSource = path.join(__dirname, '../public');
 const publicDest = path.join(dest, 'public');
 
+/**
+ * Copy directory recursively, handling symlinks properly for Windows compatibility
+ */
 function copyDir(src, dest) {
   if (!fs.existsSync(src)) return;
   fs.mkdirSync(dest, { recursive: true });
@@ -18,10 +21,37 @@ function copyDir(src, dest) {
     const srcPath = path.join(src, entry.name);
     const destPath = path.join(dest, entry.name);
 
-    if (entry.isDirectory()) {
+    // Check if it's a symbolic link
+    if (entry.isSymbolicLink()) {
+      try {
+        // Resolve the symlink to get the real path
+        const realPath = fs.realpathSync(srcPath);
+        const stat = fs.statSync(realPath);
+
+        if (stat.isDirectory()) {
+          // Copy the directory the symlink points to
+          copyDir(realPath, destPath);
+        } else {
+          // Copy the file the symlink points to
+          fs.copyFileSync(realPath, destPath);
+        }
+      } catch (err) {
+        // Skip broken symlinks
+        console.warn(`Skipping broken symlink: ${srcPath}`);
+      }
+    } else if (entry.isDirectory()) {
       copyDir(srcPath, destPath);
     } else {
-      fs.copyFileSync(srcPath, destPath);
+      try {
+        fs.copyFileSync(srcPath, destPath);
+      } catch (err) {
+        // Handle EPERM errors on Windows (locked files, etc.)
+        if (err.code === 'EPERM' || err.code === 'EBUSY') {
+          console.warn(`Skipping locked file: ${srcPath}`);
+        } else {
+          throw err;
+        }
+      }
     }
   }
 }
