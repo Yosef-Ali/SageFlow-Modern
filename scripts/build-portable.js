@@ -83,6 +83,13 @@ NEXTAUTH_URL=http://localhost:3000
 `;
 fs.writeFileSync(path.join(standaloneDest, '.env'), envContent);
 
+// Step 7: Copy icon
+console.log('6. Copying icon...');
+const iconSource = path.join(portableDir, 'icon.png');
+if (fs.existsSync(iconSource)) {
+  fs.copyFileSync(iconSource, path.join(standaloneDest, 'icon.png'));
+}
+
 console.log('');
 console.log('===========================================');
 console.log('  BUILD COMPLETE!');
