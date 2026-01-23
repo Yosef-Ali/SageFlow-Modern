@@ -1,7 +1,13 @@
 // Peachtree ODBC Connection Configuration
 // This connects to legacy Peachtree/Sage 50 database via ODBC
 
-import odbc from 'odbc';
+// ODBC is an optional dependency - only available when installed locally
+let odbc: any = null;
+try {
+  odbc = require('odbc');
+} catch {
+  // ODBC not available - Peachtree direct connection disabled
+}
 
 export interface PeachtreeConfig {
   dsn: string; // Data Source Name configured in ODBC
@@ -19,11 +25,22 @@ export class PeachtreeODBCConnection {
   }
 
   /**
+   * Check if ODBC is available
+   */
+  static isAvailable(): boolean {
+    return odbc !== null;
+  }
+
+  /**
    * Connect to Peachtree database via ODBC
    */
   async connect(): Promise<void> {
+    if (!odbc) {
+      throw new Error('ODBC driver not available. Install the odbc package: pnpm add odbc');
+    }
+
     try {
-      const connectionString = this.config.connectionString || 
+      const connectionString = this.config.connectionString ||
         `DSN=${this.config.dsn}${this.config.username ? `;UID=${this.config.username}` : ''}${this.config.password ? `;PWD=${this.config.password}` : ''}`;
 
       this.connection = await odbc.connect(connectionString);
