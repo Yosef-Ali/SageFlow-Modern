@@ -22,20 +22,15 @@ win:
     - target: nsis
       arch:
         - x64
-  icon: electron/icon.ico
   artifactName: SageFlow-Setup-${version}.${ext}
 
 nsis:
   oneClick: false
   perMachine: true
   allowToChangeInstallationDirectory: true
-  installerIcon: electron/icon.ico
-  uninstallerIcon: electron/icon.ico
-  installerHeaderIcon: electron/icon.ico
   createDesktopShortcut: true
   createStartMenuShortcut: true
   shortcutName: SageFlow Accounting
-  license: LICENSE
 
 mac:
   target:
@@ -43,7 +38,6 @@ mac:
       arch:
         - x64
         - arm64
-  icon: electron/icon.icns
   category: public.app-category.business
 
 linux:
@@ -51,7 +45,6 @@ linux:
     - target: AppImage
       arch:
         - x64
-  icon: electron/icon.png
   category: Office
 
 publish:
