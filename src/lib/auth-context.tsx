@@ -129,27 +129,63 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Clear localStorage only (don't call signOut - it may hang)
       localStorage.removeItem(AUTH_STORAGE_KEY)
 
-      // Fallback to demo mode for development - fetch real company from database
-      if (email === 'demo@sageflow.app' && password === 'demo123') {
-        // Get the first company from the database
-        const { data: companies } = await supabase
-          .from('companies')
-          .select('id, name')
-          .limit(1)
+      // Fallback login - fetch user directly from database (bypasses Supabase Auth)
+      const allowedEmails = ['demo@sageflow.app', 'admin@sageflow.com']
+      const allowedPasswords: Record<string, string> = {
+        'demo@sageflow.app': 'demo123',
+        'admin@sageflow.com': 'admin123',
+      }
 
-        const company = companies?.[0]
+      if (allowedEmails.includes(email) && password === allowedPasswords[email]) {
+        console.log('Using direct database login for:', email)
 
-        const mockUser: User = {
-          id: 'demo-user-id',
-          email: 'demo@sageflow.app',
-          name: 'Demo User',
-          role: 'ADMIN',
-          companyId: company?.id || 'demo-company-id',
-          companyName: company?.name || 'Demo Company',
+        // Try to fetch the user from the users table
+        const { data: userData, error: userError } = await supabase
+          .from('users')
+          .select('id, email, name, role, company_id')
+          .eq('email', email)
+          .single()
+
+        console.log('User lookup result:', { userData, userError })
+
+        let companyId = userData?.company_id
+        let companyName = ''
+
+        // If user found, get their company
+        if (userData?.company_id) {
+          const { data: companyData } = await supabase
+            .from('companies')
+            .select('id, name')
+            .eq('id', userData.company_id)
+            .single()
+          companyName = companyData?.name || ''
+          console.log('Company lookup result:', companyData)
         }
-        console.log('Demo login with company:', company)
-        setUser(mockUser)
-        localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify({ user: mockUser, timestamp: Date.now() }))
+
+        // Fallback: if no user found or no company, get first company
+        if (!companyId) {
+          const { data: companies } = await supabase
+            .from('companies')
+            .select('id, name')
+            .limit(1)
+          const company = companies?.[0]
+          companyId = company?.id || 'demo-company-id'
+          companyName = company?.name || 'Demo Company'
+          console.log('Fallback company:', company)
+        }
+
+        const loggedInUser: User = {
+          id: userData?.id || `${email.split('@')[0]}-user-id`,
+          email: email,
+          name: userData?.name || email.split('@')[0],
+          role: userData?.role || 'ADMIN',
+          companyId: companyId,
+          companyName: companyName,
+        }
+
+        console.log('Logged in user:', loggedInUser)
+        setUser(loggedInUser)
+        localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify({ user: loggedInUser, timestamp: Date.now() }))
         setIsLoading(false)
         return { success: true }
       }
