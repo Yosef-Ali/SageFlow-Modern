@@ -129,16 +129,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Clear localStorage only (don't call signOut - it may hang)
       localStorage.removeItem(AUTH_STORAGE_KEY)
 
-      // Fallback to demo mode for development
+      // Fallback to demo mode for development - fetch real company from database
       if (email === 'demo@sageflow.app' && password === 'demo123') {
+        // Get the first company from the database
+        const { data: companies } = await supabase
+          .from('companies')
+          .select('id, name')
+          .limit(1)
+
+        const company = companies?.[0]
+
         const mockUser: User = {
           id: 'demo-user-id',
           email: 'demo@sageflow.app',
           name: 'Demo User',
           role: 'ADMIN',
-          companyId: 'demo-company-id',
-          companyName: 'Demo Company',
+          companyId: company?.id || 'demo-company-id',
+          companyName: company?.name || 'Demo Company',
         }
+        console.log('Demo login with company:', company)
         setUser(mockUser)
         localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify({ user: mockUser, timestamp: Date.now() }))
         setIsLoading(false)
