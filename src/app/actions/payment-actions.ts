@@ -358,8 +358,7 @@ export async function updatePayment(id: string, data: PaymentFormValues) {
         : new Date(data.paymentDate).toISOString(),
       payment_method: data.paymentMethod,
       reference: data.reference || null,
-      notes: data.notes || null,
-      updated_at: new Date().toISOString()
+      notes: data.notes || null
     }).eq('id', id)
 
     if (error) throw error

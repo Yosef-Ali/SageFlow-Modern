@@ -23,6 +23,7 @@ import {
   Hammer,
   ClipboardEdit,
   Wallet,
+  Calculator,
   type LucideIcon
 } from 'lucide-react'
 import {
@@ -57,7 +58,9 @@ const navigation: NavItem[] = [
     children: [
       { name: 'Customers', href: '/dashboard/customers' },
       { name: 'Invoices', href: '/dashboard/invoices' },
+      { name: 'Quotes (Proforma)', href: '/dashboard/invoices/quotes' },
       { name: 'Payments Received', href: '/dashboard/payments' },
+      { name: 'Credit Memos', href: '/dashboard/invoices/credit-memos' },
     ]
   },
   { 
@@ -67,6 +70,8 @@ const navigation: NavItem[] = [
       { name: 'Vendors', href: '/dashboard/vendors' },
       { name: 'Purchase Orders', href: '/dashboard/purchases/orders' },
       { name: 'Bills', href: '/dashboard/purchases/bills' },
+      { name: 'Pay Bills', href: '/dashboard/purchases/pay-bills' },
+      { name: 'Credit Memos', href: '/dashboard/purchases/vendor-credits' },
     ]
   },
   { 
@@ -82,7 +87,14 @@ const navigation: NavItem[] = [
     children: [
       { name: 'Items & Services', href: '/dashboard/inventory' },
       { name: 'Assemblies', href: '/dashboard/inventory/assemblies' },
-      { name: 'Adjustments', href: '/dashboard/inventory/adjustments' },
+      { name: 'Stock Count/Adjustments', href: '/dashboard/inventory/adjustments' },
+    ]
+  },
+  { 
+    name: 'Fixed Assets', 
+    icon: Calculator, // Using Calculator as placeholder for Fixed Assets
+    children: [
+        { name: 'Assets', href: '/dashboard/assets' },
     ]
   },
   { 
@@ -106,10 +118,11 @@ const navigation: NavItem[] = [
     icon: BarChart3 
   },
   { 
-    name: 'System', 
+    name: 'Settings', 
     icon: Settings,
     children: [
-      { name: 'Settings', href: '/dashboard/settings' },
+      { name: 'System Config', href: '/dashboard/settings' },
+      { name: 'Tax Rules', href: '/dashboard/settings/taxes' },
       { name: 'Audit Trail', href: '/dashboard/audit-trail' },
     ]
   },

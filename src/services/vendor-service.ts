@@ -7,6 +7,34 @@ import type { Vendor } from "@/db/schema"
 export type { VendorFormValues }
 
 /**
+ * Helper to map database snake_case to application camelCase
+ */
+function mapVendorResponse(data: any): Vendor {
+  return {
+    ...data,
+    companyId: data.company_id,
+    vendorNumber: data.vendor_number,
+    // name, email, phone, notes are same
+    taxId: data.tax_id,
+    paymentTerms: data.payment_terms,
+    vendorType: data.vendor_type,
+    contactName: data.contact_name,
+    discountPercent: data.discount_percent,
+    creditLimit: data.credit_limit,
+    taxExempt: data.tax_exempt,
+    taxExemptNumber: data.tax_exempt_number,
+    openingBalance: data.opening_balance,
+    openingBalanceDate: data.opening_balance_date ? new Date(data.opening_balance_date) : null,
+    vendorSince: data.vendor_since ? new Date(data.vendor_since) : null,
+    isActive: data.is_active,
+    createdAt: data.created_at ? new Date(data.created_at) : new Date(),
+    updatedAt: data.updated_at ? new Date(data.updated_at) : new Date(),
+    // Map address since it's JSON
+    address: data.address
+  } as Vendor
+}
+
+/**
  * Generate next vendor number for a company
  */
 async function generateVendorNumber(companyId: string): Promise<string> {
@@ -50,7 +78,11 @@ export async function getVendors(
     const { data, error } = await query
 
     if (error) throw error
-    return { success: true, data: (data || []) as Vendor[] }
+
+    // Map all vendors
+    const vendors = (data || []).map(mapVendorResponse)
+
+    return { success: true, data: vendors }
   } catch (error) {
     console.error("Error fetching vendors:", error)
     return { success: false, error: formatSupabaseError(error) }
@@ -69,7 +101,7 @@ export async function getVendor(id: string): Promise<ActionResult<Vendor>> {
       .single()
 
     if (error) throw error
-    return { success: true, data: data as Vendor }
+    return { success: true, data: mapVendorResponse(data) }
   } catch (error) {
     console.error("Error fetching vendor:", error)
     return { success: false, error: formatSupabaseError(error) }
@@ -114,7 +146,7 @@ export async function createVendor(
       .single()
 
     if (error) throw error
-    return { success: true, data: newVendor as Vendor }
+    return { success: true, data: mapVendorResponse(newVendor) }
   } catch (error) {
     console.error("Error creating vendor:", error)
     return { success: false, error: formatSupabaseError(error) }
@@ -153,7 +185,7 @@ export async function updateVendor(
       .single()
 
     if (error) throw error
-    return { success: true, data: updated as Vendor }
+    return { success: true, data: mapVendorResponse(updated) }
   } catch (error) {
     console.error("Error updating vendor:", error)
     return { success: false, error: formatSupabaseError(error) }

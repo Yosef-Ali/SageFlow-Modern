@@ -32,6 +32,12 @@ const NewPaymentPage = lazy(() => import('@/pages/dashboard/payments/NewPayment'
 const PaymentDetailPage = lazy(() => import('@/pages/dashboard/payments/PaymentDetail'))
 const EditPaymentPage = lazy(() => import('@/pages/dashboard/payments/EditPayment'))
 const NewCustomerPage = lazy(() => import('@/pages/dashboard/customers/NewCustomer'))
+const CustomerDetailPage = lazy(() => import('@/pages/dashboard/customers/CustomerDetail'))
+const EditCustomerPage = lazy(() => import('@/pages/dashboard/customers/EditCustomer'))
+const VendorDetailPage = lazy(() => import('@/pages/dashboard/vendors/VendorDetail'))
+const EditVendorPage = lazy(() => import('@/pages/dashboard/vendors/EditVendor'))
+const ItemDetailPage = lazy(() => import('@/pages/dashboard/inventory/ItemDetail'))
+const EditItemPage = lazy(() => import('@/pages/dashboard/inventory/EditItem'))
 const AssembliesPage = lazy(() => import('@/pages/dashboard/inventory/Assemblies'))
 const NewAssemblyPage = lazy(() => import('@/pages/dashboard/inventory/NewAssembly'))
 const NewEmployeePage = lazy(() => import('@/pages/dashboard/employees/NewEmployee'))
@@ -48,6 +54,21 @@ const ProfileSettingsPage = lazy(() => import('@/pages/dashboard/settings/Profil
 const ImportExportPage = lazy(() => import('@/pages/dashboard/settings/ImportExport'))
 const AuditTrailPage = lazy(() => import('@/pages/dashboard/AuditTrail'))
 const ApiKeysPage = lazy(() => import('@/pages/dashboard/settings/ApiKeys'))
+
+// Banking Phase 3
+const NewBankAccountPage = lazy(() => import('@/pages/dashboard/banking/NewBankAccount'))
+const BankAccountDetailPage = lazy(() => import('@/pages/dashboard/banking/BankAccountDetail'))
+const EditBankAccountPage = lazy(() => import('@/pages/dashboard/banking/EditBankAccount'))
+const ReconcileAccountPage = lazy(() => import('@/pages/dashboard/banking/ReconcileAccount'))
+
+// Purchases Phase 3
+const PurchaseOrderDetailPage = lazy(() => import('@/pages/dashboard/purchases/PurchaseOrderDetail'))
+const BillDetailPage = lazy(() => import('@/pages/dashboard/purchases/BillDetail'))
+const EditBillPage = lazy(() => import('@/pages/dashboard/purchases/EditBill'))
+
+// Phase 4
+const EditEmployeePage = lazy(() => import('@/pages/dashboard/employees/EditEmployee'))
+const EditAccountPage = lazy(() => import('@/pages/dashboard/accounts/EditAccount'))
 
 // Loading component
 const PageLoader = () => (
@@ -88,8 +109,8 @@ export default function App() {
             {/* Customers */}
             <Route path="customers" element={<CustomersPage />} />
             <Route path="customers/new" element={<NewCustomerPage />} />
-            <Route path="customers/:id" element={<PlaceholderPage title="Customer Details" />} />
-            <Route path="customers/:id/edit" element={<PlaceholderPage title="Edit Customer" />} />
+            <Route path="customers/:id" element={<CustomerDetailPage />} />
+            <Route path="customers/:id/edit" element={<EditCustomerPage />} />
 
             {/* Invoices */}
             <Route path="invoices" element={<InvoicesPage />} />
@@ -100,8 +121,8 @@ export default function App() {
             {/* Vendors */}
             <Route path="vendors" element={<VendorsPage />} />
             <Route path="vendors/new" element={<NewVendorPage />} />
-            <Route path="vendors/:id" element={<PlaceholderPage title="Vendor Details" />} />
-            <Route path="vendors/:id/edit" element={<PlaceholderPage title="Edit Vendor" />} />
+            <Route path="vendors/:id" element={<VendorDetailPage />} />
+            <Route path="vendors/:id/edit" element={<EditVendorPage />} />
 
             {/* Payments */}
             <Route path="payments" element={<PaymentsPage />} />
@@ -112,38 +133,38 @@ export default function App() {
             {/* Inventory */}
             <Route path="inventory" element={<InventoryPage />} />
             <Route path="inventory/new" element={<NewItemPage />} />
-            <Route path="inventory/:id" element={<PlaceholderPage title="Item Details" />} />
-            <Route path="inventory/:id/edit" element={<PlaceholderPage title="Edit Item" />} />
-            <Route path="inventory/:id/edit" element={<PlaceholderPage title="Edit Item" />} />
             <Route path="inventory/adjustments" element={<InventoryAdjustmentsPage />} />
+            <Route path="inventory/:id" element={<ItemDetailPage />} />
+            <Route path="inventory/:id/edit" element={<EditItemPage />} />
             <Route path="inventory/assemblies" element={<AssembliesPage />} />
             <Route path="inventory/assemblies/new" element={<NewAssemblyPage />} />
 
             {/* Banking */}
             <Route path="banking" element={<BankingPage />} />
-            <Route path="banking/new" element={<PlaceholderPage title="New Bank Account" />} />
-            <Route path="banking/:id" element={<PlaceholderPage title="Bank Account Details" />} />
-            <Route path="banking/:id/edit" element={<PlaceholderPage title="Edit Bank Account" />} />
-            <Route path="banking/:id/reconcile" element={<PlaceholderPage title="Reconcile Account" />} />
+            <Route path="banking/new" element={<NewBankAccountPage />} />
+            <Route path="banking/:id" element={<BankAccountDetailPage />} />
+            <Route path="banking/:id/edit" element={<EditBankAccountPage />} />
+            <Route path="banking/:id/reconcile" element={<ReconcileAccountPage />} />
 
             {/* Purchases */}
             <Route path="purchases" element={<PurchasesPage />} />
             <Route path="purchases/orders" element={<PurchaseOrdersPage />} />
             <Route path="purchases/orders/new" element={<NewPurchaseOrderPage />} />
-            <Route path="purchases/orders/:id" element={<PlaceholderPage title="Purchase Order Details" />} />
+            <Route path="purchases/orders/:id" element={<PurchaseOrderDetailPage />} />
             <Route path="purchases/bills" element={<BillsPage />} />
             <Route path="purchases/bills/new" element={<NewBillPage />} />
-            <Route path="purchases/bills/:id" element={<PlaceholderPage title="Bill Details" />} />
+            <Route path="purchases/bills/:id" element={<BillDetailPage />} />
+            <Route path="purchases/bills/:id/edit" element={<EditBillPage />} />
 
             {/* Employees */}
             <Route path="employees" element={<EmployeesPage />} />
             <Route path="employees/new" element={<NewEmployeePage />} />
-            <Route path="employees/:id/edit" element={<PlaceholderPage title="Edit Employee" />} />
+            <Route path="employees/:id/edit" element={<EditEmployeePage />} />
 
             {/* Chart of Accounts */}
             <Route path="chart-of-accounts" element={<ChartOfAccountsPage />} />
             <Route path="chart-of-accounts/new" element={<NewAccountPage />} />
-            <Route path="chart-of-accounts/:id/edit" element={<PlaceholderPage title="Edit Account" />} />
+            <Route path="chart-of-accounts/:id/edit" element={<EditAccountPage />} />
 
             {/* Journals */}
             <Route path="journals" element={<JournalsPage />} />

@@ -3,7 +3,8 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useForm, useFieldArray } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Plus, Trash2, Loader2 } from 'lucide-react'
+import { Plus, Trash2, Loader2, ScanLine } from 'lucide-react'
+import { AIPOScan } from '@/components/ai/ai-po-scan'
 import { Button } from '@/components/ui/button'
 import { useToast } from '@/components/ui/use-toast'
 import { Input } from '@/components/ui/input'
@@ -33,6 +34,7 @@ export function PurchaseOrderForm({ vendors, items }: PurchaseOrderFormProps) {
   const navigate = useNavigate()
   const { toast } = useToast()
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [showAutoScan, setShowAutoScan] = useState(false)
   const [totals, setTotals] = useState({ total: 0 })
 
   const form = useForm<PurchaseFormValues>({
@@ -53,7 +55,7 @@ export function PurchaseOrderForm({ vendors, items }: PurchaseOrderFormProps) {
     },
   })
 
-  const { fields, append, remove } = useFieldArray({
+  const { fields, append, remove, replace } = useFieldArray({
     control: form.control,
     name: 'items',
   })
@@ -114,9 +116,21 @@ export function PurchaseOrderForm({ vendors, items }: PurchaseOrderFormProps) {
   }
 
   return (
+    <>
     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
       <div className="bg-card p-6 rounded-lg border space-y-6">
-        <h3 className="text-lg font-semibold">Purchase Details</h3>
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-semibold">Purchase Details</h3>
+           <Button
+            type="button"
+            variant="outline"
+            onClick={() => setShowAutoScan(true)}
+            className="text-blue-600 border-blue-200 hover:bg-blue-50"
+          >
+            <ScanLine className="w-4 h-4 mr-2" />
+            Auto-Scan PO
+          </Button>
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           
           {/* Vendor */}
@@ -263,5 +277,53 @@ export function PurchaseOrderForm({ vendors, items }: PurchaseOrderFormProps) {
           </Button>
        </div>
     </form>
+
+    <AIPOScan
+      open={showAutoScan}
+      onOpenChange={setShowAutoScan}
+      onScanComplete={(data) => {
+        // 1. Try to match Vendor
+        if (data.vendorName) {
+           // Simple fuzzy match: check if one string contains the other
+           const matchedVendor = vendors.find(v => 
+             v.name.toLowerCase().includes(data.vendorName!.toLowerCase()) || 
+             data.vendorName!.toLowerCase().includes(v.name.toLowerCase())
+           )
+           if (matchedVendor) {
+             form.setValue('vendorId', matchedVendor.id)
+             toast({
+               title: "Vendor Matched",
+               description: `Matched vendor: ${matchedVendor.name}`,
+             })
+           } else {
+              toast({
+               title: "Vendor Not Found",
+               description: `Could not start specific vendor: ${data.vendorName}`,
+               variant: "destructive"
+             })
+           }
+        }
+
+        // 2. Set dates
+        if (data.date) form.setValue('date', new Date(data.date))
+        if (data.expectedDate) form.setValue('expectedDate', new Date(data.expectedDate))
+
+        // 3. Set Items
+        if (data.items && data.items.length > 0) {
+           const formattedItems = data.items.map(item => ({
+              itemId: '', // We don't have ID from scan
+              description: item.description,
+              quantity: item.quantity,
+              unitCost: item.unitCost
+           }))
+           replace(formattedItems)
+           toast({
+             title: "Items Populated",
+             description: `Added ${formattedItems.length} items from scan.`,
+           })
+        }
+      }}
+    />
+    </>
   )
 }

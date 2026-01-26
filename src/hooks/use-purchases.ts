@@ -8,6 +8,9 @@ import {
   getBills,
   getBill,
   createBill,
+  updateBill,
+  deleteBill,
+  recordBillPayment,
   type PurchaseOrderFormValues,
   type BillFormValues
 } from '@/app/actions/purchase-actions'
@@ -110,6 +113,73 @@ export function useCreateBill() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: purchaseKeys.bills() })
       toast({ title: 'Success', description: 'Bill created' })
+    },
+    onError: (error: Error) => {
+      toast({ title: 'Error', description: error.message, variant: 'destructive' })
+    }
+  })
+}
+
+export function useUpdateBill() {
+  const queryClient = useQueryClient()
+  const { toast } = useToast()
+
+  return useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: BillFormValues }) => {
+      const result = await updateBill(id, data)
+      if (!result.success) throw new Error(result.error)
+      return result.data
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: purchaseKeys.bills() })
+      queryClient.invalidateQueries({ queryKey: purchaseKeys.bill(variables.id) })
+      toast({ title: 'Success', description: 'Bill updated successfully' })
+    },
+    onError: (error: Error) => {
+      toast({ title: 'Error', description: error.message, variant: 'destructive' })
+    }
+  })
+}
+
+export function useDeleteBill() {
+  const queryClient = useQueryClient()
+  const { toast } = useToast()
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const result = await deleteBill(id)
+      if (!result.success) throw new Error(result.error)
+      return result
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: purchaseKeys.bills() })
+      toast({ title: 'Success', description: 'Bill deleted' })
+    },
+    onError: (error: Error) => {
+      toast({ title: 'Error', description: error.message, variant: 'destructive' })
+    }
+  })
+}
+
+export function useRecordBillPayment() {
+  const queryClient = useQueryClient()
+  const { toast } = useToast()
+
+  return useMutation({
+    mutationFn: async ({ billId, amount, paymentMethod, reference }: {
+      billId: string
+      amount: number
+      paymentMethod: string
+      reference?: string
+    }) => {
+      const result = await recordBillPayment(billId, amount, paymentMethod, reference)
+      if (!result.success) throw new Error(result.error)
+      return result
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: purchaseKeys.bills() })
+      queryClient.invalidateQueries({ queryKey: purchaseKeys.bill(variables.billId) })
+      toast({ title: 'Success', description: 'Payment recorded successfully' })
     },
     onError: (error: Error) => {
       toast({ title: 'Error', description: error.message, variant: 'destructive' })

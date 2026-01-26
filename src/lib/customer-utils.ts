@@ -26,9 +26,13 @@ export async function getCurrentCompanyId(): Promise<string> {
  * Generate the next customer number for a company
  * Format: CUST-001, CUST-002, etc.
  *
+ * NOTE: This function is legacy code and not used. Customer number generation
+ * is now handled in customer-service.ts using Supabase client.
+ *
  * @param companyId - The company ID to generate the customer number for
  * @returns The next available customer number in format CUST-XXX
  */
+/* LEGACY - NOT USED
 export async function generateCustomerNumber(companyId: string): Promise<string> {
   const lastCustomer = await db.query.customers.findFirst({
     where: eq(customers.companyId, companyId),
@@ -47,6 +51,7 @@ export async function generateCustomerNumber(companyId: string): Promise<string>
   // Pad with zeros to ensure 3 digits
   return `CUST-${String(nextNumber).padStart(3, '0')}`
 }
+*/
 
 /**
  * Format customer balance for display

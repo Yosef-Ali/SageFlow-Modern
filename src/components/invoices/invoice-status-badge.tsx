@@ -10,8 +10,8 @@ interface InvoiceStatusBadgeProps {
 }
 
 export function InvoiceStatusBadge({ status, className }: InvoiceStatusBadgeProps) {
-  const colors = invoiceStatusColors[status]
-  const label = invoiceStatusLabels[status]
+  const colors = invoiceStatusColors[status] || invoiceStatusColors.DRAFT
+  const label = invoiceStatusLabels[status] || status
 
   return (
     <span

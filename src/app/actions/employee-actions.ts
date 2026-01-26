@@ -1,8 +1,9 @@
 import { supabase } from "@/lib/supabase"
 import { EmployeeFormValues } from "@/lib/validations/employee"
+import { ActionResult } from "@/types/api"
 export type { EmployeeFormValues }
 
-export async function getEmployees(filters?: { search?: string }) {
+export async function getEmployees(filters?: { search?: string }): Promise<ActionResult<any[]>> {
   try {
     // Fetch employees without nested company relation (FK not configured in Supabase)
     let query = supabase.from('employees').select('*').order('created_at', { ascending: false })
@@ -14,12 +15,12 @@ export async function getEmployees(filters?: { search?: string }) {
     const { data, error } = await query
     if (error) {
       console.error('Employees query error:', error)
-      return { success: true, data: [] }
+      return { success: false, error: error.message }
     }
     return { success: true, data: data || [] }
   } catch (error) {
     console.error("Error fetching employees:", error)
-    return { success: true, data: [] }
+    return { success: false, error: "Failed to fetch employees" }
   }
 }
 

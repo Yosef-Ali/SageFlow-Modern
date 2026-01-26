@@ -1,11 +1,12 @@
 import { supabase } from "@/lib/supabase"
+import { ActionResult } from "@/types/api"
 
 export interface GLFilterValues {
   dateFrom?: Date
   dateTo?: Date
 }
 
-export async function getGeneralLedger(filters?: GLFilterValues) {
+export async function getGeneralLedger(filters?: GLFilterValues): Promise<ActionResult<any[]>> {
   try {
     // Simplified query - FK relationships not configured in Supabase
     const { data, error } = await supabase
@@ -17,8 +18,8 @@ export async function getGeneralLedger(filters?: GLFilterValues) {
     return { success: true, data: data || [] }
   } catch (error: any) {
     console.error("Error fetching GL:", error)
-    // Return empty data if table doesn't exist or has issues
-    return { success: true, data: [] }
+    // Return error if table doesn't exist or has issues
+    return { success: false, error: error.message || "Failed to fetch general ledger" }
   }
 }
 

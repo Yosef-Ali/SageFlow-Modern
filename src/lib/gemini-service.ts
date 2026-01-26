@@ -416,3 +416,185 @@ Only return valid JSON, no additional text.`
     }
   }
 }
+
+/**
+ * Auto-scan and extract data from vendor documents (cards, letterheads, etc.)
+ */
+export async function autoScanVendor(
+  imageData: string | Buffer,
+  mimeType: string = 'image/jpeg'
+): Promise<{
+  success: boolean
+  data?: {
+    name?: string
+    taxId?: string
+    email?: string
+    phone?: string
+    address?: string
+    contactName?: string
+    website?: string
+  }
+  error?: string
+}> {
+  try {
+    const genAI = getGenAI()
+    if (!genAI) {
+      return {
+        success: false,
+        error: 'Gemini API key not configured',
+      }
+    }
+
+    const model = genAI.getGenerativeModel({ model: 'gemini-3-flash-preview' })
+
+    const prompt = `You are an AI that extracts vendor business information from images (business cards, letterheads, invoices).
+Extract the following information:
+
+1. Vendor/Company Name
+2. Tax ID (TIN / VAT Number)
+3. Email Address
+4. Phone Number
+5. Business Address
+6. Contact Person Name (if applicable)
+7. Website URL
+
+Return the data in this exact JSON format:
+{
+  "name": "string or null",
+  "taxId": "string or null",
+  "email": "string or null",
+  "phone": "string or null",
+  "address": "string or null",
+  "contactName": "string or null",
+  "website": "string or null"
+}
+
+Only return valid JSON, no additional text.`
+
+    const imagePart = {
+      inlineData: {
+        data: typeof imageData === 'string' ? imageData : imageData.toString('base64'),
+        mimeType,
+      },
+    }
+
+    const result = await model.generateContent([prompt, imagePart])
+    const responseText = result.response.text()
+
+    // Parse JSON response
+    const jsonMatch = responseText.match(/\\{[\\s\\S]*\\}/)
+    if (!jsonMatch) {
+      return { success: false, error: 'Could not parse vendor data' }
+    }
+
+    const extractedData = JSON.parse(jsonMatch[0])
+    return { success: true, data: extractedData }
+
+  } catch (error) {
+    console.error('Auto-scan vendor error:', error)
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to scan vendor document',
+    }
+  }
+}
+
+/**
+ * Auto-scan and extract data from purchase orders / quotes
+ */
+export async function autoScanPurchaseOrder(
+  imageData: string | Buffer,
+  mimeType: string = 'image/jpeg'
+): Promise<{
+  success: boolean
+  data?: {
+    vendorName?: string
+    poNumber?: string
+    date?: string
+    expectedDate?: string
+    items?: Array<{
+      description: string
+      quantity: number
+      unitCost: number
+      total: number
+    }>
+    subtotal?: number
+    taxAmount?: number
+    totalAmount?: number
+    currency?: string
+  }
+  error?: string
+}> {
+  try {
+    const genAI = getGenAI()
+    if (!genAI) {
+      return {
+        success: false,
+        error: 'Gemini API key not configured',
+      }
+    }
+
+    const model = genAI.getGenerativeModel({ model: 'gemini-3-flash-preview' })
+
+    const prompt = `You are an AI that extracts data from purchase orders, proforma invoices, or vendor quotes.
+Extract the following:
+
+1. Vendor Name
+2. Reference/Quote/PO Number
+3. Date
+4. Expected Delivery Date (if available)
+5. Line Items (description, quantity, unit cost, total)
+6. Subtotal
+7. Tax Amount
+8. Total Amount
+9. Currency (default to ETB)
+
+Return the data in this exact JSON format:
+{
+  "vendorName": "string or null",
+  "poNumber": "string or null",
+  "date": "YYYY-MM-DD or null",
+  "expectedDate": "YYYY-MM-DD or null",
+  "items": [
+    {
+      "description": "string",
+      "quantity": number,
+      "unitCost": number,
+      "total": number
+    }
+  ],
+  "subtotal": number or null,
+  "taxAmount": number or null,
+  "totalAmount": number or null,
+  "currency": "ETB or other"
+}
+
+Only return valid JSON, no additional text.`
+
+    const imagePart = {
+      inlineData: {
+        data: typeof imageData === 'string' ? imageData : imageData.toString('base64'),
+        mimeType,
+      },
+    }
+
+    const result = await model.generateContent([prompt, imagePart])
+    const responseText = result.response.text()
+
+    // Parse JSON response
+    const jsonMatch = responseText.match(/\\{[\\s\\S]*\\}/)
+    if (!jsonMatch) {
+      return { success: false, error: 'Could not parse PO data' }
+    }
+
+    const extractedData = JSON.parse(jsonMatch[0])
+    return { success: true, data: extractedData }
+
+  } catch (error) {
+    console.error('Auto-scan PO error:', error)
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to scan purchase order',
+    }
+  }
+}

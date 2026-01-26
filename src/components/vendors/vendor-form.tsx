@@ -5,6 +5,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Loader2, AlertCircle, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { AIVendorScan } from '@/components/ai/ai-vendor-scan'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
@@ -45,6 +46,7 @@ export function VendorForm({ vendor, onSuccess }: VendorFormProps) {
   const updateVendor = useUpdateVendor()
   const isEditing = !!vendor
   const [formError, setFormError] = useState<string | null>(null)
+  const [showAutoScan, setShowAutoScan] = useState(false)
 
   const form = useForm<VendorFormValues>({
     resolver: zodResolver(vendorSchema),
@@ -100,6 +102,7 @@ export function VendorForm({ vendor, onSuccess }: VendorFormProps) {
   const isLoading = createVendor.isPending || updateVendor.isPending
 
   return (
+    <>
     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
       {/* Error Banner */}
       {formError && (
@@ -121,7 +124,20 @@ export function VendorForm({ vendor, onSuccess }: VendorFormProps) {
 
       {/* Vendor Details */}
       <div className="bg-card p-6 rounded-lg border space-y-6">
-        <h3 className="text-lg font-semibold">Vendor Details</h3>
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-semibold">Vendor Details</h3>
+          {!isEditing && (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setShowAutoScan(true)}
+              className="text-blue-600 border-blue-200 hover:bg-blue-50"
+            >
+              <Loader2 className="w-4 h-4 mr-2" />
+              Auto-Scan Vendor
+            </Button>
+          )}
+        </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">
@@ -360,5 +376,20 @@ export function VendorForm({ vendor, onSuccess }: VendorFormProps) {
         </Button>
       </div>
     </form>
+
+    <AIVendorScan
+      open={showAutoScan}
+      onOpenChange={setShowAutoScan}
+      onScanComplete={(data) => {
+        if (data.name) form.setValue('name', data.name)
+        if (data.taxId) form.setValue('taxId', data.taxId)
+        if (data.email) form.setValue('email', data.email)
+        if (data.phone) form.setValue('phone', data.phone)
+        if (data.contactName) form.setValue('contactName', data.contactName)
+        if (data.address) form.setValue('address.street', data.address)
+        // Additional field mapping if needed
+      }}
+    />
+    </>
   )
 }

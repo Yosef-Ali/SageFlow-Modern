@@ -42,7 +42,8 @@ export function BankAccountList({ accounts }: BankAccountListProps) {
         accountNumber: number,
         accountType: 'CHECKING',
         openingBalance: Number(balance) || 0,
-        currency: 'ETB'
+        currency: 'ETB',
+        isActive: true
       })
 
       setIsDialogOpen(false)
