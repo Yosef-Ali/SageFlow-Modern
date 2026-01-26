@@ -1,10 +1,10 @@
-'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useNavigate } from 'react-router-dom'
 import { useForm, useFieldArray } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Plus, Trash2, Loader2, AlertCircle, X } from 'lucide-react'
+import { Plus, Trash2, Loader2, AlertCircle, X, Scan } from 'lucide-react'
+import { AIAutoScan } from '@/components/ai/ai-auto-scan'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -24,7 +24,10 @@ import {
   ETHIOPIAN_VAT_RATE,
 } from '@/lib/validations/invoice'
 import { useCreateInvoice, useUpdateInvoice, useCustomersDropdown } from '@/hooks/use-invoices'
+import { createCustomer } from '@/services/customer-service'
+import { useAuth } from '@/lib/auth-context'
 import { formatCurrency } from '@/lib/utils'
+import { useToast } from '@/components/ui/use-toast'
 
 interface InvoiceFormProps {
   invoice?: any // Existing invoice for editing
@@ -32,10 +35,12 @@ interface InvoiceFormProps {
 }
 
 export function InvoiceForm({ invoice, onSuccess }: InvoiceFormProps) {
-  const router = useRouter()
+  const navigate = useNavigate()
   const createInvoice = useCreateInvoice()
   const updateInvoice = useUpdateInvoice()
-  const { data: customers, isLoading: customersLoading } = useCustomersDropdown()
+  const { data: customers, isLoading: customersLoading, refetch: refetchCustomers } = useCustomersDropdown()
+  const { user } = useAuth()
+  const { toast } = useToast()
 
   const [totals, setTotals] = useState({
     subtotal: 0,
@@ -43,6 +48,8 @@ export function InvoiceForm({ invoice, onSuccess }: InvoiceFormProps) {
     total: 0,
   })
   const [formError, setFormError] = useState<string | null>(null)
+  const [showAIScan, setShowAIScan] = useState(false)
+  const [scannedCustomerName, setScannedCustomerName] = useState<string | null>(null)
 
   const isEditing = !!invoice
 
@@ -84,7 +91,7 @@ export function InvoiceForm({ invoice, onSuccess }: InvoiceFormProps) {
     setTotals(newTotals)
   }, [watchItems])
 
-  // Load existing invoice data
+  // Load existing invoice data or scanned data
   useEffect(() => {
     if (invoice) {
       form.reset({
@@ -109,26 +116,97 @@ export function InvoiceForm({ invoice, onSuccess }: InvoiceFormProps) {
         shipDate: invoice.shipDate ? new Date(invoice.shipDate) : undefined,
         dropShip: invoice.dropShip || false,
       })
+    } else {
+      // Check for scanned data from storage
+      const stored = sessionStorage.getItem('scannedInvoiceData')
+      if (stored) {
+        try {
+          const data = JSON.parse(stored)
+          
+          if (data.date) form.setValue('date', new Date(data.date))
+          if (data.dueDate) form.setValue('dueDate', new Date(data.dueDate))
+          
+          if (data.items && data.items.length > 0) {
+            const formItems = data.items.map((item: any) => ({
+              description: item.description || '',
+              quantity: item.quantity || 1,
+              unitPrice: item.unitPrice || 0,
+              taxRate: (item.taxRate || data.taxRate) ? 
+                ((item.taxRate || data.taxRate) > 1 ? (item.taxRate || data.taxRate) / 100 : (item.taxRate || data.taxRate)) : 
+                ETHIOPIAN_VAT_RATE,
+            }))
+            form.setValue('items', formItems)
+          }
+          
+          if (data.notes) form.setValue('notes', data.notes)
+
+          // Handle scanned customer name from storage
+          if (data.customerName) {
+            setScannedCustomerName(data.customerName)
+          }
+
+          // Clear storage after using it
+          sessionStorage.removeItem('scannedInvoiceData')
+        } catch (e) {
+          console.error('Failed to parse scanned invoice data', e)
+        }
+      }
     }
   }, [invoice, form])
 
   const onSubmit = async (data: InvoiceFormValues) => {
     setFormError(null) // Clear previous errors
     try {
+      let finalData = { ...data }
+
+      // Handle temporary customer creation
+      if (data.customerId === 'temp') {
+        if (!scannedCustomerName) {
+          throw new Error('Please enter a name for the new customer')
+        }
+        if (!user?.companyId) throw new Error('Not authenticated')
+
+        const newCustomerResult = await createCustomer(user.companyId, {
+          name: scannedCustomerName,
+          email: '',
+          phone: '0900000000', // Placeholder
+          billingAddress: {}, // Empty as it's optional in schema fields but required by object shape
+          isActive: true,
+          customerType: 'RETAIL',
+          paymentTerms: 'NET_30',
+          discountPercent: 0,
+          taxExempt: false,
+          priceLevel: '1',
+          openingBalance: 0,
+        })
+
+        if (!newCustomerResult.success || !newCustomerResult.data) {
+          throw new Error(`Failed to create new customer: ${newCustomerResult.error || 'Unknown error'}`)
+        }
+
+        finalData.customerId = newCustomerResult.data.id
+        await refetchCustomers() // Update local list
+      }
+
       if (isEditing) {
-        await updateInvoice.mutateAsync({ id: invoice.id, data })
+        await updateInvoice.mutateAsync({ id: invoice.id, data: finalData })
       } else {
-        await createInvoice.mutateAsync(data)
+        await createInvoice.mutateAsync(finalData)
       }
       if (onSuccess) {
         onSuccess()
       } else {
-        router.push('/dashboard/invoices')
+        navigate('/dashboard/invoices')
       }
     } catch (error) {
       // Display error in the form banner
       const errorMessage = error instanceof Error ? error.message : 'An error occurred'
       setFormError(errorMessage)
+      toast({
+        title: 'Error',
+        description: errorMessage,
+        variant: 'destructive',
+      })
       // Scroll to top to show the error
       window.scrollTo({ top: 0, behavior: 'smooth' })
     }
@@ -165,9 +243,60 @@ export function InvoiceForm({ invoice, onSuccess }: InvoiceFormProps) {
         </div>
       )}
 
+      {/* AI Auto-Scan Dialog */}
+      <AIAutoScan
+        open={showAIScan}
+        onOpenChange={setShowAIScan}
+        onScanComplete={(data) => {
+          // Auto-fill form with scanned data
+          if (data.date) form.setValue('date', new Date(data.date))
+          if (data.dueDate) form.setValue('dueDate', new Date(data.dueDate))
+          if (data.items && data.items.length > 0) {
+            // Clear existing items and add scanned items
+            const formItems = data.items.map((item: any) => ({
+              description: item.description || '',
+              quantity: item.quantity || 1,
+              unitPrice: item.unitPrice || 0,
+              taxRate: (item.taxRate || data.taxRate) ? 
+                ((item.taxRate || data.taxRate) > 1 ? (item.taxRate || data.taxRate) / 100 : (item.taxRate || data.taxRate)) : 
+                ETHIOPIAN_VAT_RATE,
+            }))
+            form.setValue('items', formItems)
+          }
+          if (data.notes) form.setValue('notes', data.notes)
+          
+          // Match customer by name if possible, or set scanned name for user to choose
+          if (data.customerName) {
+            const matchedCustomer = customers?.find(c => 
+              c.name.toLowerCase().includes(data.customerName.toLowerCase())
+            )
+            if (matchedCustomer) {
+              form.setValue('customerId', matchedCustomer.id)
+              setScannedCustomerName(null)
+            } else {
+              setScannedCustomerName(data.customerName)
+            }
+          }
+        }}
+      />
+
       {/* Customer & Dates */}
       <div className="bg-card p-6 rounded-lg border space-y-6">
-        <h3 className="text-lg font-semibold">Invoice Details</h3>
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-semibold">Invoice Details</h3>
+          {!isEditing && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setShowAIScan(true)}
+              className="gap-2"
+            >
+              <Scan className="h-4 w-4" />
+              AI Scan Invoice
+            </Button>
+          )}
+        </div>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Customer Select */}
@@ -178,6 +307,25 @@ export function InvoiceForm({ invoice, onSuccess }: InvoiceFormProps) {
               onValueChange={(value) => {
                 form.setValue('customerId', value)
                 setFormError(null) // Clear error when customer changes
+
+                // Auto-calculate Due Date based on Terms (Peachtree Logic)
+                const customer = customers?.find((c: any) => c.id === value)
+                if (customer?.paymentTerms) {
+                  const terms = customer.paymentTerms
+                  const date = form.getValues('date') || new Date()
+                  let daysToAdd = 30 // Default
+
+                  if (terms === 'NET_60') daysToAdd = 60
+                  else if (terms === 'NET_15') daysToAdd = 15
+                  else if (terms === 'DUE_ON_RECEIPT') daysToAdd = 0
+
+                  const dueDate = new Date(date)
+                  dueDate.setDate(dueDate.getDate() + daysToAdd)
+                  
+                  form.setValue('dueDate', dueDate)
+                  // If we had a terms field controlled by form, we'd set it here too
+                  form.setValue('terms', `Payment due ${terms.replace('_', ' ')}`) 
+                }
               }}
               disabled={customersLoading}
             >
@@ -185,6 +333,7 @@ export function InvoiceForm({ invoice, onSuccess }: InvoiceFormProps) {
                 <SelectValue placeholder="Select a customer" />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="temp">--- Temporary / New Customer ---</SelectItem>
                 {customers?.map((customer: any) => (
                   <SelectItem key={customer.id} value={customer.id}>
                     {customer.name} ({customer.customerNumber})
@@ -194,6 +343,26 @@ export function InvoiceForm({ invoice, onSuccess }: InvoiceFormProps) {
             </Select>
             {form.formState.errors.customerId && (
               <p className="text-sm text-red-500">{form.formState.errors.customerId.message}</p>
+            )}
+            
+            {/* Scanned Customer Notification */}
+            {scannedCustomerName && !form.watch('customerId') && (
+              <div className="text-xs mt-1 p-2 bg-blue-500/10 text-blue-500 rounded border border-blue-500/20">
+                AI extracted: <strong>"{scannedCustomerName}"</strong>. 
+                Please select an existing customer or use "Temporary Customer".
+              </div>
+            )}
+            
+            {form.watch('customerId') === 'temp' && (
+              <div className="space-y-2 mt-4">
+                <Label>Temporary Customer Name *</Label>
+                <Input 
+                  placeholder="Enter customer name"
+                  value={scannedCustomerName || ''}
+                  onChange={(e) => setScannedCustomerName(e.target.value)}
+                />
+                <p className="text-[10px] text-muted-foreground italic">Note: This will not be saved to your permanent customer list.</p>
+              </div>
             )}
             {/* Credit Limit Info */}
             {form.watch('customerId') && (() => {
@@ -439,7 +608,7 @@ export function InvoiceForm({ invoice, onSuccess }: InvoiceFormProps) {
         <Button
           type="button"
           variant="outline"
-          onClick={() => router.push('/dashboard/invoices')}
+          onClick={() => navigate('/dashboard/invoices')}
         >
           Cancel
         </Button>

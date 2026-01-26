@@ -1,6 +1,5 @@
-'use client'
 
-import Link from 'next/link'
+import { Link } from 'react-router-dom'
 import { Eye, Edit, MoreHorizontal } from 'lucide-react'
 import {
   Table,
@@ -38,7 +37,7 @@ export function PurchaseOrderTable({ purchaseOrders }: { purchaseOrders: Purchas
       <div className="flex flex-col items-center justify-center py-16 px-4 bg-card rounded-lg border">
         <h3 className="text-lg font-medium text-foreground mb-1">No Purchase Orders</h3>
         <p className="text-slate-500 mb-4">Get started by creating your first PO</p>
-        <Link href="/dashboard/purchases/orders/new">
+        <Link to="/dashboard/purchases/orders/new">
           <Button>Create Purchase Order</Button>
         </Link>
       </div>
@@ -87,14 +86,14 @@ export function PurchaseOrderTable({ purchaseOrders }: { purchaseOrders: Purchas
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
                     <DropdownMenuItem asChild>
-                      <Link href={`/dashboard/purchases/orders/${po.id}`}>
+                      <Link to={`/dashboard/purchases/orders/${po.id}`}>
                         <Eye className="h-4 w-4 mr-2" />
                         View
                       </Link>
                     </DropdownMenuItem>
                     {po.status === 'DRAFT' && (
                       <DropdownMenuItem asChild>
-                        <Link href={`/dashboard/purchases/orders/${po.id}/edit`}>
+                        <Link to={`/dashboard/purchases/orders/${po.id}/edit`}>
                           <Edit className="h-4 w-4 mr-2" />
                           Edit
                         </Link>

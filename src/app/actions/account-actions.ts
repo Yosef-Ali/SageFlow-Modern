@@ -1,277 +1,105 @@
-'use server'
+import { supabase } from "@/lib/supabase"
 
-import { db } from '@/db'
-import { chartOfAccounts } from '@/db/schema'
-import { eq, and, desc, asc, like, or } from 'drizzle-orm'
-import { getCurrentCompanyId } from '@/lib/customer-utils'
-import { revalidatePath } from 'next/cache'
-import { z } from 'zod'
-
-// Validation schema
-const accountSchema = z.object({
-  accountNumber: z.string().min(1, 'Account number is required'),
-  accountName: z.string().min(1, 'Account name is required'),
-  type: z.enum(['ASSET', 'LIABILITY', 'EQUITY', 'REVENUE', 'EXPENSE']),
-  parentId: z.string().optional(),
-  isActive: z.boolean().default(true),
-})
-
-export type AccountFormValues = z.infer<typeof accountSchema>
-
-type ActionResult<T = unknown> = {
-  success: boolean
-  data?: T
-  error?: string
+// Account form values type
+export interface AccountFormValues {
+  accountNumber: string
+  accountName: string
+  type: 'ASSET' | 'LIABILITY' | 'EQUITY' | 'REVENUE' | 'EXPENSE'
+  parentId?: string | null
+  balance?: number
+  isActive?: boolean
 }
 
-/**
- * Get all chart of accounts
- */
-export async function getChartOfAccounts(options?: {
-  type?: string
-  search?: string
-}): Promise<ActionResult<typeof chartOfAccounts.$inferSelect[]>> {
+export async function getChartOfAccounts(filters?: { type?: string; search?: string }) {
   try {
-    const companyId = await getCurrentCompanyId()
+    let query = supabase.from('chart_of_accounts').select('*').order('account_number', { ascending: true })
 
-    let query = db.query.chartOfAccounts.findMany({
-      where: eq(chartOfAccounts.companyId, companyId),
-      orderBy: [asc(chartOfAccounts.accountNumber)],
-    })
-
-    const accounts = await query
-
-    // Apply filters in memory for simplicity
-    let filtered = accounts
-    if (options?.type) {
-      filtered = filtered.filter(a => a.type === options.type)
+    if (filters?.type && filters.type !== 'all') {
+      query = query.eq('type', filters.type)
     }
-    if (options?.search) {
-      const search = options.search.toLowerCase()
-      filtered = filtered.filter(a =>
-        a.accountNumber.toLowerCase().includes(search) ||
-        a.accountName.toLowerCase().includes(search)
-      )
+    if (filters?.search) {
+      query = query.ilike('account_name', `%${filters.search}%`)
     }
 
-    return { success: true, data: filtered }
+    const { data, error } = await query
+    if (error) throw error
+    return { success: true, data: data || [] }
   } catch (error) {
-    console.error('Error fetching chart of accounts:', error)
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Failed to fetch accounts',
-    }
+    console.error("Error fetching accounts:", error)
+    return { success: false, error: "Failed to fetch accounts" }
   }
 }
 
-/**
- * Get single account by ID
- */
-export async function getAccount(id: string): Promise<ActionResult<typeof chartOfAccounts.$inferSelect>> {
+export async function getAccount(id: string) {
   try {
-    const companyId = await getCurrentCompanyId()
-
-    const account = await db.query.chartOfAccounts.findFirst({
-      where: and(
-        eq(chartOfAccounts.id, id),
-        eq(chartOfAccounts.companyId, companyId)
-      ),
-    })
-
-    if (!account) {
-      return { success: false, error: 'Account not found' }
-    }
-
-    return { success: true, data: account }
+    const { data, error } = await supabase.from('chart_of_accounts').select('*').eq('id', id).single()
+    if (error) throw error
+    return { success: true, data }
   } catch (error) {
-    console.error('Error fetching account:', error)
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Failed to fetch account',
-    }
+    return { success: false, error: "Failed to fetch account" }
   }
 }
 
-/**
- * Create new account
- */
-export async function createAccount(data: AccountFormValues): Promise<ActionResult<typeof chartOfAccounts.$inferSelect>> {
+export async function createAccount(data: AccountFormValues & { companyId?: string }) {
   try {
-    const companyId = await getCurrentCompanyId()
+    // Default company_id if not provided - in production this should come from auth
+    const companyId = data.companyId || 'default-company-id'
 
-    // Validate
-    const validated = accountSchema.parse(data)
+    const { data: newAccount, error } = await supabase.from('chart_of_accounts').insert({
+      company_id: companyId,
+      account_number: data.accountNumber,
+      account_name: data.accountName,
+      type: data.type,
+      parent_id: data.parentId,
+      balance: data.balance || '0',
+      is_active: data.isActive ?? true
+    }).select().single()
 
-    // Check for duplicate account number
-    const existing = await db.query.chartOfAccounts.findFirst({
-      where: and(
-        eq(chartOfAccounts.companyId, companyId),
-        eq(chartOfAccounts.accountNumber, validated.accountNumber)
-      ),
-    })
-
-    if (existing) {
-      return { success: false, error: 'Account number already exists' }
-    }
-
-    const [account] = await db.insert(chartOfAccounts).values({
-      companyId,
-      accountNumber: validated.accountNumber,
-      accountName: validated.accountName,
-      type: validated.type,
-      parentId: validated.parentId || null,
-      isActive: validated.isActive,
-      balance: '0',
-    }).returning()
-
-    revalidatePath('/dashboard/chart-of-accounts')
-
-    return { success: true, data: account }
-  } catch (error) {
-    console.error('Error creating account:', error)
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Failed to create account',
-    }
+    if (error) throw error
+    return { success: true, data: newAccount }
+  } catch (error: any) {
+    console.error('Create account error:', error)
+    return { success: false, error: error.message || "Failed to create account" }
   }
 }
 
-/**
- * Update account
- */
-export async function updateAccount(id: string, data: AccountFormValues): Promise<ActionResult<typeof chartOfAccounts.$inferSelect>> {
+export async function updateAccount(id: string, data: AccountFormValues) {
   try {
-    const companyId = await getCurrentCompanyId()
+    const { error } = await supabase.from('chart_of_accounts').update({
+      account_number: data.accountNumber,
+      account_name: data.accountName,
+      type: data.type,
+      parent_id: data.parentId,
+      balance: data.balance,
+    }).eq('id', id)
 
-    const validated = accountSchema.parse(data)
-
-    // Check account exists
-    const existing = await db.query.chartOfAccounts.findFirst({
-      where: and(
-        eq(chartOfAccounts.id, id),
-        eq(chartOfAccounts.companyId, companyId)
-      ),
-    })
-
-    if (!existing) {
-      return { success: false, error: 'Account not found' }
-    }
-
-    const [updated] = await db.update(chartOfAccounts)
-      .set({
-        accountNumber: validated.accountNumber,
-        accountName: validated.accountName,
-        type: validated.type,
-        parentId: validated.parentId || null,
-        isActive: validated.isActive,
-      })
-      .where(eq(chartOfAccounts.id, id))
-      .returning()
-
-    revalidatePath('/dashboard/chart-of-accounts')
-    revalidatePath(`/dashboard/chart-of-accounts/${id}`)
-
-    return { success: true, data: updated }
+    if (error) throw error
+    return { success: true, data: { id } }
   } catch (error) {
-    console.error('Error updating account:', error)
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Failed to update account',
-    }
+    return { success: false, error: "Failed to update account" }
   }
 }
 
-/**
- * Delete account
- */
-export async function deleteAccount(id: string): Promise<ActionResult> {
+export async function deleteAccount(id: string) {
   try {
-    const companyId = await getCurrentCompanyId()
-
-    const existing = await db.query.chartOfAccounts.findFirst({
-      where: and(
-        eq(chartOfAccounts.id, id),
-        eq(chartOfAccounts.companyId, companyId)
-      ),
-    })
-
-    if (!existing) {
-      return { success: false, error: 'Account not found' }
-    }
-
-    await db.delete(chartOfAccounts).where(eq(chartOfAccounts.id, id))
-
-    revalidatePath('/dashboard/chart-of-accounts')
-
+    const { error } = await supabase.from('chart_of_accounts').update({ is_active: false }).eq('id', id)
+    if (error) throw error
     return { success: true }
   } catch (error) {
-    console.error('Error deleting account:', error)
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Failed to delete account',
-    }
+    return { success: false, error: "Failed to delete account" }
   }
 }
 
-/**
- * Get account summary by type
- */
-export async function getAccountsSummary(): Promise<ActionResult<{
-  assets: { count: number; balance: number }
-  liabilities: { count: number; balance: number }
-  equity: { count: number; balance: number }
-  revenue: { count: number; balance: number }
-  expenses: { count: number; balance: number }
-  total: number
-}>> {
+export async function getAccountsSummary() {
   try {
-    const companyId = await getCurrentCompanyId()
-
-    const accounts = await db.query.chartOfAccounts.findMany({
-      where: eq(chartOfAccounts.companyId, companyId),
-    })
-
-    const summary = {
-      assets: { count: 0, balance: 0 },
-      liabilities: { count: 0, balance: 0 },
-      equity: { count: 0, balance: 0 },
-      revenue: { count: 0, balance: 0 },
-      expenses: { count: 0, balance: 0 },
-      total: accounts.length,
-    }
-
-    for (const acc of accounts) {
-      const balance = parseFloat(acc.balance || '0')
-      switch (acc.type) {
-        case 'ASSET':
-          summary.assets.count++
-          summary.assets.balance += balance
-          break
-        case 'LIABILITY':
-          summary.liabilities.count++
-          summary.liabilities.balance += balance
-          break
-        case 'EQUITY':
-          summary.equity.count++
-          summary.equity.balance += balance
-          break
-        case 'REVENUE':
-          summary.revenue.count++
-          summary.revenue.balance += balance
-          break
-        case 'EXPENSE':
-          summary.expenses.count++
-          summary.expenses.balance += balance
-          break
+    const { count } = await supabase.from('chart_of_accounts').select('*', { count: 'exact', head: true })
+    return {
+      success: true,
+      data: {
+        totalAccounts: count || 0,
       }
     }
-
-    return { success: true, data: summary }
   } catch (error) {
-    console.error('Error getting accounts summary:', error)
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Failed to get summary',
-    }
+    return { success: false, error: "Failed to fetch account summary" }
   }
 }

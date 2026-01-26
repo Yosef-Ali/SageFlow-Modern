@@ -8,33 +8,43 @@ import {
   updateCustomer,
   deleteCustomer,
   restoreCustomer,
-} from '@/app/actions/customer-actions'
+  getCustomersSummary,
+} from '@/services/customer-service'
 import { CustomerFormValues, CustomerFiltersValues } from '@/lib/validations/customer'
 import { useToast } from '@/components/ui/use-toast'
+import { useAuth } from '@/lib/auth-context'
 
-// Query keys
+// Query keys factory
 export const customerKeys = {
   all: ['customers'] as const,
   lists: () => [...customerKeys.all, 'list'] as const,
-  list: (filters?: Partial<CustomerFiltersValues>) =>
-    [...customerKeys.lists(), filters] as const,
+  list: (companyId: string, filters?: Partial<CustomerFiltersValues>) =>
+    [...customerKeys.lists(), companyId, filters] as const,
   details: () => [...customerKeys.all, 'detail'] as const,
   detail: (id: string) => [...customerKeys.details(), id] as const,
+  summary: (companyId: string) => [...customerKeys.all, 'summary', companyId] as const,
 }
 
 /**
  * Hook to fetch customers with filters
  */
 export function useCustomers(filters?: Partial<CustomerFiltersValues>) {
+  const { user } = useAuth()
+  const companyId = user?.companyId || ''
+
   return useQuery({
-    queryKey: customerKeys.list(filters),
+    queryKey: customerKeys.list(companyId, filters),
     queryFn: async () => {
-      const result = await getCustomers(filters)
+      if (!companyId) {
+        return { customers: [], total: 0 }
+      }
+      const result = await getCustomers(companyId, filters)
       if (!result.success) {
         throw new Error(result.error)
       }
       return result.data
     },
+    enabled: !!companyId,
   })
 }
 
@@ -56,15 +66,42 @@ export function useCustomer(id: string) {
 }
 
 /**
+ * Hook to fetch customer summary stats
+ */
+export function useCustomersSummary() {
+  const { user } = useAuth()
+  const companyId = user?.companyId || ''
+
+  return useQuery({
+    queryKey: customerKeys.summary(companyId),
+    queryFn: async () => {
+      if (!companyId) {
+        return { total: 0, active: 0, totalBalance: 0 }
+      }
+      const result = await getCustomersSummary(companyId)
+      if (!result.success) {
+        throw new Error(result.error)
+      }
+      return result.data
+    },
+    enabled: !!companyId,
+  })
+}
+
+/**
  * Hook to create a customer
  */
 export function useCreateCustomer() {
   const queryClient = useQueryClient()
   const { toast } = useToast()
+  const { user } = useAuth()
 
   return useMutation({
     mutationFn: async (data: CustomerFormValues) => {
-      const result = await createCustomer(data)
+      if (!user?.companyId) {
+        throw new Error('Not authenticated')
+      }
+      const result = await createCustomer(user.companyId, data)
       if (!result.success) {
         throw new Error(result.error)
       }
@@ -72,6 +109,7 @@ export function useCreateCustomer() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: customerKeys.lists() })
+      queryClient.invalidateQueries({ queryKey: customerKeys.summary(user?.companyId || '') })
       toast({
         title: 'Success',
         description: 'Customer created successfully',
@@ -93,6 +131,7 @@ export function useCreateCustomer() {
 export function useUpdateCustomer() {
   const queryClient = useQueryClient()
   const { toast } = useToast()
+  const { user } = useAuth()
 
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: CustomerFormValues }) => {
@@ -103,22 +142,15 @@ export function useUpdateCustomer() {
       return result.data
     },
     onMutate: async ({ id, data }) => {
-      // Cancel outgoing refetches
       await queryClient.cancelQueries({ queryKey: customerKeys.detail(id) })
-
-      // Snapshot previous value
       const previousCustomer = queryClient.getQueryData(customerKeys.detail(id))
-
-      // Optimistically update
       queryClient.setQueryData(customerKeys.detail(id), (old: any) => ({
         ...old,
         ...data,
       }))
-
       return { previousCustomer }
     },
     onError: (error: Error, variables, context) => {
-      // Rollback on error
       if (context?.previousCustomer) {
         queryClient.setQueryData(
           customerKeys.detail(variables.id),
@@ -134,6 +166,7 @@ export function useUpdateCustomer() {
     onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: customerKeys.lists() })
       queryClient.invalidateQueries({ queryKey: customerKeys.detail(variables.id) })
+      queryClient.invalidateQueries({ queryKey: customerKeys.summary(user?.companyId || '') })
       toast({
         title: 'Success',
         description: 'Customer updated successfully',
@@ -148,6 +181,7 @@ export function useUpdateCustomer() {
 export function useDeleteCustomer() {
   const queryClient = useQueryClient()
   const { toast } = useToast()
+  const { user } = useAuth()
 
   return useMutation({
     mutationFn: async (id: string) => {
@@ -159,6 +193,7 @@ export function useDeleteCustomer() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: customerKeys.lists() })
+      queryClient.invalidateQueries({ queryKey: customerKeys.summary(user?.companyId || '') })
       toast({
         title: 'Success',
         description: 'Customer deleted successfully',
@@ -180,6 +215,7 @@ export function useDeleteCustomer() {
 export function useRestoreCustomer() {
   const queryClient = useQueryClient()
   const { toast } = useToast()
+  const { user } = useAuth()
 
   return useMutation({
     mutationFn: async (id: string) => {
@@ -191,6 +227,7 @@ export function useRestoreCustomer() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: customerKeys.lists() })
+      queryClient.invalidateQueries({ queryKey: customerKeys.summary(user?.companyId || '') })
       toast({
         title: 'Success',
         description: 'Customer restored successfully',

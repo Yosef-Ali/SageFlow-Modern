@@ -1,7 +1,6 @@
-'use client'
 
 import { useState } from 'react'
-import Link from 'next/link'
+import { Link } from 'react-router-dom'
 import { MoreHorizontal, Hammer, Loader2 } from 'lucide-react'
 import {
   Table,
@@ -30,12 +29,14 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { formatDate } from '@/lib/utils'
 import { buildAssembly } from '@/app/actions/inventory-actions'
+import { useToast } from '@/components/ui/use-toast'
 
 interface AssemblyListProps {
   assemblies: any[]
 }
 
 export function AssemblyList({ assemblies }: AssemblyListProps) {
+  const { toast } = useToast()
   const [selectedAssembly, setSelectedAssembly] = useState<any>(null)
   const [buildQty, setBuildQty] = useState(1)
   const [isBuilding, setIsBuilding] = useState(false)
@@ -58,14 +59,25 @@ export function AssemblyList({ assemblies }: AssemblyListProps) {
       })
 
       if (result.success) {
-        alert('Assembly built successfully!')
+        toast({
+          title: 'Success',
+          description: 'Assembly built successfully!'
+        })
         setIsDialogOpen(false)
       } else {
-        alert(result.error || 'Failed to build assembly')
+        toast({
+          title: 'Error',
+          description: result.error || 'Failed to build assembly',
+          variant: 'destructive'
+        })
       }
     } catch (err) {
       console.error(err)
-      alert('An error occurred')
+      toast({
+        title: 'Error',
+        description: 'An unexpected error occurred',
+        variant: 'destructive'
+      })
     } finally {
       setIsBuilding(false)
     }
@@ -76,7 +88,7 @@ export function AssemblyList({ assemblies }: AssemblyListProps) {
       <div className="flex flex-col items-center justify-center py-16 px-4 bg-card rounded-lg border">
         <h3 className="text-lg font-medium text-foreground mb-1">No Assemblies Defined</h3>
         <p className="text-slate-500 mb-4">Create your first Bill of Materials to start building items.</p>
-        <Link href="/dashboard/inventory/assemblies/new">
+        <Link to="/dashboard/inventory/assemblies/new">
           <Button>Create Assembly</Button>
         </Link>
       </div>

@@ -1,368 +1,468 @@
-'use server'
+import { supabase } from "@/lib/supabase"
+import { PurchaseFormValues, BillFormValues } from "@/lib/validations/purchase"
+import type { ActionResult } from "@/types/api"
 
-import { db } from '@/db'
-import {
-  purchaseOrders, purchaseOrderItems, bills, billPayments, vendors, items, stockMovements,
-  PurchaseOrderStatus, BillStatus
-} from '@/db/schema'
-import { eq, and, or, ilike, gte, lte, desc, asc, count, sql } from 'drizzle-orm'
-import { getCurrentCompanyId } from '@/lib/customer-utils'
-import {
-  purchaseOrderSchema,
-  billSchema,
-  billPaymentSchema,
-  calculatePOTotals,
-  type PurchaseFormValues,
-  type BillFormValues,
-  type BillPaymentFormValues,
-} from '@/lib/validations/purchase'
-import { revalidatePath } from 'next/cache'
+// Re-export types for hooks
+export type { PurchaseFormValues as PurchaseOrderFormValues, BillFormValues }
 
-// Action result type
-type ActionResult<T = unknown> = {
-  success: boolean
-  data?: T
-  error?: string
+// ============ Peachtree-style Bill Number Generation ============
+
+/**
+ * Generate Peachtree-style bill number
+ * Format: BILL-YYYYMM-XXXXX (e.g., BILL-202601-00001)
+ */
+async function generateBillNumber(companyId: string): Promise<string> {
+  const now = new Date()
+  const yearMonth = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}`
+  const prefix = `BILL-${yearMonth}-`
+
+  // Get the last bill number for this month
+  const { data } = await supabase
+    .from('bills')
+    .select('bill_number')
+    .eq('company_id', companyId)
+    .like('bill_number', `${prefix}%`)
+    .order('created_at', { ascending: false })
+    .limit(1)
+
+  let nextNum = 1
+  if (data && data.length > 0 && data[0].bill_number) {
+    const lastNumMatch = data[0].bill_number.match(/(\d+)$/)
+    if (lastNumMatch) {
+      nextNum = parseInt(lastNumMatch[1]) + 1
+    }
+  }
+
+  return `${prefix}${String(nextNum).padStart(5, '0')}`
 }
 
 /**
- * Generate next PO number
+ * Update vendor balance helper
  */
-async function generatePONumber(companyId: string): Promise<string> {
-  const lastPO = await db.query.purchaseOrders.findFirst({
-    where: eq(purchaseOrders.companyId, companyId),
-    orderBy: desc(purchaseOrders.poNumber),
-    columns: { poNumber: true },
-  })
+async function updateVendorBalance(vendorId: string, amountDelta: number): Promise<void> {
+  const { data: vendor } = await supabase
+    .from('vendors')
+    .select('balance')
+    .eq('id', vendorId)
+    .single()
 
-  if (!lastPO) return 'PO-001'
-  const lastNumber = parseInt(lastPO.poNumber.split('-')[1] || '0', 10)
-  return `PO-${String(lastNumber + 1).padStart(3, '0')}`
+  if (vendor) {
+    const newBalance = (Number(vendor.balance) || 0) + amountDelta
+    await supabase
+      .from('vendors')
+      .update({ balance: newBalance, updated_at: new Date().toISOString() })
+      .eq('id', vendorId)
+  }
 }
 
-/**
- * Generate next Bill number (internal ref, though usually we use Vendor's Inv #)
- * But for internal tracking let's have a fallback or just use what user provides.
- * Actually, `billNumber` usually implies the Vendor's Invoice ID. 
- * But let's have a utility if needed, mostly user inputs it.
- */
+// ============ Purchase Orders ============
 
-// --- PURCHASE ORDERS ---
-
-export async function getPurchaseOrders(
-  filters?: any // Define strict type later if needed
-): Promise<ActionResult<{ purchaseOrders: any[]; total: number }>> {
+export async function getPurchaseOrders(filters?: { status?: string; vendorId?: string }): Promise<ActionResult<any[]>> {
   try {
-    const companyId = await getCurrentCompanyId()
-    const whereClause = eq(purchaseOrders.companyId, companyId)
-    // Add more filters as needed (date, status, vendor)
+    let query = supabase
+      .from('purchase_orders')
+      .select('*', { count: 'exact' })
+      .order('date', { ascending: false })
 
-    const poList = await db.query.purchaseOrders.findMany({
-      where: whereClause,
-      orderBy: desc(purchaseOrders.createdAt),
-      limit: 50,
-      with: {
-        vendor: { columns: { name: true } },
-      },
-    })
+    if (filters?.status && filters.status !== 'all') {
+      query = query.eq('status', filters.status)
+    }
+    if (filters?.vendorId) {
+      query = query.eq('vendor_id', filters.vendorId)
+    }
 
-    return { success: true, data: { purchaseOrders: poList, total: poList.length } }
-  } catch (error) {
-    return { success: false, error: 'Failed to fetch Purchase Orders' }
+    const { data: pos, error } = await query
+    if (error) throw error
+
+    if (!pos || pos.length === 0) {
+      return { success: true, data: [] }
+    }
+
+    // Manual join for vendors
+    const vendorIds = [...new Set(pos.map(p => p.vendor_id).filter(Boolean))]
+
+    let vendorsMap: Record<string, any> = {}
+    if (vendorIds.length > 0) {
+      const { data: vendors } = await supabase
+        .from('vendors')
+        .select('id, name')
+        .in('id', vendorIds)
+
+      if (vendors) {
+        vendors.forEach(v => {
+          vendorsMap[v.id] = v
+        })
+      }
+    }
+
+    // Map vendors to POs
+    const data = pos.map(po => ({
+      ...po,
+      vendor: vendorsMap[po.vendor_id] || null
+    }))
+
+    return { success: true, data }
+  } catch (error: any) {
+    console.error("Error fetching purchase orders:", error)
+    return { success: false, error: error.message || "Failed to fetch purchase orders" }
   }
 }
 
 export async function getPurchaseOrder(id: string): Promise<ActionResult<any>> {
   try {
-    const companyId = await getCurrentCompanyId()
-    const po = await db.query.purchaseOrders.findFirst({
-      where: and(eq(purchaseOrders.id, id), eq(purchaseOrders.companyId, companyId)),
-      with: {
-        vendor: true,
-        items: { with: { item: true } }
+    // 1. Fetch PO
+    const { data: po, error } = await supabase
+      .from('purchase_orders')
+      .select('*')
+      .eq('id', id)
+      .single()
+
+    if (error) throw error
+    if (!po) throw new Error('Purchase Order not found')
+
+    // 2. Fetch Vendor
+    let vendor = null
+    if (po.vendor_id) {
+      const { data: v } = await supabase
+        .from('vendors')
+        .select('*')
+        .eq('id', po.vendor_id)
+        .single()
+      vendor = v
+    }
+
+    // 3. Fetch Items
+    const { data: items } = await supabase
+      .from('purchase_order_items')
+      .select('*')
+      .eq('po_id', id)
+
+    // Manual Join
+    return {
+      success: true,
+      data: {
+        ...po,
+        vendor,
+        items: items || []
       }
-    })
-    if (!po) return { success: false, error: 'PO not found' }
-    return { success: true, data: po }
-  } catch (error) {
-    return { success: false, error: 'Failed to fetch PO' }
+    }
+  } catch (error: any) {
+    console.error("Error fetching purchase order:", error)
+    return { success: false, error: "Failed to fetch purchase order" }
   }
 }
 
 export async function createPurchaseOrder(data: PurchaseFormValues): Promise<ActionResult<any>> {
   try {
-    const companyId = await getCurrentCompanyId()
-    const validated = purchaseOrderSchema.parse(data)
-    const { total } = calculatePOTotals(validated.items)
-    const poNumber = await generatePONumber(companyId)
+    // Calculate total amount
+    const totalAmount = data.items.reduce((sum, item) => sum + (item.quantity * item.unitCost), 0)
 
-    const result = await db.transaction(async (tx) => {
-      const [newPO] = await tx.insert(purchaseOrders).values({
-        companyId,
-        vendorId: validated.vendorId,
-        poNumber,
-        date: validated.date,
-        expectedDate: validated.expectedDate,
-        status: validated.status,
-        totalAmount: String(total),
-        notes: validated.notes,
-      }).returning()
+    const { data: newPO, error } = await supabase.from('purchase_orders').insert({
+      vendor_id: data.vendorId,
+      po_number: `PO-${Date.now().toString().slice(-6)}`,
+      date: data.date,
+      expected_date: data.expectedDate,
+      status: data.status,
+      total_amount: totalAmount,
+      notes: data.notes
+    }).select().single()
 
-      for (const item of validated.items) {
-        const lineTotal = item.quantity * item.unitCost
-        await tx.insert(purchaseOrderItems).values({
-          poId: newPO.id,
-          itemId: item.itemId,
-          description: item.description,
-          quantity: String(item.quantity),
-          unitCost: String(item.unitCost),
-          total: String(lineTotal),
-        })
-      }
-      return newPO
-    })
+    if (error) throw error
 
-    revalidatePath('/dashboard/purchases/orders')
-    return { success: true, data: result }
-  } catch (error) {
-    console.error('Create PO Error:', error)
-    return { success: false, error: error instanceof Error ? error.message : 'Failed to create PO' }
+    // Items
+    if (data.items?.length > 0) {
+      const itemsToInsert = data.items.map(item => ({
+        po_id: newPO.id,
+        item_id: item.itemId,
+        quantity: item.quantity,
+        unit_cost: item.unitCost,
+        total: item.quantity * item.unitCost
+      }))
+      await supabase.from('purchase_order_items').insert(itemsToInsert)
+    }
+
+    return { success: true, data: newPO }
+  } catch (error: any) {
+    console.error("Error creating purchase order:", error)
+    return { success: false, error: "Failed to create purchase order" }
   }
 }
 
-// --- BILLS ---
+// ============ Bills ============
 
-export async function getBills(): Promise<ActionResult<{ bills: any[]; total: number }>> {
+export async function getBills(filters?: { status?: string; vendorId?: string }): Promise<ActionResult<any[]>> {
   try {
-    const companyId = await getCurrentCompanyId()
-    const billList = await db.query.bills.findMany({
-      where: eq(bills.companyId, companyId),
-      orderBy: desc(bills.date),
-      limit: 50,
-      with: {
-        vendor: { columns: { name: true } },
-      },
-    })
-    return { success: true, data: { bills: billList, total: billList.length } }
-  } catch (error) {
-    return { success: false, error: 'Failed to fetch Bills' }
+    let query = supabase
+      .from('bills')
+      .select('*', { count: 'exact' })
+      .order('date', { ascending: false })
+
+    if (filters?.status && filters.status !== 'all') {
+      query = query.eq('status', filters.status)
+    }
+
+    const { data: bills, error } = await query
+    if (error) throw error
+
+    if (!bills || bills.length === 0) {
+      return { success: true, data: [] }
+    }
+
+    // Manual join for vendors
+    const vendorIds = [...new Set(bills.map(b => b.vendor_id).filter(Boolean))]
+
+    let vendorsMap: Record<string, any> = {}
+    if (vendorIds.length > 0) {
+      const { data: vendors } = await supabase
+        .from('vendors')
+        .select('id, name')
+        .in('id', vendorIds)
+
+      if (vendors) {
+        vendors.forEach(v => {
+          vendorsMap[v.id] = v
+        })
+      }
+    }
+
+    // Map vendors to Bills
+    const data = bills.map(bill => ({
+      ...bill,
+      vendor: vendorsMap[bill.vendor_id] || null
+    }))
+
+    return { success: true, data }
+  } catch (error: any) {
+    console.error("Error fetching bills:", error)
+    return { success: false, error: error.message || "Failed to fetch bills" }
   }
 }
 
 export async function getBill(id: string): Promise<ActionResult<any>> {
   try {
-    const companyId = await getCurrentCompanyId()
-    const bill = await db.query.bills.findFirst({
-      where: and(eq(bills.id, id), eq(bills.companyId, companyId)),
-      with: {
-        vendor: true,
-        purchaseOrder: true,
-        payments: true
+    // 1. Fetch Bill
+    const { data: bill, error } = await supabase
+      .from('bills')
+      .select('*')
+      .eq('id', id)
+      .single()
+
+    if (error) throw error
+    if (!bill) throw new Error('Bill not found')
+
+    // 2. Fetch Vendor
+    let vendor = null
+    if (bill.vendor_id) {
+      const { data: v } = await supabase
+        .from('vendors')
+        .select('*')
+        .eq('id', bill.vendor_id)
+        .single()
+      vendor = v
+    }
+
+    return {
+      success: true,
+      data: {
+        ...bill,
+        vendor
       }
-    })
-    if (!bill) return { success: false, error: 'Bill not found' }
-    return { success: true, data: bill }
-  } catch (error) {
-    return { success: false, error: 'Failed to fetch Bill' }
+    }
+  } catch (error: any) {
+    console.error("Error fetching bill:", error)
+    return { success: false, error: "Failed to fetch bill" }
   }
 }
 
-export async function createBill(data: BillFormValues): Promise<ActionResult<any>> {
+export async function createBill(data: BillFormValues, companyId?: string): Promise<ActionResult<any>> {
   try {
-    const companyId = await getCurrentCompanyId()
-    const validated = billSchema.parse(data)
+    // Generate Peachtree-style bill number if not provided
+    const billNumber = data.billNumber?.trim()
+      ? data.billNumber.trim()
+      : companyId
+        ? await generateBillNumber(companyId)
+        : `BILL-${Date.now().toString().slice(-8)}`
 
-    const result = await db.transaction(async (tx) => {
-      const [newBill] = await tx.insert(bills).values({
-        companyId,
-        vendorId: validated.vendorId,
-        poId: validated.poId,
-        billNumber: validated.billNumber,
-        date: validated.date,
-        dueDate: validated.dueDate,
-        totalAmount: String(validated.totalAmount),
-        status: validated.status,
-        notes: validated.notes,
-      }).returning()
+    const { data: newBill, error } = await supabase.from('bills').insert({
+      vendor_id: data.vendorId,
+      bill_number: billNumber,
+      date: data.date,
+      due_date: data.dueDate,
+      total_amount: data.totalAmount,
+      paid_amount: 0,
+      status: 'OPEN',
+      notes: data.notes,
+      company_id: companyId
+    }).select().single()
 
-      // Update Vendor Balance (Increase Payable)
-      // Note: In real app we might read current balance first to be safe, or direct sql increment
-      /* 
-      await tx.execute(sql`
-        UPDATE ${vendors} 
-        SET balance = balance + ${validated.totalAmount} 
-        WHERE id = ${validated.vendorId}
-      `) 
-      */
-      // For now, simple read-update or just rely on calculating from bills later. 
-      // Let's do simple separate update for now to keep implementation clear.
+    if (error) throw error
 
-      const vendor = await tx.query.vendors.findFirst({
-        where: eq(vendors.id, validated.vendorId),
-        columns: { balance: true }
-      })
-      if (vendor) {
-        const newBalance = Number(vendor.balance) + validated.totalAmount
-        await tx.update(vendors)
-          .set({ balance: String(newBalance), updatedAt: new Date() })
-          .where(eq(vendors.id, validated.vendorId))
-      }
+    // ============ PEACHTREE LOGIC: Update Vendor Balance ============
+    // Increase vendor balance (AP) when bill is created
+    await updateVendorBalance(data.vendorId, Number(data.totalAmount))
+    console.log(`[createBill] Vendor ${data.vendorId} balance increased by ${data.totalAmount}`)
 
-      // If linked to PO, close PO?
-      // If linked to PO, close PO and Receive Goods (Update Stock)
-      if (validated.poId) {
-        // 1. Close PO
-        await tx.update(purchaseOrders)
-          .set({ status: 'CLOSED', updatedAt: new Date() })
-          .where(eq(purchaseOrders.id, validated.poId))
-
-        // 2. Fetch PO Items
-        const poItems = await tx.select().from(purchaseOrderItems).where(eq(purchaseOrderItems.poId, validated.poId))
-
-        // 3. Update Inventory & Log Movements
-        for (const item of poItems) {
-          // Update quantity on hand
-          await tx.update(items)
-            .set({
-              quantityOnHand: sql`${items.quantityOnHand} + ${item.quantity}`,
-              updatedAt: new Date()
-            })
-            .where(eq(items.id, item.itemId))
-
-          // Log stock movement
-          await tx.insert(stockMovements).values({
-            itemId: item.itemId,
-            type: 'PURCHASE',
-            quantity: item.quantity,
-            cost: item.unitCost, // Cost from PO
-            referenceType: 'PURCHASE_RECEIPT',
-            referenceId: newBill.id, // Link to Bill as the receipt document
-            date: validated.date,
-          })
-        }
-      }
-
-      return newBill
-    })
-
-    revalidatePath('/dashboard/purchases/bills')
-    return { success: true, data: result }
-  } catch (error) {
-    return { success: false, error: error instanceof Error ? error.message : 'Failed to create Bill' }
+    return { success: true, data: newBill }
+  } catch (error: any) {
+    console.error("Error creating bill:", error)
+    return { success: false, error: error.message || "Failed to create bill" }
   }
 }
 
-// --- PAYMENTS ---
-
-export async function recordBillPayment(data: BillPaymentFormValues): Promise<ActionResult<any>> {
+/**
+ * Update an existing bill with balance reversal logic
+ */
+export async function updateBill(id: string, data: BillFormValues): Promise<ActionResult<any>> {
   try {
-    const companyId = await getCurrentCompanyId()
-    const validated = billPaymentSchema.parse(data)
+    // ============ PEACHTREE LOGIC: Reverse old balance effects first ============
 
-    const result = await db.transaction(async (tx) => {
-      // 1. Create Payment Record
-      const [payment] = await tx.insert(billPayments).values({
-        companyId,
-        vendorId: validated.vendorId,
-        billId: validated.billId,
-        amount: String(validated.amount),
-        paymentDate: validated.paymentDate,
-        paymentMethod: validated.paymentMethod,
-        reference: validated.reference,
-        notes: validated.notes,
-      }).returning()
+    // Fetch original bill
+    const { data: oldBill, error: fetchError } = await supabase
+      .from('bills')
+      .select('*')
+      .eq('id', id)
+      .single()
 
-      // 2. Decrease Vendor Balance (Liability decreases)
-      const vendor = await tx.query.vendors.findFirst({
-        where: eq(vendors.id, validated.vendorId),
-        columns: { balance: true }
-      })
-      if (vendor) {
-        const newBalance = Number(vendor.balance) - validated.amount
-        await tx.update(vendors)
-          .set({ balance: String(newBalance), updatedAt: new Date() })
-          .where(eq(vendors.id, validated.vendorId))
+    if (fetchError) throw fetchError
+    if (!oldBill) throw new Error('Bill not found')
+
+    // Cannot edit paid bills
+    if (oldBill.status === 'PAID') {
+      return { success: false, error: 'Cannot edit a paid bill. Void it first.' }
+    }
+
+    const oldAmount = Number(oldBill.total_amount) || 0
+    const newAmount = Number(data.totalAmount)
+    const amountDiff = newAmount - oldAmount
+
+    // Handle vendor balance changes
+    if (oldBill.vendor_id === data.vendorId) {
+      // Same vendor - just adjust the difference
+      if (amountDiff !== 0) {
+        await updateVendorBalance(data.vendorId, amountDiff)
+        console.log(`[updateBill] Vendor ${data.vendorId} balance adjusted by ${amountDiff}`)
       }
+    } else {
+      // Different vendor - reverse from old, apply to new
+      // Reduce old vendor balance
+      await updateVendorBalance(oldBill.vendor_id, -oldAmount)
+      console.log(`[updateBill] Old vendor ${oldBill.vendor_id} balance reduced by ${oldAmount}`)
 
-      // 3. Update Bill Paid Amount & Status
-      if (validated.billId) {
-        const bill = await tx.query.bills.findFirst({
-          where: eq(bills.id, validated.billId),
-          columns: { totalAmount: true, paidAmount: true }
-        })
+      // Increase new vendor balance
+      await updateVendorBalance(data.vendorId, newAmount)
+      console.log(`[updateBill] New vendor ${data.vendorId} balance increased by ${newAmount}`)
+    }
 
-        if (bill) {
-          const newPaidAmount = Number(bill.paidAmount) + validated.amount
-          const isFullyPaid = newPaidAmount >= Number(bill.totalAmount)
+    // Update the bill record
+    const { data: updated, error } = await supabase.from('bills').update({
+      vendor_id: data.vendorId,
+      bill_number: data.billNumber,
+      date: data.date,
+      due_date: data.dueDate,
+      total_amount: newAmount,
+      notes: data.notes,
+      updated_at: new Date().toISOString()
+    }).eq('id', id).select().single()
 
-          await tx.update(bills)
-            .set({
-              paidAmount: String(newPaidAmount),
-              status: isFullyPaid ? 'PAID' : 'PARTIALLY_PAID',
-              updatedAt: new Date()
-            })
-            .where(eq(bills.id, validated.billId))
-        }
-      }
-
-      return payment
-    })
-
-    revalidatePath('/dashboard/purchases/bills')
-    return { success: true, data: result }
-  } catch (error) {
-    return { success: false, error: error instanceof Error ? error.message : 'Failed to record payment' }
+    if (error) throw error
+    return { success: true, data: updated }
+  } catch (error: any) {
+    console.error("Error updating bill:", error)
+    return { success: false, error: error.message || "Failed to update bill" }
   }
 }
 
-// --- DROPDOWN HELPERS ---
-
-export async function getVendorsForDropdown(): Promise<ActionResult<any[]>> {
+/**
+ * Delete a bill with balance reversal
+ */
+export async function deleteBill(id: string): Promise<ActionResult<void>> {
   try {
-    const companyId = await getCurrentCompanyId()
-    const vendorList = await db.query.vendors.findMany({
-      where: eq(vendors.companyId, companyId),
-      columns: { id: true, name: true },
-      orderBy: asc(vendors.name),
-    })
-    return { success: true, data: vendorList }
-  } catch (error) {
-    return { success: false, error: 'Failed to fetch vendors' }
+    // ============ PEACHTREE LOGIC: Reverse balance before deletion ============
+
+    // Fetch bill first
+    const { data: bill, error: fetchError } = await supabase
+      .from('bills')
+      .select('*')
+      .eq('id', id)
+      .single()
+
+    if (fetchError) throw fetchError
+    if (!bill) throw new Error('Bill not found')
+
+    // Cannot delete paid bills
+    if (bill.status === 'PAID') {
+      return { success: false, error: 'Cannot delete a paid bill. Void it first.' }
+    }
+
+    // Reverse vendor balance (subtract the unpaid portion)
+    const unpaidAmount = Number(bill.total_amount) - Number(bill.paid_amount || 0)
+    if (unpaidAmount > 0) {
+      await updateVendorBalance(bill.vendor_id, -unpaidAmount)
+      console.log(`[deleteBill] Vendor ${bill.vendor_id} balance reduced by ${unpaidAmount}`)
+    }
+
+    // Delete the bill
+    const { error } = await supabase.from('bills').delete().eq('id', id)
+    if (error) throw error
+
+    return { success: true }
+  } catch (error: any) {
+    console.error("Error deleting bill:", error)
+    return { success: false, error: error.message || "Failed to delete bill" }
   }
 }
 
-export async function getItemsForDropdown(): Promise<ActionResult<any[]>> {
+/**
+ * Record a payment against a bill (reduce AP)
+ */
+export async function recordBillPayment(
+  billId: string,
+  amount: number,
+  paymentMethod: string,
+  reference?: string
+): Promise<ActionResult<void>> {
   try {
-    const companyId = await getCurrentCompanyId()
-    const itemList = await db.query.items.findMany({
-      where: eq(items.companyId, companyId),
-      columns: { id: true, name: true, costPrice: true },
-      orderBy: asc(items.name),
-    })
-    // Map costPrice to unitCost for frontend consistency
-    const mappedItems = itemList.map(item => ({
-      ...item,
-      unitCost: item.costPrice
-    }))
-    return { success: true, data: mappedItems }
-  } catch (error) {
-    return { success: false, error: 'Failed to fetch items' }
-  }
-}
+    // Fetch bill
+    const { data: bill, error: fetchError } = await supabase
+      .from('bills')
+      .select('*')
+      .eq('id', billId)
+      .single()
 
-export async function getOpenPurchaseOrdersForDropdown(): Promise<ActionResult<any[]>> {
-  try {
-    const companyId = await getCurrentCompanyId()
-    const poList = await db.query.purchaseOrders.findMany({
-      where: and(
-        eq(purchaseOrders.companyId, companyId),
-        eq(purchaseOrders.status, 'OPEN')
-      ),
-      columns: { id: true, poNumber: true, totalAmount: true, vendorId: true },
-      orderBy: desc(purchaseOrders.createdAt),
-    })
-    return { success: true, data: poList }
-  } catch (error) {
-    return { success: false, error: 'Failed to fetch open POs' }
+    if (fetchError) throw fetchError
+    if (!bill) throw new Error('Bill not found')
+
+    const newPaidAmount = Number(bill.paid_amount || 0) + amount
+    const billTotal = Number(bill.total_amount)
+
+    // Peachtree-style status determination
+    let newStatus: string
+    if (newPaidAmount >= billTotal) {
+      newStatus = 'PAID'
+    } else if (newPaidAmount > 0) {
+      newStatus = 'PARTIALLY_PAID'
+    } else {
+      newStatus = 'OPEN'
+    }
+
+    // Update bill
+    const { error: updateError } = await supabase.from('bills').update({
+      paid_amount: newPaidAmount,
+      status: newStatus,
+      updated_at: new Date().toISOString()
+    }).eq('id', billId)
+
+    if (updateError) throw updateError
+
+    // ============ PEACHTREE LOGIC: Reduce Vendor Balance ============
+    // Payment reduces AP (vendor balance)
+    await updateVendorBalance(bill.vendor_id, -amount)
+    console.log(`[recordBillPayment] Bill ${billId}: paid=${newPaidAmount}, status=${newStatus}`)
+    console.log(`[recordBillPayment] Vendor ${bill.vendor_id} balance reduced by ${amount}`)
+
+    return { success: true }
+  } catch (error: any) {
+    console.error("Error recording bill payment:", error)
+    return { success: false, error: error.message || "Failed to record payment" }
   }
 }

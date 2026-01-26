@@ -1,11 +1,11 @@
-'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useNavigate } from 'react-router-dom'
 import { useForm, useFieldArray } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Plus, Trash2, Loader2, Save } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { useToast } from '@/components/ui/use-toast'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
@@ -24,7 +24,8 @@ interface AdjustmentFormProps {
 }
 
 export function AdjustmentForm({ items }: AdjustmentFormProps) {
-  const router = useRouter()
+  const navigate = useNavigate()
+  const { toast } = useToast()
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const form = useForm<InventoryAdjustmentFormValues>({
@@ -49,13 +50,25 @@ export function AdjustmentForm({ items }: AdjustmentFormProps) {
     try {
       const result = await createInventoryAdjustment(data)
       if (result.success) {
-        router.push('/dashboard/inventory') // Or adjustments list if I create one
+        toast({
+          title: 'Success',
+          description: 'Inventory adjustment posted successfully',
+        })
+        navigate('/dashboard/inventory') // Or adjustments list if I create one
       } else {
-        alert(result.error || 'Failed to record adjustment')
+        toast({
+          title: 'Error',
+          description: result.error || 'Failed to record adjustment',
+          variant: 'destructive',
+        })
       }
     } catch (error) {
       console.error(error)
-      alert('An error occurred')
+      toast({
+        title: 'Error',
+        description: 'An unexpected error occurred',
+        variant: 'destructive',
+      })
     } finally {
       setIsSubmitting(false)
     }
@@ -160,7 +173,7 @@ export function AdjustmentForm({ items }: AdjustmentFormProps) {
       </div>
 
       <div className="flex justify-end gap-4">
-        <Button type="button" variant="outline" onClick={() => router.back()}>Cancel</Button>
+        <Button type="button" variant="outline" onClick={() => navigate(-1)}>Cancel</Button>
         <Button type="submit" disabled={isSubmitting} className="bg-emerald-500 hover:bg-emerald-600">
            {isSubmitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
            <Save className="w-4 h-4 mr-2" />

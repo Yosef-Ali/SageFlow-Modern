@@ -1,6 +1,5 @@
-'use client'
 
-import Link from 'next/link'
+import { Link } from 'react-router-dom'
 import { Eye, Edit, MoreHorizontal, CreditCard } from 'lucide-react'
 import {
   Table,
@@ -39,7 +38,7 @@ export function BillTable({ bills }: { bills: Bill[] }) {
       <div className="flex flex-col items-center justify-center py-16 px-4 bg-card rounded-lg border border-slate-200 dark:border-border">
         <h3 className="text-lg font-medium text-foreground mb-1">No Bills Found</h3>
         <p className="text-slate-500 mb-4">Record your first vendor bill to get started.</p>
-        <Link href="/dashboard/purchases/bills/new">
+        <Link to="/dashboard/purchases/bills/new">
           <Button>Enter Bill</Button>
         </Link>
       </div>
@@ -95,14 +94,14 @@ export function BillTable({ bills }: { bills: Bill[] }) {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
                     <DropdownMenuItem asChild>
-                      <Link href={`/dashboard/purchases/bills/${bill.id}`}>
+                      <Link to={`/dashboard/purchases/bills/${bill.id}`}>
                         <Eye className="h-4 w-4 mr-2" />
                         View
                       </Link>
                     </DropdownMenuItem>
                     {bill.status !== 'PAID' && (
                         <DropdownMenuItem asChild>
-                        <Link href={`/dashboard/purchases/bills/${bill.id}/pay`}>
+                        <Link to={`/dashboard/purchases/bills/${bill.id}/pay`}>
                             <CreditCard className="h-4 w-4 mr-2" />
                             Record Payment
                         </Link>

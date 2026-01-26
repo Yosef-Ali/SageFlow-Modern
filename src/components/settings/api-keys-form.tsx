@@ -1,7 +1,6 @@
-'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useNavigate } from 'react-router-dom'
 import { Eye, EyeOff, Key, Loader2, Check, X, AlertCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -95,7 +94,7 @@ function ApiKeyInput({
 }
 
 export function ApiKeysForm() {
-  const router = useRouter()
+  const navigate = useNavigate()
   const { toast } = useToast()
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
@@ -287,7 +286,7 @@ export function ApiKeysForm() {
         <Button
           type="button"
           variant="outline"
-          onClick={() => router.push('/dashboard/settings')}
+          onClick={() => navigate('/dashboard/settings')}
         >
           Cancel
         </Button>

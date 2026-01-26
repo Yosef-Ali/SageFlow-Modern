@@ -1,7 +1,6 @@
-'use client'
 
 import { useState } from 'react'
-import Link from 'next/link'
+import { Link } from 'react-router-dom'
 import { MoreHorizontal, Eye, Edit, Trash2, Package, AlertTriangle } from 'lucide-react'
 import {
   Table,
@@ -79,7 +78,7 @@ export function ItemTable({ items, isLoading }: ItemTableProps) {
         <Package className="w-12 h-12 text-muted-foreground mb-4" />
         <h3 className="text-lg font-medium mb-1">No inventory items yet</h3>
         <p className="text-muted-foreground mb-4">Add your first item to start tracking inventory</p>
-        <Link href="/dashboard/inventory/new">
+        <Link to="/dashboard/inventory/new">
           <Button>Add Item</Button>
         </Link>
       </div>
@@ -156,13 +155,13 @@ export function ItemTable({ items, isLoading }: ItemTableProps) {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem asChild>
-                          <Link href={`/dashboard/inventory/${item.id}`}>
+                          <Link to={`/dashboard/inventory/${item.id}`}>
                             <Eye className="h-4 w-4 mr-2" />
                             View Details
                           </Link>
                         </DropdownMenuItem>
                         <DropdownMenuItem asChild>
-                          <Link href={`/dashboard/inventory/${item.id}/edit`}>
+                          <Link to={`/dashboard/inventory/${item.id}/edit`}>
                             <Edit className="h-4 w-4 mr-2" />
                             Edit
                           </Link>

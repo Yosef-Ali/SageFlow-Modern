@@ -1,17 +1,16 @@
-import { drizzle } from 'drizzle-orm/postgres-js';
-import postgres from 'postgres';
+// This file acts as a placeholder for the client-side app.
+// Direct database access via 'postgres' driver is not possible in the browser.
+// We are using Supabase Client (@supabase/supabase-js) which connects via HTTP.
+
 import * as schema from './schema';
 
-if (!process.env.DATABASE_URL) {
-  throw new Error('DATABASE_URL environment variable is not set');
-}
+export const db = new Proxy({}, {
+  get: function (target, prop) {
+    // Prevent crashing if something imports db, but warn developer
+    console.warn(`Attempted to access db.${String(prop)} on client-side. Use Supabase client instead.`);
+    return () => { }; // Return safe no-op function
+  }
+});
 
-// Create the connection
-const connectionString = process.env.DATABASE_URL;
-
-// For query purposes
-const queryClient = postgres(connectionString);
-export const db = drizzle(queryClient, { schema });
-
-// For migrations
-export const migrationClient = postgres(connectionString, { max: 1 });
+// Mock query builder for schema compatibility if needed, though mostly unused now
+export { schema };

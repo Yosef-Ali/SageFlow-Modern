@@ -1,11 +1,11 @@
-'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useNavigate } from 'react-router-dom'
 import { useForm, useFieldArray } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Plus, Trash2, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { useToast } from '@/components/ui/use-toast'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
@@ -30,7 +30,8 @@ interface PurchaseOrderFormProps {
 }
 
 export function PurchaseOrderForm({ vendors, items }: PurchaseOrderFormProps) {
-  const router = useRouter()
+  const navigate = useNavigate()
+  const { toast } = useToast()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [totals, setTotals] = useState({ total: 0 })
 
@@ -79,13 +80,25 @@ export function PurchaseOrderForm({ vendors, items }: PurchaseOrderFormProps) {
     try {
       const result = await createPurchaseOrder(data)
       if (result.success) {
-         router.push('/dashboard/purchases/orders')
+         toast({
+            title: 'Success',
+            description: 'Purchase Order created successfully',
+         })
+         navigate('/dashboard/purchases/orders')
       } else {
-         alert(result.error || 'Failed to create PO')
+         toast({
+            title: 'Error',
+            description: result.error || 'Failed to create PO',
+            variant: 'destructive',
+         })
       }
     } catch (error) {
       console.error(error)
-      alert('An error occurred')
+       toast({
+        title: 'Error',
+        description: 'An unexpected error occurred',
+        variant: 'destructive',
+      })
     } finally {
       setIsSubmitting(false)
     }
@@ -243,7 +256,7 @@ export function PurchaseOrderForm({ vendors, items }: PurchaseOrderFormProps) {
        
        {/* Actions */}
        <div className="flex justify-end gap-4">
-          <Button type="button" variant="outline" onClick={() => router.back()}>Cancel</Button>
+          <Button type="button" variant="outline" onClick={() => navigate(-1)}>Cancel</Button>
           <Button type="submit" disabled={isSubmitting} className="bg-emerald-500 hover:bg-emerald-600">
              {isSubmitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
              Create Purchase Order

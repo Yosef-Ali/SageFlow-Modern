@@ -1,7 +1,6 @@
-'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Loader2 } from 'lucide-react'
@@ -45,7 +44,7 @@ const accountTypes = [
 ]
 
 export function BankAccountForm({ account, onSuccess }: BankAccountFormProps) {
-  const router = useRouter()
+  const navigate = useNavigate()
   const createAccount = useCreateBankAccount()
   const updateAccount = useUpdateBankAccount()
   const isEditing = !!account
@@ -73,7 +72,7 @@ export function BankAccountForm({ account, onSuccess }: BankAccountFormProps) {
       if (onSuccess) {
         onSuccess()
       } else {
-        router.push('/dashboard/banking')
+        navigate('/dashboard/banking')
       }
     } catch (error) {
       // Error handled by mutation hook
@@ -182,7 +181,7 @@ export function BankAccountForm({ account, onSuccess }: BankAccountFormProps) {
         <Button
           type="button"
           variant="outline"
-          onClick={() => router.push('/dashboard/banking')}
+          onClick={() => navigate('/dashboard/banking')}
         >
           Cancel
         </Button>

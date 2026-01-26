@@ -12,6 +12,7 @@ import {
 import { PaymentFormValues, PaymentFiltersValues } from '@/lib/validations/payment'
 import { useToast } from '@/components/ui/use-toast'
 import { invoiceKeys } from './use-invoices'
+import { useAuth } from '@/lib/auth-context'
 
 // Query keys
 export const paymentKeys = {
@@ -28,15 +29,19 @@ export const paymentKeys = {
  * Hook to fetch payments with filters
  */
 export function usePayments(filters?: Partial<PaymentFiltersValues>) {
+  const { user } = useAuth()
+
   return useQuery({
     queryKey: paymentKeys.list(filters),
     queryFn: async () => {
-      const result = await getPayments(filters)
+      if (!user?.companyId) throw new Error('User not authenticated')
+      const result = await getPayments(user.companyId, filters)
       if (!result.success) {
-        throw new Error(result.error)
+        throw new Error(result.error || 'Failed to fetch payments')
       }
       return result.data
     },
+    enabled: !!user?.companyId,
   })
 }
 
@@ -80,10 +85,12 @@ export function useUnpaidInvoices(customerId: string) {
 export function useCreatePayment() {
   const queryClient = useQueryClient()
   const { toast } = useToast()
+  const { user } = useAuth()
 
   return useMutation({
     mutationFn: async (data: PaymentFormValues) => {
-      const result = await createPayment(data)
+      if (!user?.companyId) throw new Error('User not authenticated')
+      const result = await createPayment(data, user.companyId)
       if (!result.success) {
         throw new Error(result.error)
       }

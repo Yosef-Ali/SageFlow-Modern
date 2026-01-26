@@ -1,10 +1,40 @@
 import { GoogleGenerativeAI } from '@google/generative-ai'
 import { env } from './env'
 
-// Initialize Gemini AI
-const genAI = env.GEMINI_API_KEY
-  ? new GoogleGenerativeAI(env.GEMINI_API_KEY)
-  : null
+// Storage key for settings (same as settings-actions.ts)
+const SETTINGS_KEY = 'sageflow_settings'
+
+/**
+ * Get Gemini API key from localStorage or environment variables
+ * Priority: localStorage (user-provided) > environment variable
+ */
+export function getGeminiApiKey(): string | null {
+  // First check localStorage for user-provided key
+  try {
+    const stored = localStorage.getItem(SETTINGS_KEY)
+    if (stored) {
+      const settings = JSON.parse(stored)
+      if (settings.apiKeys?.geminiApiKey) {
+        return settings.apiKeys.geminiApiKey
+      }
+    }
+  } catch {
+    // Ignore localStorage errors
+  }
+
+  // Fall back to environment variable
+  return env.VITE_GEMINI_API_KEY || null
+}
+
+/**
+ * Get GoogleGenerativeAI instance with current API key
+ * Creates new instance each time to pick up updated keys from localStorage
+ */
+function getGenAI(): GoogleGenerativeAI | null {
+  const apiKey = getGeminiApiKey()
+  if (!apiKey) return null
+  return new GoogleGenerativeAI(apiKey)
+}
 
 /**
  * Chat with AI Assistant about accounting and business queries
@@ -18,16 +48,17 @@ export async function chatWithAI(
   }
 ): Promise<{ response: string; error?: string }> {
   try {
+    const genAI = getGenAI()
     if (!genAI) {
       return {
         response: '',
-        error: 'Gemini API key not configured. Please add GEMINI_API_KEY to your environment variables.',
+        error: 'Gemini API key not configured. Please go to Settings → API Keys to add your Gemini API key.',
       }
     }
 
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' })
+    const model = genAI.getGenerativeModel({ model: 'gemini-3-flash-preview' })
 
-    // Build context-aware prompt
+    // Build context-aware prompt with A2-UI widget support
     let prompt = `You are an AI assistant for SageFlow, an accounting software designed for Ethiopian businesses.
 You help users with:
 - Understanding their financial data
@@ -35,6 +66,81 @@ You help users with:
 - Providing insights on invoices, payments, and expenses
 - Helping with Ethiopian business tax and VAT (15%)
 - Currency conversions and ETB calculations
+
+## A2-UI WIDGET RESPONSES - MANDATORY
+You MUST use A2-UI widgets to display data. Never show raw numbers or lists as plain text.
+ALWAYS wrap financial data, metrics, lists, and calculations in widget blocks.
+
+### Available Widgets (USE THESE FOR EVERY RESPONSE WITH DATA):
+
+1. **Stats** - Show key metrics:
+\`\`\`widget:stats
+{"items": [{"label": "Revenue", "value": "ETB 50,000", "change": "+12%"}, {"label": "Expenses", "value": "ETB 30,000", "change": "-5%"}]}
+\`\`\`
+
+2. **List** - Show items with status:
+\`\`\`widget:list
+{"title": "Recent Invoices", "items": [{"primary": "INV-001", "secondary": "Abebe Corp", "value": "ETB 5,000", "status": "paid"}, {"primary": "INV-002", "secondary": "Kebede Ltd", "value": "ETB 3,000", "status": "pending"}]}
+\`\`\`
+
+3. **Progress** - Show progress towards goal:
+\`\`\`widget:progress
+{"label": "Monthly Target", "current": 75000, "target": 100000, "unit": "ETB "}
+\`\`\`
+
+4. **Card** - Show calculation breakdown:
+\`\`\`widget:card
+{"title": "VAT Calculation", "items": [{"label": "Subtotal", "value": "ETB 10,000"}, {"label": "VAT (15%)", "value": "ETB 1,500"}, {"label": "Total", "value": "ETB 11,500", "highlight": true}]}
+\`\`\`
+
+5. **Chart** - Show bar, pie, or line charts:
+\`\`\`widget:chart
+{"chartType": "pie", "title": "Expenses by Category", "data": [{"name": "Rent", "value": 5000}, {"name": "Salaries", "value": 15000}, {"name": "Supplies", "value": 3000}]}
+\`\`\`
+
+6. **Table** - Show tabular data:
+\`\`\`widget:table
+{"title": "Top Customers", "headers": ["Customer", "Total", "Status"], "rows": [{"Customer": "ABC Corp", "Total": "ETB 25,000", "Status": "Active"}]}
+\`\`\`
+
+7. **Alert** - Show important messages (variant: info, success, warning, error):
+\`\`\`widget:alert
+{"variant": "warning", "title": "Attention", "message": "You have 3 overdue invoices totaling ETB 15,000"}
+\`\`\`
+
+8. **Metric** - Show single important metric:
+\`\`\`widget:metric
+{"value": "ETB 125,000", "label": "Total Revenue", "trend": "up", "trendValue": "+15%"}
+\`\`\`
+
+9. **KPI Card** - Show KPI with icon (icon: dollar, users, package, alert, trending):
+\`\`\`widget:kpicard
+{"icon": "dollar", "label": "Net Profit", "value": "ETB 45,000", "trend": {"value": "+8%", "direction": "up"}, "color": "green"}
+\`\`\`
+
+10. **Distribution** - Show breakdown with bars:
+\`\`\`widget:distribution
+{"title": "Revenue Sources", "items": [{"label": "Products", "value": 60000}, {"label": "Services", "value": 40000}]}
+\`\`\`
+
+## CRITICAL RULES:
+1. ALWAYS use widgets in EVERY response - no exceptions
+2. Keep text VERY SHORT - max 1-2 sentences before widgets
+3. For financial summaries → use stats or kpicard widgets
+4. For lists → use list or table widgets
+5. For calculations → use card widget
+6. For warnings/no data → use alert widget
+7. For charts → use chart or distribution widgets
+8. JSON must be valid - double quotes, no trailing commas
+9. NO markdown formatting (**bold**, *italic*) - plain text only
+10. If no data available, show alert widget with info variant
+11. Response format: Short intro (1 line) → Widget(s) → Optional 1-line note
+
+Example for no data:
+Short intro here.
+\`\`\`widget:alert
+{"variant": "info", "title": "No Data", "message": "No payment records found. Start by creating invoices and recording payments."}
+\`\`\`
 
 `
 
@@ -53,7 +159,7 @@ You help users with:
       })
     }
 
-    prompt += `\nUser Question: ${message}\n\nProvide a helpful, concise response:`
+    prompt += `\nUser Question: ${message}\n\nRespond with: 1 short sentence + widget(s). Keep it concise:`
 
     const result = await model.generateContent(prompt)
     const response = result.response.text()
@@ -96,14 +202,15 @@ export async function autoScanInvoice(
   error?: string
 }> {
   try {
+    const genAI = getGenAI()
     if (!genAI) {
       return {
         success: false,
-        error: 'Gemini API key not configured',
+        error: 'Gemini API key not configured. Please go to Settings → API Keys to add your Gemini API key.',
       }
     }
 
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' })
+    const model = genAI.getGenerativeModel({ model: 'gemini-3-flash-preview' })
 
     const prompt = `You are an AI that extracts structured data from invoice and receipt images.
 Extract the following information from this invoice/receipt:
@@ -134,7 +241,7 @@ Return the data in this exact JSON format:
   ],
   "subtotal": number or null,
   "taxAmount": number or null,
-  "taxRate": number or null (e.g., 15 for 15%),
+  "taxRate": number or null (Ethiopian VAT is 0.15 for 15%),
   "total": number or null,
   "currency": "ETB or other"
 }
@@ -187,14 +294,15 @@ export async function getFinancialInsights(financialData: {
   topCustomers?: Array<{ name: string; total: number }>
 }): Promise<{ insights: string; error?: string }> {
   try {
+    const genAI = getGenAI()
     if (!genAI) {
       return {
         insights: '',
-        error: 'Gemini API key not configured',
+        error: 'Gemini API key not configured. Please go to Settings → API Keys to add your Gemini API key.',
       }
     }
 
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' })
+    const model = genAI.getGenerativeModel({ model: 'gemini-3-flash-preview' })
 
     const prompt = `Analyze this financial data for an Ethiopian business and provide actionable insights and recommendations:
 
@@ -241,14 +349,15 @@ export async function autoScanPayment(
   error?: string
 }> {
   try {
+    const genAI = getGenAI()
     if (!genAI) {
       return {
         success: false,
-        error: 'Gemini API key not configured',
+        error: 'Gemini API key not configured. Please go to Settings → API Keys to add your Gemini API key.',
       }
     }
 
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' })
+    const model = genAI.getGenerativeModel({ model: 'gemini-3-flash-preview' })
 
     const prompt = `You are an AI that extracts structured data from payment receipts and bank transfer confirmations.
 Extract the following information from this payment receipt/confirmation:

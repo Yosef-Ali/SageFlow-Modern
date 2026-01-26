@@ -10,7 +10,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { scanInvoiceImage } from '@/app/actions/ai-actions'
+import { autoScanInvoice } from '@/lib/gemini-service'
 import { useToast } from '@/components/ui/use-toast'
 
 interface AIAutoScanProps {
@@ -53,7 +53,7 @@ export function AIAutoScan({ open, onOpenChange, onScanComplete }: AIAutoScanPro
       // Start scanning
       setIsScanning(true)
       try {
-        const result = await scanInvoiceImage(base64Data, mimeType)
+        const result = await autoScanInvoice(base64Data, mimeType)
 
         if (result.success && result.data) {
           setScannedData(result.data)
@@ -137,6 +137,7 @@ export function AIAutoScan({ open, onOpenChange, onScanComplete }: AIAutoScanPro
             <div
               onDragOver={handleDragOver}
               onDrop={handleDrop}
+              onClick={() => fileInputRef.current?.click()}
               className="border-2 border-dashed border-border rounded-lg p-12 text-center hover:border-emerald-500/50 transition-colors cursor-pointer bg-muted/30"
             >
               <Upload className="h-12 w-12 mx-auto text-muted-foreground mb-4" />

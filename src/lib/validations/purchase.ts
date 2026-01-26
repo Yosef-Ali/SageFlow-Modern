@@ -22,6 +22,7 @@ export const purchaseOrderSchema = z.object({
 });
 
 export type PurchaseFormValues = z.infer<typeof purchaseOrderSchema>;
+export type PurchaseOrderFormValues = PurchaseFormValues;
 
 // --- Bill Schemas ---
 

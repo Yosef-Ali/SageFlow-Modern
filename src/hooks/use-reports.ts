@@ -14,7 +14,7 @@ export function useGeneralLedger(filters?: GLFilterValues) {
     queryKey: reportKeys.gl(filters),
     queryFn: async () => {
       const result = await getGeneralLedger(filters)
-      if (!result.success) throw new Error(result.error)
+      if (!result.success) throw new Error(result.error || 'Failed to fetch report')
       return result.data
     },
   })

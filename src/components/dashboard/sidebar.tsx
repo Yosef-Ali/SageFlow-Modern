@@ -1,9 +1,6 @@
-'use client'
-
 import { useState, useEffect } from 'react'
-import { signOut, useSession } from 'next-auth/react'
-import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { useAuth } from '@/lib/auth-context'
 import {
   LayoutDashboard,
   Users,
@@ -157,7 +154,7 @@ function NavSection({ item, expanded, onToggle, pathname }: {
           {item.children.map((child) => (
             <Link
               key={child.href}
-              href={child.href}
+              to={child.href}
               className={cn(
                 "flex items-center py-2 px-3 rounded-lg text-sm transition-colors",
                 pathname === child.href || pathname.startsWith(child.href + '/')
@@ -175,8 +172,15 @@ function NavSection({ item, expanded, onToggle, pathname }: {
 }
 
 export function DashboardSidebar() {
-  const { data: session } = useSession()
-  const pathname = usePathname()
+  const { user, logout } = useAuth()
+  const navigate = useNavigate()
+  const location = useLocation()
+  const pathname = location.pathname
+
+  const handleSignOut = () => {
+    logout()
+    navigate('/login')
+  }
   
   // Expanded sections state (persisted in localStorage)
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({})
@@ -213,7 +217,7 @@ export function DashboardSidebar() {
         {/* Logo */}
         {/* Logo & Toggle */}
         <div className="flex items-center justify-between mb-6 px-2">
-          <Link href="/dashboard" className="flex items-center gap-3">
+          <Link to="/dashboard" className="flex items-center gap-3">
             <div className="w-9 h-9 bg-sidebar-primary rounded-lg flex items-center justify-center">
               <TrendingUp className="w-5 h-5 text-sidebar-primary-foreground" />
             </div>
@@ -237,9 +241,9 @@ export function DashboardSidebar() {
                 pathname={pathname}
               />
             ) : (
-              <Link
+                <Link
                 key={item.name}
-                href={item.href!}
+                to={item.href!}
                 className={cn(
                   "flex items-center gap-3 px-4 py-2.5 rounded-lg transition-colors",
                   pathname === item.href
@@ -257,7 +261,7 @@ export function DashboardSidebar() {
 
       {/* User Profile Section */}
       <div className="p-4 border-t border-sidebar-border">
-        {session?.user && (
+        {user && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-sidebar-accent transition-colors w-full text-left">
@@ -266,10 +270,10 @@ export function DashboardSidebar() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold truncate">
-                    {session.user.name || session.user.email}
+                    {user.name || user.email}
                   </p>
                   <p className="text-xs text-sidebar-foreground/60 truncate">
-                    {(session.user as any).companyName}
+                    {user.companyName}
                   </p>
                 </div>
                 <ChevronDown className="w-4 h-4 text-sidebar-foreground/60" />
@@ -278,26 +282,26 @@ export function DashboardSidebar() {
             <DropdownMenuContent align="end" className="w-56">
               <DropdownMenuLabel>
                 <div>
-                  <p className="font-medium">{session.user.name}</p>
-                  <p className="text-xs text-muted-foreground">{session.user.email}</p>
+                  <p className="font-medium">{user.name}</p>
+                  <p className="text-xs text-muted-foreground">{user.email}</p>
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem asChild>
-                <Link href="/dashboard/settings/profile">
+                <Link to="/dashboard/settings/profile">
                   <User className="w-4 h-4 mr-2" />
                   Profile
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
-                <Link href="/dashboard/settings">
+                <Link to="/dashboard/settings">
                   <Settings className="w-4 h-4 mr-2" />
                   Settings
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
-                onClick={() => signOut({ callbackUrl: '/login' })}
+                onClick={handleSignOut}
                 className="text-destructive focus:text-destructive"
               >
                 <LogOut className="w-4 h-4 mr-2" />
@@ -307,9 +311,9 @@ export function DashboardSidebar() {
           </DropdownMenu>
         )}
 
-        {!session?.user && (
+        {!user && (
           <button
-            onClick={() => signOut({ callbackUrl: '/login' })}
+            onClick={handleSignOut}
             className="flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors w-full text-left text-sidebar-foreground/80"
           >
             <LogOut className="w-5 h-5" />

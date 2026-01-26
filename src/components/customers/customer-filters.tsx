@@ -1,14 +1,13 @@
-'use client'
 
 import { Search, X } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { useEffect, useState } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 
 export function CustomerFilters() {
-  const router = useRouter()
-  const searchParams = useSearchParams()
+  const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const [search, setSearch] = useState(searchParams.get('search') || '')
   const [status, setStatus] = useState(searchParams.get('status') || 'active')
 
@@ -22,16 +21,16 @@ export function CustomerFilters() {
         params.delete('search')
       }
       params.set('status', status)
-      router.push(`/dashboard/customers?${params.toString()}`)
+      navigate(`/dashboard/customers?${params.toString()}`)
     }, 300)
 
     return () => clearTimeout(timer)
-  }, [search, status, router, searchParams])
+  }, [search, status, navigate, searchParams])
 
   const handleClearFilters = () => {
     setSearch('')
     setStatus('active')
-    router.push('/dashboard/customers')
+    navigate('/dashboard/customers')
   }
 
   const hasFilters = search || status !== 'active'

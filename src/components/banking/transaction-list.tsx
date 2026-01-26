@@ -1,7 +1,6 @@
-'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useNavigate } from 'react-router-dom'
 import { Plus, ArrowUpRight, ArrowDownLeft, Loader2, MoreHorizontal } from 'lucide-react'
 import {
   Table,
@@ -33,6 +32,7 @@ import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { createBankTransaction } from '@/app/actions/banking-actions'
 import { formatDate, formatCurrency } from '@/lib/utils'
+import { useToast } from '@/components/ui/use-toast'
 
 interface TransactionListProps {
   accountId: string
@@ -40,7 +40,8 @@ interface TransactionListProps {
 }
 
 export function TransactionList({ accountId, transactions }: TransactionListProps) {
-  const router = useRouter()
+  const navigate = useNavigate()
+  const { toast } = useToast()
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -72,12 +73,25 @@ export function TransactionList({ accountId, transactions }: TransactionListProp
         setDescription('')
         setReference('')
         setCategory('')
-        router.refresh()
+        toast({
+          title: 'Success',
+          description: 'Transaction recorded successfully',
+        })
+        navigate(0)
       } else {
-        alert(result.error || 'Failed to record transaction')
+        toast({
+          title: 'Error',
+          description: result.error || 'Failed to record transaction',
+          variant: 'destructive',
+        })
       }
     } catch (err) {
       console.error(err)
+      toast({
+        title: 'Error',
+        description: 'An unexpected error occurred',
+        variant: 'destructive',
+      })
     } finally {
       setIsSubmitting(false)
     }

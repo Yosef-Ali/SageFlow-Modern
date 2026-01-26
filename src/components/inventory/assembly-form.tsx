@@ -1,11 +1,11 @@
-'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useNavigate } from 'react-router-dom'
 import { useForm, useFieldArray } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Plus, Trash2, Loader2, Save } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { useToast } from '@/components/ui/use-toast'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
@@ -23,7 +23,8 @@ interface AssemblyFormProps {
 }
 
 export function AssemblyForm({ items }: AssemblyFormProps) {
-  const router = useRouter()
+  const navigate = useNavigate()
+  const { toast } = useToast()
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const form = useForm<AssemblyFormValues>({
@@ -32,7 +33,7 @@ export function AssemblyForm({ items }: AssemblyFormProps) {
       itemId: '',
       description: '',
       yieldQuantity: 1,
-      items: [
+      components: [
         { itemId: '', quantity: 1 }
       ]
     },
@@ -40,7 +41,7 @@ export function AssemblyForm({ items }: AssemblyFormProps) {
 
   const { fields, append, remove } = useFieldArray({
     control: form.control,
-    name: 'items',
+    name: 'components',
   })
 
   // Prevent selecting the same item as component that is being built (circular)
@@ -52,13 +53,25 @@ export function AssemblyForm({ items }: AssemblyFormProps) {
     try {
       const result = await createAssemblyDefinition(data)
       if (result.success) {
-        router.push('/dashboard/inventory/assemblies')
+        toast({
+          title: 'Success',
+          description: 'Assembly created successfully'
+        })
+        navigate('/dashboard/inventory/assemblies')
       } else {
-        alert(result.error || 'Failed to create assembly')
+        toast({
+          title: 'Error',
+          description: result.error || 'Failed to create assembly',
+          variant: 'destructive'
+        })
       }
     } catch (error) {
       console.error(error)
-      alert('An error occurred')
+      toast({
+        title: 'Error',
+        description: 'An unexpected error occurred',
+        variant: 'destructive'
+      })
     } finally {
       setIsSubmitting(false)
     }
@@ -139,8 +152,8 @@ export function AssemblyForm({ items }: AssemblyFormProps) {
                 <tr key={field.id} className="border-b">
                    <td className="py-2 px-2">
                       <Select
-                        onValueChange={(val) => form.setValue(`items.${index}.itemId`, val)}
-                        defaultValue={form.watch(`items.${index}.itemId`)}
+                        onValueChange={(val) => form.setValue(`components.${index}.itemId`, val)}
+                        defaultValue={form.watch(`components.${index}.itemId`)}
                       >
                         <SelectTrigger>
                           <SelectValue placeholder="Select Component" />
@@ -155,7 +168,7 @@ export function AssemblyForm({ items }: AssemblyFormProps) {
                    <td className="py-2 px-2">
                       <Input 
                          type="number" step="0.0001" min="0"
-                         {...form.register(`items.${index}.quantity`, { valueAsNumber: true })}
+                         {...form.register(`components.${index}.quantity`, { valueAsNumber: true })}
                          className="text-right"
                       />
                    </td>
@@ -173,13 +186,13 @@ export function AssemblyForm({ items }: AssemblyFormProps) {
             </tbody>
           </table>
         </div>
-         {form.formState.errors.items && (
-            <p className="text-sm text-red-500">{form.formState.errors.items.message}</p>
+         {form.formState.errors.components && (
+            <p className="text-sm text-red-500">{form.formState.errors.components.message}</p>
         )}
       </div>
 
       <div className="flex justify-end gap-4">
-        <Button type="button" variant="outline" onClick={() => router.back()}>Cancel</Button>
+        <Button type="button" variant="outline" onClick={() => navigate(-1)}>Cancel</Button>
         <Button type="submit" disabled={isSubmitting} className="bg-emerald-500 hover:bg-emerald-600">
            {isSubmitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
            <Save className="w-4 h-4 mr-2" />

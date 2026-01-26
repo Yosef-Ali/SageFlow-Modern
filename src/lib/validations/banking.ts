@@ -1,33 +1,32 @@
 import { z } from 'zod'
 
 export const bankAccountSchema = z.object({
-  accountName: z.string().min(1, 'Account Name is required'),
-  accountNumber: z.string().min(1, 'Account Number is required'),
-  openingBalance: z.number().default(0),
+  accountName: z.string().min(1, 'Account name is required'),
+  accountNumber: z.string().min(1, 'Account number is required'),
+  bankName: z.string().optional(),
+  accountType: z.string().min(1, 'Account type is required'),
   currency: z.string().default('ETB'),
-  isActive: z.boolean().optional(),
+  openingBalance: z.number().default(0),
+  isActive: z.boolean().default(true)
+})
+
+export const bankTransactionSchema = z.object({
+  bankAccountId: z.string().min(1, 'Bank account is required'),
+  date: z.date(),
+  description: z.string().min(1, 'Description is required'),
+  amount: z.number().min(0.01, 'Amount must be greater than 0'),
+  type: z.enum(['DEPOSIT', 'WITHDRAWAL', 'TRANSFER']),
+  category: z.string().optional(),
+  reference: z.string().optional()
+})
+
+export const reconciliationSchema = z.object({
+  bankAccountId: z.string().min(1, 'Bank account is required'),
+  statementDate: z.date(),
+  statementBalance: z.number(),
+  status: z.enum(['DRAFT', 'COMPLETED']).default('DRAFT')
 })
 
 export type BankAccountFormValues = z.infer<typeof bankAccountSchema>
-
-// Manual Transaction Entry (if needed separate from deposits/payments)
-// Usually we have: Deposit, Withdrawal, Transfer.
-export const bankTransactionSchema = z.object({
-  bankAccountId: z.string().min(1, 'Bank Account is required'),
-  date: z.date(),
-  description: z.string().min(1, 'Description is required'),
-  type: z.enum(['DEPOSIT', 'WITHDRAWAL', 'TRANSFER']),
-  amount: z.number().min(0.01, 'Amount must be positive'),
-  reference: z.string().optional(),
-  category: z.string().optional(), // Expense Category / Income Category
-})
-
 export type BankTransactionFormValues = z.infer<typeof bankTransactionSchema>
-
-export const reconciliationSchema = z.object({
-  bankAccountId: z.string().min(1, 'Bank Account is required'),
-  statementDate: z.date(),
-  statementBalance: z.number(),
-})
-
 export type ReconciliationFormValues = z.infer<typeof reconciliationSchema>

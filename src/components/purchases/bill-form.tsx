@@ -1,11 +1,11 @@
-'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { useToast } from '@/components/ui/use-toast'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
@@ -29,7 +29,8 @@ interface BillFormProps {
 }
 
 export function BillForm({ vendors, openPOs }: BillFormProps) {
-  const router = useRouter()
+  const navigate = useNavigate()
+  const { toast } = useToast()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [filteredPOs, setFilteredPOs] = useState<any[]>([])
 
@@ -75,13 +76,25 @@ export function BillForm({ vendors, openPOs }: BillFormProps) {
     try {
       const result = await createBill(data)
       if (result.success) {
-         router.push('/dashboard/purchases/bills')
+         toast({
+            title: 'Success',
+            description: 'Bill created successfully',
+         })
+         navigate('/dashboard/purchases/bills')
       } else {
-         alert(result.error || 'Failed to create Bill')
+         toast({
+            title: 'Error',
+            description: result.error || 'Failed to create Bill',
+            variant: 'destructive',
+         })
       }
     } catch (error) {
       console.error(error)
-      alert('An error occurred')
+      toast({
+        title: 'Error',
+        description: 'An unexpected error occurred',
+        variant: 'destructive',
+      })
     } finally {
       setIsSubmitting(false)
     }
@@ -195,7 +208,7 @@ export function BillForm({ vendors, openPOs }: BillFormProps) {
        
        {/* Actions */}
        <div className="flex justify-end gap-4">
-          <Button type="button" variant="outline" onClick={() => router.back()}>Cancel</Button>
+          <Button type="button" variant="outline" onClick={() => navigate(-1)}>Cancel</Button>
           <Button type="submit" disabled={isSubmitting} className="bg-emerald-500 hover:bg-emerald-600">
              {isSubmitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
              Enter Bill

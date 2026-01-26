@@ -1,8 +1,7 @@
-'use client'
 
 import { useState, useCallback } from 'react'
-import Link from 'next/link'
-import { MoreHorizontal, Eye, Edit, XCircle, Send, FileText, Download, Printer, Loader2, Mail, Clock, CreditCard } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { MoreHorizontal, Eye, Edit, XCircle, Send, FileText, Download, Printer, Loader2, Mail, Clock, CreditCard, Trash2 } from 'lucide-react'
 import { pdf } from '@react-pdf/renderer'
 import {
   Table,
@@ -19,10 +18,21 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
+import { useToast } from '@/components/ui/use-toast'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import { InvoiceStatusBadge } from './invoice-status-badge'
-import { useCancelInvoice, useUpdateInvoiceStatus } from '@/hooks/use-invoices'
+import { useCancelInvoice, useUpdateInvoiceStatus, useDeleteInvoice } from '@/hooks/use-invoices'
 import { InvoiceStatus } from '@/db/schema'
 import { InvoicePDF } from './invoice-pdf'
 import { getInvoiceForPDF } from '@/app/actions/invoice-pdf-actions'
@@ -32,15 +42,15 @@ import { createPaymentLink } from '@/app/actions/chapa-actions'
 interface Invoice {
   id: string
   invoiceNumber: string
-  date: Date
-  dueDate: Date
-  total: any
-  paidAmount: any
+  date: string | Date
+  dueDate: string | Date
+  total: number | string
+  paidAmount: number | string
   status: InvoiceStatus
   customer: {
     id: string
     name: string
-  }
+  } | null | { name: string } // Allow for loose typing or null
 }
 
 interface InvoiceTableProps {
@@ -51,12 +61,21 @@ interface InvoiceTableProps {
 export function InvoiceTable({ invoices, isLoading }: InvoiceTableProps) {
   const cancelInvoice = useCancelInvoice()
   const updateStatus = useUpdateInvoiceStatus()
+  const deleteInvoice = useDeleteInvoice()
+  const { toast } = useToast()
   const [pdfLoading, setPdfLoading] = useState<string | null>(null)
   const [emailLoading, setEmailLoading] = useState<string | null>(null)
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
+  const [confirmCancelId, setConfirmCancelId] = useState<string | null>(null)
 
-  const handleCancel = async (id: string) => {
-    if (confirm('Are you sure you want to cancel this invoice?')) {
-      await cancelInvoice.mutateAsync(id)
+  const handleCancelClick = (id: string) => {
+    setConfirmCancelId(id)
+  }
+
+  const handleConfirmCancel = async () => {
+    if (confirmCancelId) {
+      await cancelInvoice.mutateAsync(confirmCancelId)
+      setConfirmCancelId(null)
     }
   }
 
@@ -64,57 +83,101 @@ export function InvoiceTable({ invoices, isLoading }: InvoiceTableProps) {
     await updateStatus.mutateAsync({ id, status: 'SENT' })
   }
 
+  const handleDeleteClick = (id: string) => {
+    setConfirmDeleteId(id)
+  }
+
+  const handleConfirmDelete = async () => {
+    if (confirmDeleteId) {
+      await deleteInvoice.mutateAsync(confirmDeleteId)
+      setConfirmDeleteId(null)
+    }
+  }
+
   const handleSendEmail = useCallback(async (invoiceId: string) => {
     setEmailLoading(invoiceId)
     try {
       const result = await sendInvoiceEmailAction(invoiceId, true)
       if (!result.success) {
-        alert(result.error || 'Failed to send email')
+        toast({
+          title: 'Error',
+          description: result.error || 'Failed to send email',
+          variant: 'destructive',
+        })
       } else {
-        alert('Invoice sent successfully!')
+        toast({
+          title: 'Success',
+          description: 'Invoice sent successfully!',
+        })
       }
     } catch (err) {
       console.error('Email send error:', err)
-      alert('Failed to send email')
+      toast({
+        title: 'Error',
+        description: 'Failed to send email',
+        variant: 'destructive',
+      })
     } finally {
       setEmailLoading(null)
     }
-  }, [])
+  }, [toast])
 
   const handleSendReminder = useCallback(async (invoiceId: string) => {
     setEmailLoading(invoiceId)
     try {
       const result = await sendPaymentReminderAction(invoiceId)
       if (!result.success) {
-        alert(result.error || 'Failed to send reminder')
+        toast({
+          title: 'Error',
+          description: result.error || 'Failed to send reminder',
+          variant: 'destructive',
+        })
       } else {
-        alert('Payment reminder sent!')
+        toast({
+          title: 'Success',
+          description: 'Payment reminder sent!',
+        })
       }
     } catch (err) {
       console.error('Reminder send error:', err)
-      alert('Failed to send reminder')
+      toast({
+        title: 'Error',
+        description: 'Failed to send reminder',
+        variant: 'destructive',
+      })
     } finally {
       setEmailLoading(null)
     }
-  }, [])
+  }, [toast])
 
   const handleGetPaymentLink = useCallback(async (invoiceId: string) => {
     setEmailLoading(invoiceId)
     try {
       const result = await createPaymentLink(invoiceId)
       if (!result.success) {
-        alert(result.error || 'Failed to create payment link')
+        toast({
+          title: 'Error',
+          description: result.error || 'Failed to create payment link',
+          variant: 'destructive',
+        })
       } else if (result.data) {
         await navigator.clipboard.writeText(result.data.checkoutUrl)
-        alert('Payment link copied to clipboard!')
+        toast({
+          title: 'Success',
+          description: 'Payment link copied to clipboard!',
+        })
       }
     } catch (err) {
       console.error('Payment link error:', err)
-      alert('Failed to create payment link')
+      toast({
+        title: 'Error',
+        description: 'Failed to create payment link',
+        variant: 'destructive',
+      })
     } finally {
       setEmailLoading(null)
     }
-  }, [])
+  }, [toast])
 
   const handleDownloadPDF = useCallback(async (invoiceId: string, invoiceNumber: string) => {
     setPdfLoading(invoiceId)
@@ -168,7 +231,7 @@ export function InvoiceTable({ invoices, isLoading }: InvoiceTableProps) {
         <FileText className="w-12 h-12 text-muted-foreground mb-4" />
         <h3 className="text-lg font-medium mb-1">No invoices yet</h3>
         <p className="text-muted-foreground mb-4">Get started by creating your first invoice</p>
-        <Link href="/dashboard/invoices/new">
+        <Link to="/dashboard/invoices/new">
           <Button>Create Invoice</Button>
         </Link>
       </div>
@@ -200,16 +263,16 @@ export function InvoiceTable({ invoices, isLoading }: InvoiceTableProps) {
               <TableRow key={invoice.id}>
                 <TableCell className="font-mono text-sm font-medium">
                   <Link 
-                    href={`/dashboard/invoices/${invoice.id}`}
+                    to={`/dashboard/invoices/${invoice.id}`}
                     className="text-emerald-500 hover:text-emerald-600 hover:underline"
                   >
                     {invoice.invoiceNumber}
                   </Link>
                 </TableCell>
-                <TableCell>{invoice.customer.name}</TableCell>
-                <TableCell>{formatDate(new Date(invoice.date))}</TableCell>
+                <TableCell>{invoice.customer?.name || 'Unknown'}</TableCell>
+                <TableCell>{formatDate(invoice.date)}</TableCell>
                 <TableCell className={isOverdue ? 'text-red-600' : ''}>
-                  {formatDate(new Date(invoice.dueDate))}
+                  {formatDate(invoice.dueDate)}
                 </TableCell>
                 <TableCell>
                   <div>
@@ -237,7 +300,7 @@ export function InvoiceTable({ invoices, isLoading }: InvoiceTableProps) {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem asChild>
-                        <Link href={`/dashboard/invoices/${invoice.id}`}>
+                        <Link to={`/dashboard/invoices/${invoice.id}`}>
                           <Eye className="h-4 w-4 mr-2" />
                           View
                         </Link>
@@ -290,7 +353,7 @@ export function InvoiceTable({ invoices, isLoading }: InvoiceTableProps) {
                         <>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem asChild>
-                            <Link href={`/dashboard/invoices/${invoice.id}/edit`}>
+                            <Link to={`/dashboard/invoices/${invoice.id}/edit`}>
                               <Edit className="h-4 w-4 mr-2" />
                               Edit
                             </Link>
@@ -305,13 +368,22 @@ export function InvoiceTable({ invoices, isLoading }: InvoiceTableProps) {
                         <>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem
-                            onClick={() => handleCancel(invoice.id)}
+                            onClick={() => handleCancelClick(invoice.id)}
                             className="text-red-600"
                           >
                             <XCircle className="h-4 w-4 mr-2" />
                             Cancel
                           </DropdownMenuItem>
                         </>
+                      )}
+                      {invoice.status === 'DRAFT' && (
+                        <DropdownMenuItem
+                          onClick={() => handleDeleteClick(invoice.id)}
+                          className="text-red-600"
+                        >
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Delete Permanently
+                        </DropdownMenuItem>
                       )}
                     </DropdownMenuContent>
                   </DropdownMenu>
@@ -321,6 +393,46 @@ export function InvoiceTable({ invoices, isLoading }: InvoiceTableProps) {
           })}
         </TableBody>
       </Table>
+
+      {/* Confirmation Dialogs */}
+      <AlertDialog open={!!confirmDeleteId} onOpenChange={(open) => !open && setConfirmDeleteId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the invoice
+              and remove the data from our servers.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleConfirmDelete}
+              className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
+            >
+              Delete Permanently
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={!!confirmCancelId} onOpenChange={(open) => !open && setConfirmCancelId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Cancel Invoice?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to cancel this invoice? This will mark it as cancelled
+              but keep the record in your system.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>No, Keep It</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmCancel}>
+              Yes, Cancel Invoice
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

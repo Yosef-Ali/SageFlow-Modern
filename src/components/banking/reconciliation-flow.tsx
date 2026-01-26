@@ -1,9 +1,9 @@
-'use client'
 
 import { useState, useMemo, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useNavigate } from 'react-router-dom'
 import { Loader2, CheckCircle2, AlertTriangle, Save } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { useToast } from '@/components/ui/use-toast'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -36,7 +36,8 @@ export function ReconciliationFlow({
     currentBalance, 
     unclearedTransactions 
 }: ReconciliationFlowProps) {
-    const router = useRouter()
+    const navigate = useNavigate()
+    const { toast } = useToast()
     
     // Steps: 'SETUP' | 'RECONCILE' | 'SUCCESS'
     const [step, setStep] = useState<'SETUP' | 'RECONCILE' | 'SUCCESS'>('SETUP')
@@ -119,14 +120,24 @@ export function ReconciliationFlow({
                 statementDate: new Date(statementDate),
                 statementBalance: Number(statementBalance)
             })
-            if (res.success) {
+            if (res.success && res.data) {
                 setReconciliationId(res.data.id)
                 setStep('RECONCILE')
+                setStep('RECONCILE')
             } else {
-                alert(res.error)
+                toast({
+                    title: 'Error',
+                    description: res.error || 'Failed to start reconciliation',
+                    variant: 'destructive',
+                })
             }
         } catch (e) {
             console.error(e)
+            toast({
+                title: 'Error',
+                description: 'An unexpected error occurred',
+                variant: 'destructive',
+            })
         } finally {
             setIsSubmitting(false)
         }
@@ -156,10 +167,18 @@ export function ReconciliationFlow({
             if (res.success) {
                 setStep('SUCCESS')
             } else {
-                alert(res.error)
+                toast({
+                    title: 'Error',
+                    description: res.error || 'Reconciliation failed',
+                    variant: 'destructive',
+                })
             }
         } catch (e) {
-            
+             toast({
+                title: 'Error',
+                description: 'An unexpected error occurred',
+                variant: 'destructive',
+            })
         } finally {
             setIsSubmitting(false)
         }
@@ -217,7 +236,7 @@ export function ReconciliationFlow({
                  <p className="text-muted-foreground">
                      Balance has been updated and transactions marked as reconciled.
                  </p>
-                 <Button onClick={() => router.push(`/dashboard/banking/${accountId}`)}>
+                 <Button onClick={() => navigate(`/dashboard/banking/${accountId}`)}>
                      Return to Account
                  </Button>
              </div>

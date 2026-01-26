@@ -1,181 +1,184 @@
-'use server'
+/**
+ * Settings Actions - Manage application settings and API keys
+ */
 
-import { db } from '@/db'
-import { companies } from '@/db/schema'
-import { eq } from 'drizzle-orm'
-import { getCurrentCompanyId } from '@/lib/customer-utils'
-import { revalidatePath } from 'next/cache'
+import type { ActionResult } from "@/types/api"
 
-type ActionResult<T = unknown> = {
-  success: boolean
-  data?: T
-  error?: string
-}
-
+// API key status type
 export interface ApiKeyStatus {
   geminiConfigured: boolean
   chapaConfigured: boolean
+  resendConfigured: boolean
   lastUpdated?: string
 }
 
-export interface ApiKeySaveData {
+// Masked API keys type
+export interface MaskedApiKeys {
   geminiApiKey?: string
   chapaSecretKey?: string
+  resendApiKey?: string
 }
 
+// Storage key for settings
+const SETTINGS_KEY = 'sageflow_settings'
+
 /**
- * Get the current API key configuration status
- * Returns only whether keys are configured, not the actual keys
+ * Get API key configuration status
  */
 export async function getApiKeyStatus(): Promise<ActionResult<ApiKeyStatus>> {
   try {
-    const companyId = await getCurrentCompanyId()
-
-    const company = await db.query.companies.findFirst({
-      where: eq(companies.id, companyId),
-      columns: { settings: true },
-    })
-
-    const settings = (company?.settings as Record<string, any>) || {}
-
-    return {
-      success: true,
-      data: {
-        geminiConfigured: !!settings.geminiApiKey,
-        chapaConfigured: !!settings.chapaSecretKey,
-        lastUpdated: settings.apiKeysUpdatedAt,
-      },
+    // Check environment variables (set in .env.local)
+    const status: ApiKeyStatus = {
+      geminiConfigured: !!import.meta.env.VITE_GEMINI_API_KEY,
+      chapaConfigured: !!import.meta.env.VITE_CHAPA_SECRET_KEY,
+      resendConfigured: !!import.meta.env.VITE_RESEND_API_KEY,
     }
+
+    // Also check localStorage for user-provided keys
+    const stored = localStorage.getItem(SETTINGS_KEY)
+    if (stored) {
+      try {
+        const settings = JSON.parse(stored)
+        if (settings.apiKeys) {
+          status.geminiConfigured = status.geminiConfigured || !!settings.apiKeys.geminiApiKey
+          status.chapaConfigured = status.chapaConfigured || !!settings.apiKeys.chapaSecretKey
+          status.resendConfigured = status.resendConfigured || !!settings.apiKeys.resendApiKey
+          status.lastUpdated = settings.apiKeys.lastUpdated
+        }
+      } catch {
+        // Ignore parse errors
+      }
+    }
+
+    return { success: true, data: status }
   } catch (error) {
-    console.error('Failed to get API key status:', error)
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Failed to get API key status',
-    }
+    return { success: false, error: 'Failed to get API key status' }
   }
 }
 
 /**
- * Get masked API keys for display
- * Shows only first 4 and last 4 characters
+ * Get masked versions of API keys for display
  */
-export async function getMaskedApiKeys(): Promise<ActionResult<{ geminiApiKey?: string; chapaSecretKey?: string }>> {
+export async function getMaskedApiKeys(): Promise<ActionResult<MaskedApiKeys>> {
   try {
-    const companyId = await getCurrentCompanyId()
-
-    const company = await db.query.companies.findFirst({
-      where: eq(companies.id, companyId),
-      columns: { settings: true },
-    })
-
-    const settings = (company?.settings as Record<string, any>) || {}
-
-    const maskKey = (key: string | undefined): string | undefined => {
-      if (!key || key.length < 12) return key ? '••••••••' : undefined
-      return `${key.slice(0, 4)}${'•'.repeat(key.length - 8)}${key.slice(-4)}`
+    const maskKey = (key?: string) => {
+      if (!key) return undefined
+      if (key.length <= 8) return '****'
+      return key.slice(0, 4) + '****' + key.slice(-4)
     }
+
+    const stored = localStorage.getItem(SETTINGS_KEY)
+    const settings = stored ? JSON.parse(stored) : {}
 
     return {
       success: true,
       data: {
-        geminiApiKey: maskKey(settings.geminiApiKey),
-        chapaSecretKey: maskKey(settings.chapaSecretKey),
-      },
+        geminiApiKey: maskKey(settings.apiKeys?.geminiApiKey || import.meta.env.VITE_GEMINI_API_KEY),
+        chapaSecretKey: maskKey(settings.apiKeys?.chapaSecretKey || import.meta.env.VITE_CHAPA_SECRET_KEY),
+        resendApiKey: maskKey(settings.apiKeys?.resendApiKey || import.meta.env.VITE_RESEND_API_KEY),
+      }
     }
   } catch (error) {
-    console.error('Failed to get masked API keys:', error)
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Failed to get API keys',
-    }
+    return { success: false, error: 'Failed to get masked API keys' }
   }
 }
 
 /**
- * Save API keys to company settings
- * Only updates keys that are provided (non-empty)
+ * Save API keys to localStorage
+ * Note: In production, these should be server-side environment variables
  */
-export async function saveApiKeys(data: ApiKeySaveData): Promise<ActionResult> {
+export async function saveApiKeys(keys: {
+  geminiApiKey?: string
+  chapaSecretKey?: string
+  resendApiKey?: string
+}): Promise<ActionResult<void>> {
   try {
-    const companyId = await getCurrentCompanyId()
+    const stored = localStorage.getItem(SETTINGS_KEY)
+    const settings = stored ? JSON.parse(stored) : {}
 
-    // Get current settings
-    const company = await db.query.companies.findFirst({
-      where: eq(companies.id, companyId),
-      columns: { settings: true },
-    })
-
-    const currentSettings = (company?.settings as Record<string, any>) || {}
-
-    // Only update keys that are provided
-    const updatedSettings = {
-      ...currentSettings,
-      ...(data.geminiApiKey && { geminiApiKey: data.geminiApiKey }),
-      ...(data.chapaSecretKey && { chapaSecretKey: data.chapaSecretKey }),
-      apiKeysUpdatedAt: new Date().toISOString(),
+    settings.apiKeys = {
+      ...settings.apiKeys,
+      ...Object.fromEntries(
+        Object.entries(keys).filter(([_, v]) => v !== undefined && v !== '')
+      ),
+      lastUpdated: new Date().toISOString()
     }
 
-    // Update company settings
-    await db
-      .update(companies)
-      .set({
-        settings: updatedSettings,
-        updatedAt: new Date(),
-      })
-      .where(eq(companies.id, companyId))
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings))
 
-    revalidatePath('/dashboard/settings/api-keys')
-
-    return {
-      success: true,
-    }
+    return { success: true }
   } catch (error) {
-    console.error('Failed to save API keys:', error)
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Failed to save API keys',
-    }
+    return { success: false, error: 'Failed to save API keys' }
   }
 }
 
 /**
  * Clear a specific API key
  */
-export async function clearApiKey(keyName: 'geminiApiKey' | 'chapaSecretKey'): Promise<ActionResult> {
+export async function clearApiKey(
+  keyName: 'geminiApiKey' | 'chapaSecretKey' | 'resendApiKey'
+): Promise<ActionResult<void>> {
   try {
-    const companyId = await getCurrentCompanyId()
+    const stored = localStorage.getItem(SETTINGS_KEY)
+    if (stored) {
+      const settings = JSON.parse(stored)
+      if (settings.apiKeys) {
+        delete settings.apiKeys[keyName]
+        localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings))
+      }
+    }
 
-    // Get current settings
-    const company = await db.query.companies.findFirst({
-      where: eq(companies.id, companyId),
-      columns: { settings: true },
-    })
+    return { success: true }
+  } catch (error) {
+    return { success: false, error: 'Failed to clear API key' }
+  }
+}
 
-    const currentSettings = (company?.settings as Record<string, any>) || {}
-
-    // Remove the specified key
-    const { [keyName]: _, ...updatedSettings } = currentSettings
-    updatedSettings.apiKeysUpdatedAt = new Date().toISOString()
-
-    // Update company settings
-    await db
-      .update(companies)
-      .set({
-        settings: updatedSettings,
-        updatedAt: new Date(),
-      })
-      .where(eq(companies.id, companyId))
-
-    revalidatePath('/dashboard/settings/api-keys')
+/**
+ * Get all application settings
+ */
+export async function getSettings(): Promise<ActionResult<{
+  dateFormat: string
+  currency: string
+  timezone: string
+  language: string
+}>> {
+  try {
+    const stored = localStorage.getItem(SETTINGS_KEY)
+    const settings = stored ? JSON.parse(stored) : {}
 
     return {
       success: true,
+      data: {
+        dateFormat: settings.dateFormat || 'DD/MM/YYYY',
+        currency: settings.currency || 'ETB',
+        timezone: settings.timezone || 'Africa/Addis_Ababa',
+        language: settings.language || 'en',
+      }
     }
   } catch (error) {
-    console.error('Failed to clear API key:', error)
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Failed to clear API key',
-    }
+    return { success: false, error: 'Failed to get settings' }
+  }
+}
+
+/**
+ * Update application settings
+ */
+export async function updateSettings(updates: {
+  dateFormat?: string
+  currency?: string
+  timezone?: string
+  language?: string
+}): Promise<ActionResult<void>> {
+  try {
+    const stored = localStorage.getItem(SETTINGS_KEY)
+    const settings = stored ? JSON.parse(stored) : {}
+
+    Object.assign(settings, updates)
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings))
+
+    return { success: true }
+  } catch (error) {
+    return { success: false, error: 'Failed to update settings' }
   }
 }

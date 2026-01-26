@@ -1,7 +1,6 @@
-'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Loader2 } from 'lucide-react'
@@ -31,7 +30,7 @@ interface PaymentEditFormProps {
 }
 
 export function PaymentEditForm({ payment, onSuccess }: PaymentEditFormProps) {
-  const router = useRouter()
+  const navigate = useNavigate()
   const updatePayment = useUpdatePayment()
   const { data: customers, isLoading: customersLoading } = useCustomersDropdown()
 
@@ -65,13 +64,15 @@ export function PaymentEditForm({ payment, onSuccess }: PaymentEditFormProps) {
   const onSubmit = async (data: PaymentFormValues) => {
     try {
       await updatePayment.mutateAsync({ id: payment.id, data })
+      // Toast is handled by the mutation hook
       if (onSuccess) {
         onSuccess()
       } else {
-        router.push(`/dashboard/payments/${payment.id}`)
+        navigate(`/dashboard/payments/${payment.id}`)
       }
     } catch (error) {
-      // Error handled by mutation hook
+      // Error toast is handled by the mutation hook
+      console.error('Update payment error:', error)
     }
   }
 
@@ -80,7 +81,7 @@ export function PaymentEditForm({ payment, onSuccess }: PaymentEditFormProps) {
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
       {/* Customer & Invoice Selection */}
-      <div className="bg-white p-6 rounded-lg border border-slate-200 space-y-6">
+      <div className="bg-card p-6 rounded-lg border space-y-6">
         <h3 className="text-lg font-semibold">Payment Details</h3>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -214,7 +215,7 @@ export function PaymentEditForm({ payment, onSuccess }: PaymentEditFormProps) {
         <Button
           type="button"
           variant="outline"
-          onClick={() => router.push(`/dashboard/payments/${payment.id}`)}
+          onClick={() => navigate(`/dashboard/payments/${payment.id}`)}
         >
           Cancel
         </Button>

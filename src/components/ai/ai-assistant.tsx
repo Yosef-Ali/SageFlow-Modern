@@ -7,12 +7,14 @@ import {
   Info, AlertTriangle, Clock, ArrowRight, Calendar, Zap,
   DollarSign, Users, Package, Mic, MicOff
 } from 'lucide-react'
+import { chatWithAI, getGeminiApiKey } from '@/lib/gemini-service'
+import { getBusinessContext, formatContextForAI, type BusinessContext } from '@/services/ai-context-service'
 import {
   BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip,
   PieChart, Pie, Cell, LineChart, Line
 } from 'recharts'
 import { cn } from '@/lib/utils'
-import { usePathname } from 'next/navigation'
+import { useLocation } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -230,44 +232,215 @@ interface ParsedContent {
 }
 
 // ============================================================================
-// CONSTANTS
+// DYNAMIC SUGGESTIONS GENERATOR
 // ============================================================================
 
-const SUGGESTIONS: Record<string, Suggestion[]> = {
-  '/dashboard': [
-    { id: '1', label: 'Financial Summary', prompt: 'Give me a summary of my financial performance this month with key metrics.' },
-    { id: '2', label: 'Cash Flow', prompt: 'Analyze my current cash flow situation.' },
-    { id: '3', label: 'VAT Calculation', prompt: 'Calculate VAT for a sale of ETB 25,000.' },
-  ],
-  '/dashboard/invoices': [
-    { id: '1', label: 'Unpaid Invoices', prompt: 'Show me a summary of unpaid invoices.' },
-    { id: '2', label: 'Overdue Report', prompt: 'What invoices are overdue and need attention?' },
-    { id: '3', label: 'Invoice Help', prompt: 'Help me create a professional invoice.' },
-  ],
-  '/dashboard/customers': [
-    { id: '1', label: 'Top Customers', prompt: 'Who are my most valuable customers?' },
-    { id: '2', label: 'Customer Analysis', prompt: 'Analyze customer payment patterns.' },
-  ],
-  '/dashboard/vendors': [
-    { id: '1', label: 'Vendor Balance', prompt: 'What is my total outstanding balance to vendors?' },
-    { id: '2', label: 'Vendor Types', prompt: 'List vendors by their Peachtree type (Supplier, Contractor, etc.).' },
-    { id: '3', label: 'Credit Limits', prompt: 'Which vendors have I exceeded credit limits with?' },
-  ],
-  '/dashboard/inventory': [
-    { id: '1', label: 'Low Stock', prompt: 'Which items are below reorder point?' },
-    { id: '2', label: 'Price List', prompt: 'Show me the Retail, Wholesale, and Distributor prices for items.' },
-    { id: '3', label: 'Valuation', prompt: 'What is the total value of my inventory?' },
-  ],
-  '/dashboard/employees': [
-    { id: '1', label: 'Payroll Summary', prompt: 'Calculate total monthly payroll cost including overtime.' },
-    { id: '2', label: 'Employee Types', prompt: 'Break down employees by type (Regular vs Contract).' },
-    { id: '3', label: 'Bank Info', prompt: 'List employees missing bank account details.' },
-  ],
-  'default': [
-    { id: '1', label: 'VAT Guide', prompt: 'Explain how Ethiopian VAT works with an example calculation.' },
-    { id: '2', label: 'Accounting Help', prompt: 'What is the difference between cash and accrual accounting?' },
-    { id: '3', label: 'Tax Rates', prompt: 'What are the current tax rates in Ethiopia?' },
-  ]
+function generateDynamicSuggestions(
+  pathname: string,
+  context: BusinessContext | null
+): Suggestion[] {
+  const suggestions: Suggestion[] = []
+
+  // Dashboard - Main page suggestions based on data
+  if (pathname === '/dashboard' || pathname === '/') {
+    if (context?.summary.overdueInvoices && context.summary.overdueInvoices > 0) {
+      suggestions.push({
+        id: 'overdue',
+        label: `${context.summary.overdueInvoices} Overdue`,
+        prompt: `I have ${context.summary.overdueInvoices} overdue invoices. Show me details and suggest collection actions.`
+      })
+    }
+    if (context?.summary.totalRevenue) {
+      suggestions.push({
+        id: 'revenue',
+        label: 'Revenue Analysis',
+        prompt: 'Analyze my revenue performance and show trends with charts.'
+      })
+    }
+    if (context?.summary.lowStockItems && context.summary.lowStockItems > 0) {
+      suggestions.push({
+        id: 'lowstock',
+        label: `${context.summary.lowStockItems} Low Stock`,
+        prompt: `I have ${context.summary.lowStockItems} items low on stock. Show me which items need reordering.`
+      })
+    }
+    suggestions.push({
+      id: 'summary',
+      label: 'Business Summary',
+      prompt: 'Give me a complete business summary with all key metrics, charts, and insights.'
+    })
+  }
+
+  // Invoices page
+  else if (pathname.includes('/invoices')) {
+    if (context?.overdueInvoices && context.overdueInvoices.length > 0) {
+      const total = context.overdueInvoices.reduce((s, i) => s + i.total, 0)
+      suggestions.push({
+        id: 'overdue',
+        label: 'Overdue Invoices',
+        prompt: `Show me all ${context.overdueInvoices.length} overdue invoices totaling ETB ${total.toLocaleString()} and suggest follow-up actions.`
+      })
+    }
+    if (context?.summary.pendingInvoices && context.summary.pendingInvoices > 0) {
+      suggestions.push({
+        id: 'pending',
+        label: `${context.summary.pendingInvoices} Pending`,
+        prompt: `I have ${context.summary.pendingInvoices} pending invoices. Show me the details and expected collection dates.`
+      })
+    }
+    suggestions.push({
+      id: 'create',
+      label: 'Invoice Tips',
+      prompt: 'Give me tips for creating professional invoices with proper Ethiopian tax compliance.'
+    })
+    suggestions.push({
+      id: 'aging',
+      label: 'Aging Report',
+      prompt: 'Show me an invoice aging report with 30/60/90 day breakdown.'
+    })
+  }
+
+  // Customers page
+  else if (pathname.includes('/customers')) {
+    if (context?.topCustomers && context.topCustomers.length > 0) {
+      suggestions.push({
+        id: 'top',
+        label: 'Top Customers',
+        prompt: 'Show me my top customers by revenue with charts and payment patterns.'
+      })
+    }
+    suggestions.push({
+      id: 'analysis',
+      label: 'Customer Analysis',
+      prompt: 'Analyze customer payment behavior and identify slow payers.'
+    })
+    suggestions.push({
+      id: 'segments',
+      label: 'Segmentation',
+      prompt: 'Segment my customers by purchase volume and suggest retention strategies.'
+    })
+  }
+
+  // Payments page
+  else if (pathname.includes('/payments')) {
+    if (context?.recentPayments && context.recentPayments.length > 0) {
+      const total = context.recentPayments.reduce((s, p) => s + p.amount, 0)
+      suggestions.push({
+        id: 'recent',
+        label: 'Recent Payments',
+        prompt: `Show me recent payments totaling ETB ${total.toLocaleString()} with breakdown by method.`
+      })
+    }
+    suggestions.push({
+      id: 'methods',
+      label: 'Payment Methods',
+      prompt: 'Analyze which payment methods my customers prefer most.'
+    })
+    suggestions.push({
+      id: 'reconcile',
+      label: 'Reconciliation',
+      prompt: 'Help me reconcile payments with invoices and identify unmatched transactions.'
+    })
+  }
+
+  // Inventory page
+  else if (pathname.includes('/inventory')) {
+    if (context?.inventoryAlerts && context.inventoryAlerts.length > 0) {
+      suggestions.push({
+        id: 'alerts',
+        label: `${context.inventoryAlerts.length} Alerts`,
+        prompt: `Show me the ${context.inventoryAlerts.length} inventory items that need attention with reorder suggestions.`
+      })
+    }
+    suggestions.push({
+      id: 'valuation',
+      label: 'Stock Valuation',
+      prompt: 'Calculate my total inventory value and show breakdown by category.'
+    })
+    suggestions.push({
+      id: 'turnover',
+      label: 'Turnover Analysis',
+      prompt: 'Analyze inventory turnover and identify slow-moving items.'
+    })
+  }
+
+  // Vendors page
+  else if (pathname.includes('/vendors')) {
+    suggestions.push({
+      id: 'payables',
+      label: 'Accounts Payable',
+      prompt: 'Show me total outstanding balances to all vendors with due dates.'
+    })
+    suggestions.push({
+      id: 'top-vendors',
+      label: 'Top Vendors',
+      prompt: 'Who are my main vendors by purchase volume?'
+    })
+    suggestions.push({
+      id: 'terms',
+      label: 'Payment Terms',
+      prompt: 'Summarize payment terms for each vendor and upcoming due dates.'
+    })
+  }
+
+  // Employees page
+  else if (pathname.includes('/employees')) {
+    suggestions.push({
+      id: 'payroll',
+      label: 'Payroll Cost',
+      prompt: 'Calculate total monthly payroll including taxes and benefits.'
+    })
+    suggestions.push({
+      id: 'breakdown',
+      label: 'Department Cost',
+      prompt: 'Show payroll costs breakdown by department or employee type.'
+    })
+  }
+
+  // Reports page
+  else if (pathname.includes('/reports')) {
+    suggestions.push({
+      id: 'pnl',
+      label: 'Profit & Loss',
+      prompt: 'Generate a profit and loss statement for this period.'
+    })
+    suggestions.push({
+      id: 'balance',
+      label: 'Balance Sheet',
+      prompt: 'Show me the current balance sheet summary.'
+    })
+    suggestions.push({
+      id: 'cashflow',
+      label: 'Cash Flow',
+      prompt: 'Analyze my cash flow statement and forecast.'
+    })
+  }
+
+  // Banking page
+  else if (pathname.includes('/banking')) {
+    suggestions.push({
+      id: 'balances',
+      label: 'Bank Balances',
+      prompt: 'Show all bank account balances and recent transactions.'
+    })
+    suggestions.push({
+      id: 'reconcile',
+      label: 'Reconciliation',
+      prompt: 'Help me reconcile bank statements with recorded transactions.'
+    })
+  }
+
+  // Default suggestions if none matched or empty
+  if (suggestions.length === 0) {
+    suggestions.push(
+      { id: 'summary', label: 'Business Overview', prompt: 'Give me a complete overview of my business with key metrics and insights.' },
+      { id: 'vat', label: 'VAT Calculator', prompt: 'Help me calculate VAT for my transactions (15% Ethiopian rate).' },
+      { id: 'help', label: 'Accounting Help', prompt: 'What accounting tasks should I prioritize today?' }
+    )
+  }
+
+  // Limit to 4 suggestions max
+  return suggestions.slice(0, 4)
 }
 
 const INITIAL_MESSAGE: A2UIMessage = {
@@ -1067,7 +1240,13 @@ function parseContent(content: string): ParsedContent {
     cleanedText = cleanedText.replace(fullMatch, '')
   }
 
-  return { text: cleanedText.trim(), widgets }
+  // Clean up extra whitespace and newlines
+  cleanedText = cleanedText
+    .replace(/\n{3,}/g, '\n\n')  // Replace 3+ newlines with 2
+    .replace(/^\s+|\s+$/g, '')   // Trim start/end
+    .replace(/\n\s*\n\s*\n/g, '\n\n')  // Normalize gaps
+
+  return { text: cleanedText, widgets }
 }
 
 function RenderWidget({
@@ -1190,10 +1369,13 @@ export function AIAssistant() {
   const [isLoading, setIsLoading] = useState(false)
   const [isListening, setIsListening] = useState(false)
   const [voiceSupported, setVoiceSupported] = useState(false)
+  const [businessContext, setBusinessContext] = useState<BusinessContext | null>(null)
+  const [contextLoading, setContextLoading] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const recognitionRef = useRef<SpeechRecognitionInterface | null>(null)
-  const pathname = usePathname()
+  const location = useLocation()
+  const pathname = location.pathname
 
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -1206,6 +1388,31 @@ export function AIAssistant() {
   useEffect(() => {
     if (isOpen) setTimeout(() => inputRef.current?.focus(), 100)
   }, [isOpen])
+
+  // Fetch business context when chat opens
+  useEffect(() => {
+    if (isOpen && !businessContext && !contextLoading) {
+      setContextLoading(true)
+      getBusinessContext()
+        .then(ctx => {
+          setBusinessContext(ctx)
+          // Update welcome message with context summary
+          if (ctx.summary.totalRevenue > 0 || ctx.summary.activeCustomers > 0) {
+            setMessages([{
+              ...INITIAL_MESSAGE,
+              content: `Welcome to SageFlow AI. I have access to your business data:\n\n` +
+                `• Revenue: ETB ${ctx.summary.totalRevenue.toLocaleString()}\n` +
+                `• Customers: ${ctx.summary.activeCustomers}\n` +
+                `• Pending Invoices: ${ctx.summary.pendingInvoices}\n` +
+                `• Overdue: ${ctx.summary.overdueInvoices}\n\n` +
+                `How can I help you today?`
+            }])
+          }
+        })
+        .catch(console.error)
+        .finally(() => setContextLoading(false))
+    }
+  }, [isOpen, businessContext, contextLoading])
 
   // Setup speech recognition
   useEffect(() => {
@@ -1279,32 +1486,47 @@ export function AIAssistant() {
     setIsLoading(true)
 
     try {
+      // Check if API key is configured
+      const apiKey = getGeminiApiKey()
+      if (!apiKey) {
+        setMessages(prev => [...prev, {
+          id: generateId(),
+          role: 'assistant',
+          content: "⚠️ API Key not configured. Please go to Settings → API Keys to add your Gemini API key.",
+          timestamp: new Date(),
+          status: 'error',
+        }])
+        setIsLoading(false)
+        return
+      }
+
       // Filter out the initial welcome message (id: 'welcome') before sending to API
       const chatHistory = [...messages, userMessage]
         .filter(m => m.id !== 'welcome')
         .map(m => ({ role: m.role, content: m.content }))
 
-      const response = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: chatHistory }),
+      // Call Gemini AI directly with business context
+      const result = await chatWithAI(text.trim(), {
+        conversationHistory: chatHistory,
+        companyContext: businessContext ? formatContextForAI(businessContext) : undefined,
       })
 
-      if (!response.ok) throw new Error('Request failed')
-      const data = await response.json()
+      if (result.error) {
+        throw new Error(result.error)
+      }
 
       setMessages(prev => [...prev, {
         id: generateId(),
         role: 'assistant',
-        content: data.content,
+        content: result.response,
         timestamp: new Date(),
         status: 'sent',
       }])
-    } catch {
+    } catch (error) {
       setMessages(prev => [...prev, {
         id: generateId(),
         role: 'assistant',
-        content: "I apologize, but I encountered an error. Please try again.",
+        content: error instanceof Error ? error.message : "I apologize, but I encountered an error. Please try again.",
         timestamp: new Date(),
         status: 'error',
       }])
@@ -1333,11 +1555,8 @@ export function AIAssistant() {
   }
 
   const suggestions = useMemo(() => {
-    if (!pathname) return SUGGESTIONS['default']
-    if (SUGGESTIONS[pathname]) return SUGGESTIONS[pathname]
-    const parentKey = Object.keys(SUGGESTIONS).find(k => k !== 'default' && pathname.startsWith(k))
-    return parentKey ? SUGGESTIONS[parentKey] : SUGGESTIONS['default']
-  }, [pathname])
+    return generateDynamicSuggestions(pathname || '/dashboard', businessContext)
+  }, [pathname, businessContext])
 
   // Floating button
   if (!isOpen) {
@@ -1374,10 +1593,10 @@ export function AIAssistant() {
             <h3 className="font-semibold text-sm">SageFlow AI</h3>
             <p className="text-xs text-muted-foreground flex items-center gap-1.5">
               <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-75" />
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+                <span className={cn("animate-ping absolute inline-flex h-full w-full rounded-full opacity-75", contextLoading ? "bg-amber-500" : "bg-emerald-500")} />
+                <span className={cn("relative inline-flex rounded-full h-2 w-2", contextLoading ? "bg-amber-500" : "bg-emerald-500")} />
               </span>
-              Online
+              {contextLoading ? "Loading data..." : businessContext ? "Connected to Supabase" : "Online"}
             </p>
           </div>
         </div>
@@ -1386,8 +1605,11 @@ export function AIAssistant() {
             variant="ghost"
             size="icon"
             className="h-8 w-8"
-            onClick={() => setMessages([INITIAL_MESSAGE])}
-            title="Reset"
+            onClick={() => {
+              setMessages([INITIAL_MESSAGE])
+              setBusinessContext(null) // Refresh context on next open
+            }}
+            title="Reset & Refresh Data"
           >
             <RotateCcw className="h-4 w-4" />
           </Button>
@@ -1444,18 +1666,20 @@ export function AIAssistant() {
                     {message.content}
                   </div>
                 ) : (
-                  <div className="space-y-1 w-full">
-                    {parsed?.text && (
+                  <div className="space-y-2 w-full">
+                    {parsed?.text && parsed.text.trim() && (
                       <div className="px-4 py-2.5 rounded-2xl rounded-tl-sm text-sm leading-relaxed bg-muted">
-                        <div className="whitespace-pre-wrap">{parsed.text}</div>
+                        {parsed.text.split('\n').filter(line => line.trim()).map((line, i) => (
+                          <p key={i} className={i > 0 ? 'mt-2' : ''}>{line}</p>
+                        ))}
                       </div>
                     )}
                     {parsed?.widgets.map((widget, i) => (
                       <RenderWidget key={i} widget={widget} onFormSubmit={handleFormSubmit} />
                     ))}
-                    {!parsed?.text && !parsed?.widgets.length && (
+                    {!parsed?.text?.trim() && !parsed?.widgets.length && (
                       <div className="px-4 py-2.5 rounded-2xl rounded-tl-sm text-sm leading-relaxed bg-muted">
-                        <div className="whitespace-pre-wrap">{message.content}</div>
+                        <p>{message.content}</p>
                       </div>
                     )}
                   </div>

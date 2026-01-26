@@ -10,33 +10,42 @@ import {
   getBankTransactions,
   createBankTransaction,
   getBankingSummary,
+  reconcileTransactions,
+  transferFunds,
   type BankAccountFormValues,
   type BankTransactionFormValues,
-} from '@/app/actions/banking-actions'
+} from '@/services/banking-service'
 import { useToast } from '@/components/ui/use-toast'
+import { useAuth } from '@/lib/auth-context'
 
-// Query keys
+// Query keys factory
 export const bankingKeys = {
   all: ['banking'] as const,
-  accounts: () => [...bankingKeys.all, 'accounts'] as const,
+  accounts: (companyId: string) => [...bankingKeys.all, 'accounts', companyId] as const,
   account: (id: string) => [...bankingKeys.all, 'account', id] as const,
   transactions: (accountId: string) => [...bankingKeys.all, 'transactions', accountId] as const,
-  summary: () => [...bankingKeys.all, 'summary'] as const,
+  summary: (companyId: string) => [...bankingKeys.all, 'summary', companyId] as const,
 }
 
 /**
  * Hook to fetch bank accounts
  */
 export function useBankAccounts() {
+  const { user } = useAuth()
+  const companyId = user?.companyId || ''
+
   return useQuery({
-    queryKey: bankingKeys.accounts(),
+    queryKey: bankingKeys.accounts(companyId),
     queryFn: async () => {
-      const result = await getBankAccounts()
+      if (!companyId) return []
+      const result = await getBankAccounts(companyId)
       if (!result.success) {
-        throw new Error(result.error)
+        console.error(result.error)
+        return []
       }
       return result.data
     },
+    enabled: !!companyId,
   })
 }
 
@@ -61,26 +70,36 @@ export function useBankAccount(id: string) {
  * Hook to fetch banking summary
  */
 export function useBankingSummary() {
+  const { user } = useAuth()
+  const companyId = user?.companyId || ''
+
   return useQuery({
-    queryKey: bankingKeys.summary(),
+    queryKey: bankingKeys.summary(companyId),
     queryFn: async () => {
-      const result = await getBankingSummary()
+      if (!companyId) {
+        return { totalBalance: 0, accountCount: 0, unreconciledTransactions: 0 }
+      }
+      const result = await getBankingSummary(companyId)
       if (!result.success) {
         throw new Error(result.error)
       }
       return result.data
     },
+    enabled: !!companyId,
   })
 }
 
 /**
  * Hook to fetch transactions for an account
  */
-export function useBankTransactions(accountId: string) {
+export function useBankTransactions(
+  accountId: string,
+  filters?: { startDate?: string; endDate?: string; type?: string }
+) {
   return useQuery({
     queryKey: bankingKeys.transactions(accountId),
     queryFn: async () => {
-      const result = await getBankTransactions(accountId)
+      const result = await getBankTransactions(accountId, filters)
       if (!result.success) {
         throw new Error(result.error)
       }
@@ -96,18 +115,22 @@ export function useBankTransactions(accountId: string) {
 export function useCreateBankAccount() {
   const queryClient = useQueryClient()
   const { toast } = useToast()
+  const { user } = useAuth()
 
   return useMutation({
     mutationFn: async (data: BankAccountFormValues) => {
-      const result = await createBankAccount(data)
+      if (!user?.companyId) {
+        throw new Error('Not authenticated')
+      }
+      const result = await createBankAccount(user.companyId, data)
       if (!result.success) {
         throw new Error(result.error)
       }
       return result.data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: bankingKeys.accounts() })
-      queryClient.invalidateQueries({ queryKey: bankingKeys.summary() })
+      queryClient.invalidateQueries({ queryKey: bankingKeys.accounts(user?.companyId || '') })
+      queryClient.invalidateQueries({ queryKey: bankingKeys.summary(user?.companyId || '') })
       toast({
         title: 'Success',
         description: 'Bank account created successfully',
@@ -129,6 +152,7 @@ export function useCreateBankAccount() {
 export function useUpdateBankAccount() {
   const queryClient = useQueryClient()
   const { toast } = useToast()
+  const { user } = useAuth()
 
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: BankAccountFormValues }) => {
@@ -139,7 +163,7 @@ export function useUpdateBankAccount() {
       return result.data
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: bankingKeys.accounts() })
+      queryClient.invalidateQueries({ queryKey: bankingKeys.accounts(user?.companyId || '') })
       queryClient.invalidateQueries({ queryKey: bankingKeys.account(variables.id) })
       toast({
         title: 'Success',
@@ -162,6 +186,7 @@ export function useUpdateBankAccount() {
 export function useDeleteBankAccount() {
   const queryClient = useQueryClient()
   const { toast } = useToast()
+  const { user } = useAuth()
 
   return useMutation({
     mutationFn: async (id: string) => {
@@ -172,8 +197,8 @@ export function useDeleteBankAccount() {
       return result
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: bankingKeys.accounts() })
-      queryClient.invalidateQueries({ queryKey: bankingKeys.summary() })
+      queryClient.invalidateQueries({ queryKey: bankingKeys.accounts(user?.companyId || '') })
+      queryClient.invalidateQueries({ queryKey: bankingKeys.summary(user?.companyId || '') })
       toast({
         title: 'Success',
         description: 'Bank account deleted',
@@ -195,6 +220,7 @@ export function useDeleteBankAccount() {
 export function useCreateBankTransaction() {
   const queryClient = useQueryClient()
   const { toast } = useToast()
+  const { user } = useAuth()
 
   return useMutation({
     mutationFn: async (data: BankTransactionFormValues) => {
@@ -205,9 +231,9 @@ export function useCreateBankTransaction() {
       return result.data
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: bankingKeys.accounts() })
+      queryClient.invalidateQueries({ queryKey: bankingKeys.accounts(user?.companyId || '') })
       queryClient.invalidateQueries({ queryKey: bankingKeys.transactions(variables.bankAccountId) })
-      queryClient.invalidateQueries({ queryKey: bankingKeys.summary() })
+      queryClient.invalidateQueries({ queryKey: bankingKeys.summary(user?.companyId || '') })
       toast({
         title: 'Success',
         description: 'Transaction recorded successfully',
@@ -217,6 +243,85 @@ export function useCreateBankTransaction() {
       toast({
         title: 'Error',
         description: error.message || 'Failed to record transaction',
+        variant: 'destructive',
+      })
+    },
+  })
+}
+
+/**
+ * Hook to reconcile transactions
+ */
+export function useReconcileTransactions() {
+  const queryClient = useQueryClient()
+  const { toast } = useToast()
+  const { user } = useAuth()
+
+  return useMutation({
+    mutationFn: async (transactionIds: string[]) => {
+      const result = await reconcileTransactions(transactionIds)
+      if (!result.success) {
+        throw new Error(result.error)
+      }
+      return result
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: bankingKeys.all })
+      toast({
+        title: 'Success',
+        description: 'Transactions reconciled',
+      })
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to reconcile transactions',
+        variant: 'destructive',
+      })
+    },
+  })
+}
+
+/**
+ * Hook to transfer funds between accounts
+ */
+export function useTransferFunds() {
+  const queryClient = useQueryClient()
+  const { toast } = useToast()
+  const { user } = useAuth()
+
+  return useMutation({
+    mutationFn: async ({
+      fromAccountId,
+      toAccountId,
+      amount,
+      description,
+      date,
+    }: {
+      fromAccountId: string
+      toAccountId: string
+      amount: number
+      description: string
+      date: string
+    }) => {
+      const result = await transferFunds(fromAccountId, toAccountId, amount, description, date)
+      if (!result.success) {
+        throw new Error(result.error)
+      }
+      return result
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: bankingKeys.accounts(user?.companyId || '') })
+      queryClient.invalidateQueries({ queryKey: bankingKeys.summary(user?.companyId || '') })
+      toast({
+        title: 'Success',
+        description: 'Transfer completed successfully',
+      })
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to transfer funds',
         variant: 'destructive',
       })
     },

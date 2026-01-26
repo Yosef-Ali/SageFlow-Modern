@@ -23,10 +23,14 @@ export function formatCurrency(amount: number, currency: string = "ETB") {
   }).format(amount)
 }
 
-export function formatDate(date: Date | string) {
+export function formatDate(date: Date | string | null | undefined) {
+  if (!date) return 'N/A'
+  const d = new Date(date)
+  if (isNaN(d.getTime())) return 'N/A'
+
   return new Intl.DateTimeFormat('en-US', {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
-  }).format(new Date(date))
+  }).format(d)
 }

@@ -74,6 +74,11 @@ export const vendorSchema = z.object({
     .or(z.nan()),
   taxExempt: z.boolean().optional().default(false),
   taxExemptNumber: z.string().max(50).optional().or(z.literal('')),
+  // Balance and opening balance
+  balance: z.number().optional().default(0),
+  openingBalance: z.number().optional().default(0),
+  openingBalanceDate: z.date().optional().or(z.string().optional()),
+  vendorSince: z.date().optional().or(z.string().optional()),
 })
 
 // Type inference from schema

@@ -1,0 +1,150 @@
+src/app/actions/inventory-actions.ts(50,20): error TS2339: Property 'weight' does not exist on type '{ type: "PRODUCT" | "SERVICE" | "BUNDLE"; name: string; isActive: boolean; sku: string; unitOfMeasure: string; costPrice: number; sellingPrice: number; reorderPoint: number; reorderQuantity: number; quantityOnHand: number; description?: string | undefined; categoryId?: string | undefined; }'.
+src/app/actions/inventory-actions.ts(142,14): error TS2339: Property 'items' does not exist on type '{ name: string; itemId: string; yieldQuantity: number; components: { itemId: string; quantity: number; }[]; description?: string | undefined; }'.
+src/app/actions/inventory-actions.ts(143,31): error TS2339: Property 'items' does not exist on type '{ name: string; itemId: string; yieldQuantity: number; components: { itemId: string; quantity: number; }[]; description?: string | undefined; }'.
+src/app/actions/inventory-actions.ts(143,41): error TS7006: Parameter 'item' implicitly has an 'any' type.
+src/app/actions/purchase-actions.ts(51,49): error TS2552: Cannot find name 'PurchaseOrderFormValues'. Did you mean 'PurchaseFormValues'?
+src/app/actions/purchase-actions.ts(67,44): error TS7006: Parameter 'item' implicitly has an 'any' type.
+src/components/banking/bank-account-form.tsx(68,59): error TS2741: Property 'name' is missing in type '{ accountNumber: string; accountType: "CHECKING" | "OTHER" | "SAVINGS" | "CASH" | "CREDIT_CARD"; currency: string; openingBalance: number; isActive: boolean; accountName: string; bankName?: string | undefined; }' but required in type '{ name: string; accountNumber: string; accountType: string; currency: string; openingBalance: number; isActive: boolean; }'.
+src/components/banking/bank-account-form.tsx(70,41): error TS2345: Argument of type '{ accountNumber: string; accountType: "CHECKING" | "OTHER" | "SAVINGS" | "CASH" | "CREDIT_CARD"; currency: string; openingBalance: number; isActive: boolean; accountName: string; bankName?: string | undefined; }' is not assignable to parameter of type '{ name: string; accountNumber: string; accountType: string; currency: string; openingBalance: number; isActive: boolean; }'.
+  Property 'name' is missing in type '{ accountNumber: string; accountType: "CHECKING" | "OTHER" | "SAVINGS" | "CASH" | "CREDIT_CARD"; currency: string; openingBalance: number; isActive: boolean; accountName: string; bankName?: string | undefined; }' but required in type '{ name: string; accountNumber: string; accountType: string; currency: string; openingBalance: number; isActive: boolean; }'.
+src/components/banking/bank-account-list.tsx(41,9): error TS2561: Object literal may only specify known properties, but 'accountName' does not exist in type '{ name: string; accountNumber: string; accountType: string; currency: string; openingBalance: number; isActive: boolean; }'. Did you mean to write 'accountNumber'?
+src/components/inventory/assembly-form.tsx(34,7): error TS2353: Object literal may only specify known properties, and 'items' does not exist in type 'AsyncDefaultValues<{ name: string; itemId: string; yieldQuantity: number; components: { itemId: string; quantity: number; }[]; description?: string | undefined; }> | { ...; }'.
+src/components/inventory/assembly-form.tsx(42,5): error TS2322: Type '"items"' is not assignable to type '"components"'.
+src/components/inventory/assembly-form.tsx(67,39): error TS2345: Argument of type '(data: AssemblyFormValues) => Promise<void>' is not assignable to parameter of type 'SubmitHandler<TFieldValues>'.
+  Types of parameters 'data' and 'data' are incompatible.
+    Type 'TFieldValues' is not assignable to type '{ name: string; itemId: string; yieldQuantity: number; components: { itemId: string; quantity: number; }[]; description?: string | undefined; }'.
+      Type 'FieldValues' is missing the following properties from type '{ name: string; itemId: string; yieldQuantity: number; components: { itemId: string; quantity: number; }[]; description?: string | undefined; }': name, itemId, yieldQuantity, components
+src/components/inventory/assembly-form.tsx(141,63): error TS2345: Argument of type '`items.${number}.itemId`' is not assignable to parameter of type '"name" | "description" | "itemId" | "yieldQuantity" | "components" | `components.${number}` | `components.${number}.itemId` | `components.${number}.quantity`'.
+src/components/inventory/assembly-form.tsx(142,25): error TS2322: Type 'readonly (string | number | { itemId: string; quantity: number; } | { itemId: string; quantity: number; }[] | undefined)[]' is not assignable to type 'string'.
+src/components/inventory/assembly-form.tsx(142,50): error TS2769: No overload matches this call.
+  Overload 1 of 4, '(names: readonly ("name" | "description" | "itemId" | "yieldQuantity" | "components" | `components.${number}` | `components.${number}.itemId` | `components.${number}.quantity`)[], defaultValue?: { name?: string | undefined; itemId?: string | undefined; yieldQuantity?: number | undefined; components?: ({ ...; } | undefined)[] | undefined; description?: string | undefined; } | undefined): readonly (string | ... 3 more ... | undefined)[]', gave the following error.
+    Argument of type 'string' is not assignable to parameter of type 'readonly ("name" | "description" | "itemId" | "yieldQuantity" | "components" | `components.${number}` | `components.${number}.itemId` | `components.${number}.quantity`)[]'.
+  Overload 2 of 4, '(name: "name" | "description" | "itemId" | "yieldQuantity" | "components" | `components.${number}` | `components.${number}.itemId` | `components.${number}.quantity`, defaultValue?: string | number | { itemId: string; quantity: number; } | { itemId: string; quantity: number; }[] | undefined): string | ... 3 more ... | undefined', gave the following error.
+    Argument of type '`items.${number}.itemId`' is not assignable to parameter of type '"name" | "description" | "itemId" | "yieldQuantity" | "components" | `components.${number}` | `components.${number}.itemId` | `components.${number}.quantity`'.
+  Overload 3 of 4, '(callback: WatchObserver<{ name: string; itemId: string; yieldQuantity: number; components: { itemId: string; quantity: number; }[]; description?: string | undefined; }>, defaultValues?: { ...; } | undefined): Subscription', gave the following error.
+    Argument of type 'string' is not assignable to parameter of type 'WatchObserver<{ name: string; itemId: string; yieldQuantity: number; components: { itemId: string; quantity: number; }[]; description?: string | undefined; }>'.
+src/components/inventory/assembly-form.tsx(157,44): error TS2345: Argument of type '`items.${number}.quantity`' is not assignable to parameter of type '"name" | "description" | "itemId" | "yieldQuantity" | "components" | `components.${number}` | `components.${number}.itemId` | `components.${number}.quantity`'.
+src/components/inventory/assembly-form.tsx(175,33): error TS2339: Property 'items' does not exist on type 'FieldErrors<{ name: string; itemId: string; yieldQuantity: number; components: { itemId: string; quantity: number; }[]; description?: string | undefined; }>'.
+src/components/inventory/assembly-form.tsx(176,72): error TS2339: Property 'items' does not exist on type 'FieldErrors<{ name: string; itemId: string; yieldQuantity: number; components: { itemId: string; quantity: number; }[]; description?: string | undefined; }>'.
+src/components/invoices/invoice-pdf-download.tsx(42,38): error TS2339: Property 'data' does not exist on type '{ success: boolean; error: string; }'.
+src/components/invoices/invoice-pdf-download.tsx(47,55): error TS2339: Property 'data' does not exist on type '{ success: boolean; error: string; }'.
+src/components/invoices/invoice-pdf-download.tsx(178,38): error TS2339: Property 'data' does not exist on type '{ success: boolean; error: string; }'.
+src/components/invoices/invoice-pdf-download.tsx(182,55): error TS2339: Property 'data' does not exist on type '{ success: boolean; error: string; }'.
+src/components/invoices/invoice-table.tsx(71,22): error TS2339: Property 'error' does not exist on type '{ success: boolean; }'.
+src/components/invoices/invoice-table.tsx(88,22): error TS2339: Property 'error' does not exist on type '{ success: boolean; }'.
+src/components/invoices/invoice-table.tsx(106,25): error TS2339: Property 'data' does not exist on type '{ success: boolean; error: string; }'.
+src/components/invoices/invoice-table.tsx(107,52): error TS2339: Property 'data' does not exist on type '{ success: boolean; error: string; }'.
+src/components/invoices/invoice-table.tsx(122,38): error TS2339: Property 'data' does not exist on type '{ success: boolean; error: string; }'.
+src/components/invoices/invoice-table.tsx(126,55): error TS2339: Property 'data' does not exist on type '{ success: boolean; error: string; }'.
+src/components/invoices/invoice-table.tsx(146,38): error TS2339: Property 'data' does not exist on type '{ success: boolean; error: string; }'.
+src/components/invoices/invoice-table.tsx(150,55): error TS2339: Property 'data' does not exist on type '{ success: boolean; error: string; }'.
+src/components/settings/api-keys-form.tsx(119,25): error TS2345: Argument of type 'MaskedApiKeys' is not assignable to parameter of type 'SetStateAction<{ geminiApiKey?: string | undefined; chapaSecretKey?: string | undefined; }>'.
+src/components/settings/api-keys-form.tsx(148,9): error TS2353: Object literal may only specify known properties, and 'geminiApiKey' does not exist in type '{ gemini?: string | undefined; chapa?: string | undefined; resend?: string | undefined; }'.
+src/components/settings/api-keys-form.tsx(168,25): error TS2345: Argument of type 'MaskedApiKeys' is not assignable to parameter of type 'SetStateAction<{ geminiApiKey?: string | undefined; chapaSecretKey?: string | undefined; }>'.
+src/components/settings/api-keys-form.tsx(186,40): error TS2345: Argument of type '"geminiApiKey" | "chapaSecretKey"' is not assignable to parameter of type '"chapa" | "gemini" | "resend"'.
+  Type '"geminiApiKey"' is not assignable to type '"chapa" | "gemini" | "resend"'.
+src/components/settings/api-keys-form.tsx(201,25): error TS2345: Argument of type 'MaskedApiKeys' is not assignable to parameter of type 'SetStateAction<{ geminiApiKey?: string | undefined; chapaSecretKey?: string | undefined; }>'.
+src/components/settings/api-keys-form.tsx(244,35): error TS2339: Property 'geminiConfigured' does not exist on type 'ApiKeyStatus'.
+src/components/settings/api-keys-form.tsx(269,35): error TS2339: Property 'chapaConfigured' does not exist on type 'ApiKeyStatus'.
+src/components/settings/api-keys-form.tsx(278,16): error TS2339: Property 'lastUpdated' does not exist on type 'ApiKeyStatus'.
+src/components/settings/api-keys-form.tsx(280,42): error TS2339: Property 'lastUpdated' does not exist on type 'ApiKeyStatus'.
+src/db/seed.ts(2,24): error TS2307: Cannot find module 'dotenv' or its corresponding type declarations.
+src/hooks/use-dashboard.ts(35,51): error TS2339: Property 'error' does not exist on type '{ success: boolean; data: never[]; }'.
+src/hooks/use-dashboard.ts(46,51): error TS2339: Property 'error' does not exist on type '{ success: boolean; data: any[]; }'.
+src/hooks/use-dashboard.ts(57,51): error TS2339: Property 'error' does not exist on type '{ success: boolean; data: never[]; }'.
+src/hooks/use-employees.ts(30,32): error TS2339: Property 'error' does not exist on type '{ success: boolean; data: any[]; }'.
+src/hooks/use-import-export.ts(187,32): error TS2339: Property 'error' does not exist on type '{ success: boolean; data: string; }'.
+src/hooks/use-payments.ts(34,40): error TS2554: Expected 0 arguments, but got 1.
+src/hooks/use-payments.ts(36,32): error TS2339: Property 'error' does not exist on type '{ success: boolean; data: any[]; }'.
+src/hooks/use-reports.ts(17,51): error TS2339: Property 'error' does not exist on type '{ success: boolean; data: any[]; }'.
+src/lib/customer-utils.ts(33,33): error TS2339: Property 'query' does not exist on type '{}'.
+src/lib/peachtree/hybrid-sync.ts(94,8): error TS2339: Property 'select' does not exist on type '{}'.
+src/lib/peachtree/hybrid-sync.ts(126,10): error TS2339: Property 'update' does not exist on type '{}'.
+src/lib/peachtree/hybrid-sync.ts(138,10): error TS2339: Property 'update' does not exist on type '{}'.
+src/lib/peachtree/hybrid-sync.ts(161,30): error TS2339: Property 'insert' does not exist on type '{}'.
+src/lib/peachtree/hybrid-sync.ts(182,12): error TS2339: Property 'update' does not exist on type '{}'.
+src/lib/peachtree/hybrid-sync.ts(186,18): error TS2769: No overload matches this call.
+  Overload 1 of 3, '(left: PgColumn<{ name: "id"; tableName: "sync_jobs"; dataType: "string"; columnType: "PgText"; data: string; driverParam: string; notNull: true; hasDefault: true; enumValues: [string, ...string[]]; baseColumn: never; }, {}, {}>, right: string | SQLWrapper): SQL<...>', gave the following error.
+    Argument of type 'string | null' is not assignable to parameter of type 'string | SQLWrapper'.
+      Type 'null' is not assignable to type 'string | SQLWrapper'.
+  Overload 2 of 3, '(left: Aliased<string | null>, right: string | SQLWrapper | null): SQL<unknown>', gave the following error.
+    Argument of type 'PgColumn<{ name: "id"; tableName: "sync_jobs"; dataType: "string"; columnType: "PgText"; data: string; driverParam: string; notNull: true; hasDefault: true; enumValues: [string, ...string[]]; baseColumn: never; }, {}, {}>' is not assignable to parameter of type 'Aliased<string | null>'.
+      Type 'PgColumn<{ name: "id"; tableName: "sync_jobs"; dataType: "string"; columnType: "PgText"; data: string; driverParam: string; notNull: true; hasDefault: true; enumValues: [string, ...string[]]; baseColumn: never; }, {}, {}>' is missing the following properties from type 'Aliased<string | null>': sql, fieldAlias
+  Overload 3 of 3, '(left: never, right: unknown): SQL<unknown>', gave the following error.
+    Argument of type 'PgColumn<{ name: "id"; tableName: "sync_jobs"; dataType: "string"; columnType: "PgText"; data: string; driverParam: string; notNull: true; hasDefault: true; enumValues: [string, ...string[]]; baseColumn: never; }, {}, {}>' is not assignable to parameter of type 'never'.
+src/lib/peachtree/hybrid-sync.ts(193,10): error TS2339: Property 'update' does not exist on type '{}'.
+src/lib/peachtree/hybrid-sync.ts(201,16): error TS2769: No overload matches this call.
+  Overload 1 of 3, '(left: PgColumn<{ name: "id"; tableName: "sync_jobs"; dataType: "string"; columnType: "PgText"; data: string; driverParam: string; notNull: true; hasDefault: true; enumValues: [string, ...string[]]; baseColumn: never; }, {}, {}>, right: string | SQLWrapper): SQL<...>', gave the following error.
+    Argument of type 'string | null' is not assignable to parameter of type 'string | SQLWrapper'.
+      Type 'null' is not assignable to type 'string | SQLWrapper'.
+  Overload 2 of 3, '(left: Aliased<string | null>, right: string | SQLWrapper | null): SQL<unknown>', gave the following error.
+    Argument of type 'PgColumn<{ name: "id"; tableName: "sync_jobs"; dataType: "string"; columnType: "PgText"; data: string; driverParam: string; notNull: true; hasDefault: true; enumValues: [string, ...string[]]; baseColumn: never; }, {}, {}>' is not assignable to parameter of type 'Aliased<string | null>'.
+      Type 'PgColumn<{ name: "id"; tableName: "sync_jobs"; dataType: "string"; columnType: "PgText"; data: string; driverParam: string; notNull: true; hasDefault: true; enumValues: [string, ...string[]]; baseColumn: never; }, {}, {}>' is missing the following properties from type 'Aliased<string | null>': sql, fieldAlias
+  Overload 3 of 3, '(left: never, right: unknown): SQL<unknown>', gave the following error.
+    Argument of type 'PgColumn<{ name: "id"; tableName: "sync_jobs"; dataType: "string"; columnType: "PgText"; data: string; driverParam: string; notNull: true; hasDefault: true; enumValues: [string, ...string[]]; baseColumn: never; }, {}, {}>' is not assignable to parameter of type 'never'.
+src/lib/peachtree/hybrid-sync.ts(204,9): error TS2322: Type 'string | null' is not assignable to type 'string'.
+  Type 'null' is not assignable to type 'string'.
+src/lib/peachtree/hybrid-sync.ts(215,12): error TS2339: Property 'update' does not exist on type '{}'.
+src/lib/peachtree/hybrid-sync.ts(275,12): error TS2339: Property 'select' does not exist on type '{}'.
+src/lib/peachtree/hybrid-sync.ts(318,14): error TS2339: Property 'update' does not exist on type '{}'.
+src/lib/peachtree/hybrid-sync.ts(323,14): error TS2339: Property 'update' does not exist on type '{}'.
+src/lib/peachtree/hybrid-sync.ts(330,42): error TS2339: Property 'insert' does not exist on type '{}'.
+src/lib/peachtree/hybrid-sync.ts(332,20): error TS2339: Property 'insert' does not exist on type '{}'.
+src/lib/peachtree/hybrid-sync.ts(365,12): error TS2339: Property 'select' does not exist on type '{}'.
+src/lib/peachtree/hybrid-sync.ts(402,20): error TS2339: Property 'update' does not exist on type '{}'.
+src/lib/peachtree/hybrid-sync.ts(403,20): error TS2339: Property 'update' does not exist on type '{}'.
+src/lib/peachtree/hybrid-sync.ts(406,40): error TS2339: Property 'insert' does not exist on type '{}'.
+src/lib/peachtree/hybrid-sync.ts(407,20): error TS2339: Property 'insert' does not exist on type '{}'.
+src/lib/peachtree/hybrid-sync.ts(439,12): error TS2339: Property 'select' does not exist on type '{}'.
+src/lib/peachtree/hybrid-sync.ts(474,20): error TS2339: Property 'update' does not exist on type '{}'.
+src/lib/peachtree/hybrid-sync.ts(475,20): error TS2339: Property 'update' does not exist on type '{}'.
+src/lib/peachtree/hybrid-sync.ts(478,38): error TS2339: Property 'insert' does not exist on type '{}'.
+src/lib/peachtree/hybrid-sync.ts(479,20): error TS2339: Property 'insert' does not exist on type '{}'.
+src/lib/peachtree/hybrid-sync.ts(511,12): error TS2339: Property 'select' does not exist on type '{}'.
+src/lib/peachtree/hybrid-sync.ts(541,20): error TS2339: Property 'update' does not exist on type '{}'.
+src/lib/peachtree/hybrid-sync.ts(542,20): error TS2339: Property 'update' does not exist on type '{}'.
+src/lib/peachtree/hybrid-sync.ts(545,41): error TS2339: Property 'insert' does not exist on type '{}'.
+src/lib/peachtree/hybrid-sync.ts(546,20): error TS2339: Property 'insert' does not exist on type '{}'.
+src/lib/peachtree/hybrid-sync.ts(588,12): error TS2339: Property 'select' does not exist on type '{}'.
+src/lib/peachtree/hybrid-sync.ts(606,12): error TS2339: Property 'select' does not exist on type '{}'.
+src/lib/peachtree/hybrid-sync.ts(641,20): error TS2339: Property 'update' does not exist on type '{}'.
+src/lib/peachtree/hybrid-sync.ts(642,20): error TS2339: Property 'update' does not exist on type '{}'.
+src/lib/peachtree/hybrid-sync.ts(645,41): error TS2339: Property 'insert' does not exist on type '{}'.
+src/lib/peachtree/hybrid-sync.ts(650,22): error TS2339: Property 'insert' does not exist on type '{}'.
+src/lib/peachtree/hybrid-sync.ts(661,20): error TS2339: Property 'insert' does not exist on type '{}'.
+src/lib/peachtree/hybrid-sync.ts(703,12): error TS2339: Property 'select' does not exist on type '{}'.
+src/lib/peachtree/hybrid-sync.ts(722,14): error TS2339: Property 'select' does not exist on type '{}'.
+src/lib/peachtree/hybrid-sync.ts(739,12): error TS2339: Property 'select' does not exist on type '{}'.
+src/lib/peachtree/hybrid-sync.ts(769,20): error TS2339: Property 'update' does not exist on type '{}'.
+src/lib/peachtree/hybrid-sync.ts(770,20): error TS2339: Property 'update' does not exist on type '{}'.
+src/lib/peachtree/hybrid-sync.ts(773,41): error TS2339: Property 'insert' does not exist on type '{}'.
+src/lib/peachtree/hybrid-sync.ts(774,20): error TS2339: Property 'insert' does not exist on type '{}'.
+src/lib/peachtree/hybrid-sync.ts(833,8): error TS2339: Property 'select' does not exist on type '{}'.
+src/lib/peachtree/hybrid-sync.ts(845,8): error TS2339: Property 'select' does not exist on type '{}'.
+src/lib/peachtree/migration.ts(61,18): error TS2339: Property 'insert' does not exist on type '{}'.
+src/lib/peachtree/migration.ts(108,18): error TS2339: Property 'insert' does not exist on type '{}'.
+src/lib/peachtree/migration.ts(152,18): error TS2339: Property 'insert' does not exist on type '{}'.
+src/lib/peachtree/migration.ts(197,18): error TS2339: Property 'insert' does not exist on type '{}'.
+src/lib/peachtree/migration.ts(233,12): error TS2339: Property 'select' does not exist on type '{}'.
+src/lib/peachtree/migration.ts(247,39): error TS2339: Property 'insert' does not exist on type '{}'.
+src/lib/peachtree/migration.ts(270,20): error TS2339: Property 'insert' does not exist on type '{}'.
+src/lib/peachtree/migration.ts(302,12): error TS2339: Property 'select' does not exist on type '{}'.
+src/lib/peachtree/migration.ts(316,14): error TS2339: Property 'select' does not exist on type '{}'.
+src/lib/peachtree/migration.ts(326,18): error TS2339: Property 'insert' does not exist on type '{}'.
+src/pages/dashboard/Inventory.tsx(70,25): error TS2339: Property 'lowStockCount' does not exist on type '{ totalItems: number; lowStockItems: number; totalValue: number; }'.
+src/pages/dashboard/Inventory.tsx(84,25): error TS2339: Property 'outOfStockCount' does not exist on type '{ totalItems: number; lowStockItems: number; totalValue: number; }'.
+src/pages/dashboard/inventory/Assemblies.tsx(29,11): error TS2322: Type '{ assemblies: never[]; isLoading: boolean; }' is not assignable to type 'IntrinsicAttributes & AssemblyListProps'.
+  Property 'isLoading' does not exist on type 'IntrinsicAttributes & AssemblyListProps'.
+src/pages/dashboard/Invoices.tsx(99,25): error TS2322: Type 'InvoiceWithCustomer[]' is not assignable to type 'Invoice[]'.
+  Type 'InvoiceWithCustomer' is not assignable to type 'Invoice'.
+    Types of property 'date' are incompatible.
+      Type 'string' is not assignable to type 'Date'.
+src/services/banking-service.ts(86,28): error TS2551: Property 'accountName' does not exist on type '{ name: string; accountNumber: string; accountType: string; currency: string; openingBalance: number; isActive: boolean; }'. Did you mean 'accountNumber'?
+src/services/banking-service.ts(88,25): error TS2339: Property 'bankName' does not exist on type '{ name: string; accountNumber: string; accountType: string; currency: string; openingBalance: number; isActive: boolean; }'.
+src/services/banking-service.ts(117,28): error TS2551: Property 'accountName' does not exist on type '{ name: string; accountNumber: string; accountType: string; currency: string; openingBalance: number; isActive: boolean; }'. Did you mean 'accountNumber'?
+src/services/banking-service.ts(119,25): error TS2339: Property 'bankName' does not exist on type '{ name: string; accountNumber: string; accountType: string; currency: string; openingBalance: number; isActive: boolean; }'.
+src/services/banking-service.ts(217,12): error TS2678: Type '"TRANSFER"' is not comparable to type '"DEPOSIT" | "WITHDRAWAL"'.
+src/services/banking-service.ts(395,7): error TS2322: Type 'string' is not assignable to type 'Date'.
+src/services/banking-service.ts(408,7): error TS2322: Type 'string' is not assignable to type 'Date'.
+src/services/customer-service.ts(100,3): error TS2322: Type '{ id: any; companyId: any; customerNumber: any; billingAddress: any; shippingAddress: any; creditLimit: any; taxId: any; isActive: any; customerType: any; paymentTerms: any; contactName: any; discountPercent: any; ... 8 more ...; updatedAt: any; }' is not assignable to type 'SerializedCustomer'.
+  Type '{ id: any; companyId: any; customerNumber: any; billingAddress: any; shippingAddress: any; creditLimit: any; taxId: any; isActive: any; customerType: any; paymentTerms: any; contactName: any; discountPercent: any; ... 8 more ...; updatedAt: any; }' is missing the following properties from type 'Omit<{ id: string; name: string; openingBalance: string | null; isActive: boolean; balance: string; email: string | null; phone: string | null; taxId: string | null; notes: string | null; ... 16 more ...; customerSince: Date | null; }, "openingBalance" | ... 2 more ... | "discountPercent">': name, email, phone, notes

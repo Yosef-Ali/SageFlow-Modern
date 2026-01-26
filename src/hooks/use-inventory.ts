@@ -9,6 +9,7 @@ import {
   deleteItem,
   getItemCategories,
   getInventorySummary,
+  getAssemblyDefinitions,
   type ItemFormValues,
   type ItemFiltersValues,
 } from '@/app/actions/inventory-actions'
@@ -24,6 +25,7 @@ export const inventoryKeys = {
   detail: (id: string) => [...inventoryKeys.details(), id] as const,
   categories: () => [...inventoryKeys.all, 'categories'] as const,
   summary: () => [...inventoryKeys.all, 'summary'] as const,
+  assemblies: () => [...inventoryKeys.all, 'assemblies'] as const,
 }
 
 /**
@@ -35,7 +37,8 @@ export function useItems(filters?: Partial<ItemFiltersValues>) {
     queryFn: async () => {
       const result = await getItems(filters)
       if (!result.success) {
-        throw new Error(result.error)
+        console.error(result.error)
+        return []
       }
       return result.data
     },
@@ -85,6 +88,23 @@ export function useInventorySummary() {
       const result = await getInventorySummary()
       if (!result.success) {
         throw new Error(result.error)
+      }
+      return result.data
+    },
+  })
+}
+
+/**
+ * Hook to fetch assembly definitions
+ */
+export function useAssemblyDefinitions() {
+  return useQuery({
+    queryKey: inventoryKeys.assemblies(),
+    queryFn: async () => {
+      const result = await getAssemblyDefinitions()
+      if (!result.success) {
+        console.error(result.error) // Don't throw, prevent white page
+        return []
       }
       return result.data
     },

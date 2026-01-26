@@ -13,6 +13,15 @@ export const invoiceItemSchema = z.object({
   taxRate: z.number().min(0).max(1).default(ETHIOPIAN_VAT_RATE),
 })
 
+// Ship address schema
+export const shipAddressSchema = z.object({
+  street: z.string().optional(),
+  city: z.string().optional(),
+  region: z.string().optional(),
+  country: z.string().optional(),
+  postalCode: z.string().optional(),
+}).optional()
+
 // Main invoice schema
 export const invoiceSchema = z.object({
   customerId: z.string().min(1, "Customer is required"),
@@ -22,14 +31,14 @@ export const invoiceSchema = z.object({
   notes: z.string().optional(),
   terms: z.string().optional(),
   status: z.enum(["DRAFT", "SENT", "PARTIALLY_PAID", "PAID", "OVERDUE", "CANCELLED"]).default("DRAFT"),
+  discountAmount: z.number().optional().default(0),
   // Peachtree-standard fields
   salesRepId: z.string().optional(),
   poNumber: z.string().optional(),
   shipMethod: z.string().optional(),
   shipDate: z.date().optional().nullable(),
+  shipAddress: shipAddressSchema,
   dropShip: z.boolean().default(false),
-  // We can add shipAddress validation later if needed structure is complex, 
-  // for now keep it simple or omitted from form validation if handled separately
 })
 
 // Invoice filters schema

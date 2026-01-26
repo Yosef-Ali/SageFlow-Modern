@@ -1,10 +1,10 @@
-'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Loader2 } from 'lucide-react'
+import { Loader2, Scan } from 'lucide-react'
+import { AIPaymentScan } from '@/components/ai/ai-payment-scan'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -23,7 +23,10 @@ import {
 } from '@/lib/validations/payment'
 import { useCreatePayment, useUnpaidInvoices } from '@/hooks/use-payments'
 import { useCustomersDropdown } from '@/hooks/use-invoices'
+import { createCustomer } from '@/services/customer-service'
+import { useAuth } from '@/lib/auth-context'
 import { formatCurrency } from '@/lib/utils'
+import { useToast } from '@/components/ui/use-toast'
 
 interface PaymentFormProps {
   preselectedInvoiceId?: string
@@ -38,11 +41,15 @@ export function PaymentForm({
   preselectedAmount,
   onSuccess,
 }: PaymentFormProps) {
-  const router = useRouter()
+  const navigate = useNavigate()
+  const { toast } = useToast()
+  const { user } = useAuth()
   const createPayment = useCreatePayment()
-  const { data: customers, isLoading: customersLoading } = useCustomersDropdown()
+  const { data: customers, isLoading: customersLoading, refetch: refetchCustomers } = useCustomersDropdown()
 
   const [selectedCustomerId, setSelectedCustomerId] = useState(preselectedCustomerId || '')
+  const [showPaymentScan, setShowPaymentScan] = useState(false)
+  const [scannedCustomerName, setScannedCustomerName] = useState<string | null>(null)
   const { data: unpaidInvoices } = useUnpaidInvoices(selectedCustomerId)
 
   const form = useForm<PaymentFormValues>({
@@ -94,14 +101,86 @@ export function PaymentForm({
 
   const onSubmit = async (data: PaymentFormValues) => {
     try {
-      await createPayment.mutateAsync(data)
+      let finalData = { ...data }
+
+      // Handle temporary customer creation
+      if (data.customerId === 'temp') {
+        if (!scannedCustomerName) {
+          throw new Error('Please enter a name for the new customer')
+        }
+        if (!user?.companyId) throw new Error('Not authenticated')
+
+        const newCustomerResult = await createCustomer(user.companyId, {
+          name: scannedCustomerName,
+          email: '',
+          phone: '',
+          billingAddress: {}, 
+          isActive: true,
+          customerType: 'RETAIL',
+          paymentTerms: 'DUE_ON_RECEIPT',
+          discountPercent: 0,
+          taxExempt: false,
+          priceLevel: '1',
+          openingBalance: 0,
+        })
+
+        if (!newCustomerResult.success || !newCustomerResult.data) {
+          throw new Error(`Failed to create new customer: ${newCustomerResult.error || 'Unknown error'}`)
+        }
+
+        finalData.customerId = newCustomerResult.data.id
+        await refetchCustomers() // Update local list
+      }
+
+      await createPayment.mutateAsync(finalData)
+      // Toast is handled by the mutation hook
       if (onSuccess) {
         onSuccess()
       } else {
-        router.push('/dashboard/payments')
+        navigate('/dashboard/payments')
       }
     } catch (error) {
-      // Error handled by mutation hook
+      console.error('Payment error:', error)
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to record payment',
+        variant: 'destructive',
+      })
+    }
+  }
+
+  const handleScanComplete = (data: any) => {
+    if (data.amount) form.setValue('amount', data.amount)
+    if (data.paymentDate) form.setValue('paymentDate', new Date(data.paymentDate))
+    
+    if (data.paymentMethod) {
+      // Map extracted method to allowed values (must be lowercase)
+      const method = data.paymentMethod.toLowerCase().replace(' ', '_')
+      form.setValue('paymentMethod', method)
+    } else {
+      // Default to cash if not found (lowercase to match validation)
+      form.setValue('paymentMethod', 'cash')
+    }
+    
+    if (data.reference) form.setValue('reference', data.reference)
+    if (data.notes) form.setValue('notes', data.notes)
+
+    // Handle scanned customer/payee name
+    if (data.customerName || data.payeeName || data.receivedFrom) {
+       // Normalize field options from scanner
+       const name = data.customerName || data.payeeName || data.receivedFrom
+       
+       const matchedCustomer = customers?.find((c: any) => 
+          c.name.toLowerCase().includes(name.toLowerCase())
+       )
+
+       if (matchedCustomer) {
+          handleCustomerChange(matchedCustomer.id)
+          setScannedCustomerName(null)
+       } else {
+          setScannedCustomerName(name)
+          // Don't auto-set 'temp' to avoid confusion, but show banner
+       }
     }
   }
 
@@ -109,9 +188,28 @@ export function PaymentForm({
 
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+      {/* AI Payment Scan Dialog */}
+      <AIPaymentScan
+        open={showPaymentScan}
+        onOpenChange={setShowPaymentScan}
+        onScanComplete={handleScanComplete}
+      />
+
       {/* Customer & Invoice Selection */}
       <div className="bg-card p-6 rounded-lg border space-y-6">
-        <h3 className="text-lg font-semibold">Payment Details</h3>
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-semibold">Payment Details</h3>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setShowPaymentScan(true)}
+            className="gap-2"
+          >
+            <Scan className="h-4 w-4" />
+            AI Scan Receipt
+          </Button>
+        </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Customer Select */}
@@ -126,6 +224,7 @@ export function PaymentForm({
                 <SelectValue placeholder="Select a customer" />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="temp">--- Temporary / New Customer ---</SelectItem>
                 {customers?.map((customer: any) => (
                   <SelectItem key={customer.id} value={customer.id}>
                     {customer.name}
@@ -135,6 +234,26 @@ export function PaymentForm({
             </Select>
             {form.formState.errors.customerId && (
               <p className="text-sm text-red-500">{form.formState.errors.customerId.message}</p>
+            )}
+
+            {/* Scanned Customer Notification */}
+            {scannedCustomerName && !form.watch('customerId') && (
+              <div className="text-xs mt-1 p-2 bg-blue-500/10 text-blue-500 rounded border border-blue-500/20">
+                AI extracted: <strong>"{scannedCustomerName}"</strong>. 
+                Please select an existing customer or use "Temporary Customer".
+              </div>
+            )}
+            
+            {form.watch('customerId') === 'temp' && (
+              <div className="space-y-2 mt-4">
+                <Label>Temporary Customer Name *</Label>
+                <Input 
+                  placeholder="Enter customer name"
+                  value={scannedCustomerName || ''}
+                  onChange={(e) => setScannedCustomerName(e.target.value)}
+                />
+                <p className="text-[10px] text-muted-foreground italic">Note: This will not be saved to your permanent customer list.</p>
+              </div>
             )}
           </div>
 
@@ -244,7 +363,7 @@ export function PaymentForm({
         <Button
           type="button"
           variant="outline"
-          onClick={() => router.push('/dashboard/payments')}
+          onClick={() => navigate('/dashboard/payments')}
         >
           Cancel
         </Button>

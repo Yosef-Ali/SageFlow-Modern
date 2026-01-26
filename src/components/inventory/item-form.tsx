@@ -1,7 +1,6 @@
-'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Loader2, AlertCircle, X } from 'lucide-react'
@@ -69,7 +68,7 @@ const unitTypes = [
 ]
 
 export function ItemForm({ item, onSuccess }: ItemFormProps) {
-  const router = useRouter()
+  const navigate = useNavigate()
   const createItem = useCreateItem()
   const updateItem = useUpdateItem()
   const { data: categories } = useItemCategories()
@@ -113,7 +112,7 @@ export function ItemForm({ item, onSuccess }: ItemFormProps) {
       if (onSuccess) {
         onSuccess()
       } else {
-        router.push('/dashboard/inventory')
+        navigate('/dashboard/inventory')
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'An error occurred'
@@ -420,7 +419,7 @@ export function ItemForm({ item, onSuccess }: ItemFormProps) {
         <Button
           type="button"
           variant="outline"
-          onClick={() => router.push('/dashboard/inventory')}
+          onClick={() => navigate('/dashboard/inventory')}
         >
           Cancel
         </Button>

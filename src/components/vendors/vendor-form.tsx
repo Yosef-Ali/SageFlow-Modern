@@ -1,7 +1,6 @@
-'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Loader2, AlertCircle, X } from 'lucide-react'
@@ -41,7 +40,7 @@ interface VendorFormProps {
 }
 
 export function VendorForm({ vendor, onSuccess }: VendorFormProps) {
-  const router = useRouter()
+  const navigate = useNavigate()
   const createVendor = useCreateVendor()
   const updateVendor = useUpdateVendor()
   const isEditing = !!vendor
@@ -89,7 +88,7 @@ export function VendorForm({ vendor, onSuccess }: VendorFormProps) {
       if (onSuccess) {
         onSuccess()
       } else {
-        router.push('/dashboard/vendors')
+        navigate('/dashboard/vendors')
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'An error occurred'
@@ -351,7 +350,7 @@ export function VendorForm({ vendor, onSuccess }: VendorFormProps) {
         <Button
           type="button"
           variant="outline"
-          onClick={() => router.push('/dashboard/vendors')}
+          onClick={() => navigate('/dashboard/vendors')}
         >
           Cancel
         </Button>

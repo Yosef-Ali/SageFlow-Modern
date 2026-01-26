@@ -1,7 +1,6 @@
-'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Loader2 } from 'lucide-react'
@@ -44,7 +43,7 @@ const accountTypes = [
 ]
 
 export function AccountForm({ account, onSuccess }: AccountFormProps) {
-  const router = useRouter()
+  const navigate = useNavigate()
   const createAccount = useCreateAccount()
   const updateAccount = useUpdateAccount()
   const { data: accountsData } = useAccounts()
@@ -72,7 +71,7 @@ export function AccountForm({ account, onSuccess }: AccountFormProps) {
       if (onSuccess) {
         onSuccess()
       } else {
-        router.push('/dashboard/chart-of-accounts')
+        navigate('/dashboard/chart-of-accounts')
       }
     } catch (error) {
       // Error handled by mutation hook
@@ -86,7 +85,7 @@ export function AccountForm({ account, onSuccess }: AccountFormProps) {
 
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-      <div className="bg-white p-6 rounded-lg border border-slate-200 space-y-6">
+      <div className="bg-card p-6 rounded-lg border border-border space-y-6">
         <h3 className="text-lg font-semibold">Account Information</h3>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -185,7 +184,7 @@ export function AccountForm({ account, onSuccess }: AccountFormProps) {
         <Button
           type="button"
           variant="outline"
-          onClick={() => router.push('/dashboard/chart-of-accounts')}
+          onClick={() => navigate('/dashboard/chart-of-accounts')}
         >
           Cancel
         </Button>

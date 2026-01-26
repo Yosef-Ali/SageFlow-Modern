@@ -1,7 +1,6 @@
-'use client'
 
 import { useState } from 'react'
-import Link from 'next/link'
+import { Link } from 'react-router-dom'
 import { MoreHorizontal, Eye, Trash2, Receipt, Edit } from 'lucide-react'
 import {
   Table,
@@ -79,7 +78,7 @@ export function PaymentTable({ payments, isLoading }: PaymentTableProps) {
         <Receipt className="w-12 h-12 text-muted-foreground mb-4" />
         <h3 className="text-lg font-medium mb-1">No payments yet</h3>
         <p className="text-muted-foreground mb-4">Record your first payment to get started</p>
-        <Link href="/dashboard/payments/new">
+        <Link to="/dashboard/payments/new">
           <Button>Record Payment</Button>
         </Link>
       </div>
@@ -112,7 +111,7 @@ export function PaymentTable({ payments, isLoading }: PaymentTableProps) {
                   <TableCell>
                     {payment.invoice ? (
                       <Link
-                        href={`/dashboard/invoices/${payment.invoice.id}`}
+                        to={`/dashboard/invoices/${payment.invoice.id}`}
                         className="text-primary hover:underline"
                       >
                         {payment.invoice.invoiceNumber}
@@ -141,13 +140,13 @@ export function PaymentTable({ payments, isLoading }: PaymentTableProps) {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem asChild>
-                          <Link href={`/dashboard/payments/${payment.id}`}>
+                          <Link to={`/dashboard/payments/${payment.id}`}>
                             <Eye className="h-4 w-4 mr-2" />
                             View Details
                           </Link>
                         </DropdownMenuItem>
                         <DropdownMenuItem asChild>
-                          <Link href={`/dashboard/payments/${payment.id}/edit`}>
+                          <Link to={`/dashboard/payments/${payment.id}/edit`}>
                             <Edit className="h-4 w-4 mr-2" />
                             Edit
                           </Link>

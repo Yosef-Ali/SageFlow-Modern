@@ -74,6 +74,7 @@ export const customerSchema = z.object({
     .max(500, 'Notes must be less than 500 characters')
     .optional()
     .or(z.literal('')),
+  isActive: z.boolean().optional().default(true),
   // Peachtree-standard fields
   customerType: z.enum(['RETAIL', 'WHOLESALE', 'GOVERNMENT', 'NGO', 'CORPORATE', 'OTHER']).optional().default('RETAIL'),
   paymentTerms: z.enum(['DUE_ON_RECEIPT', 'NET_15', 'NET_30', 'NET_45', 'NET_60', 'NET_90', '2_10_NET_30', 'COD']).optional().default('NET_30'),
@@ -82,6 +83,10 @@ export const customerSchema = z.object({
   taxExempt: z.boolean().optional().default(false),
   taxExemptNumber: z.string().max(50).optional().or(z.literal('')),
   priceLevel: z.enum(['1', '2', '3']).optional().default('1'),
+  salesRepId: z.string().optional(),
+  openingBalance: z.number().optional().default(0),
+  openingBalanceDate: z.date().optional().or(z.string().optional()),
+  customerSince: z.date().optional().or(z.string().optional()),
 })
 
 // Type inference from schema
@@ -113,6 +118,7 @@ export function getEarlyPaymentDiscount(terms: string): { discountPercent: numbe
 export const customerFiltersSchema = z.object({
   search: z.string().optional(),
   status: z.enum(['active', 'inactive', 'all']).optional().default('active'),
+  customerType: z.enum(['RETAIL', 'WHOLESALE', 'GOVERNMENT', 'NGO', 'CORPORATE', 'OTHER']).optional(),
   sortBy: z.enum(['name', 'customerNumber', 'balance', 'createdAt']).optional().default('createdAt'),
   sortOrder: z.enum(['asc', 'desc']).optional().default('desc'),
   page: z.number().int().positive().optional().default(1),

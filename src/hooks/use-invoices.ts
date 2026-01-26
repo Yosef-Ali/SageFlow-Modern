@@ -8,38 +8,50 @@ import {
   updateInvoice,
   updateInvoiceStatus,
   cancelInvoice,
+  deleteInvoice,
   getCustomersForDropdown,
   getItemsForDropdown,
-} from '@/app/actions/invoice-actions'
+  getInvoicesSummary,
+} from '@/services/invoice-service'
 import { InvoiceFormValues, InvoiceFiltersValues } from '@/lib/validations/invoice'
 import { InvoiceStatus } from '@/db/schema'
 import { useToast } from '@/components/ui/use-toast'
+import { useAuth } from '@/lib/auth-context'
 
-// Query keys
+// Query keys factory
 export const invoiceKeys = {
   all: ['invoices'] as const,
   lists: () => [...invoiceKeys.all, 'list'] as const,
-  list: (filters?: Partial<InvoiceFiltersValues>) =>
-    [...invoiceKeys.lists(), filters] as const,
+  list: (companyId: string, filters?: Partial<InvoiceFiltersValues>) =>
+    [...invoiceKeys.lists(), companyId, filters] as const,
   details: () => [...invoiceKeys.all, 'detail'] as const,
   detail: (id: string) => [...invoiceKeys.details(), id] as const,
-  customers: ['customers', 'dropdown'] as const,
-  items: ['items', 'dropdown'] as const,
+  summary: (companyId: string) => [...invoiceKeys.all, 'summary', companyId] as const,
+  customers: (companyId: string) => ['customers', 'dropdown', companyId] as const,
+  items: (companyId: string) => ['items', 'dropdown', companyId] as const,
 }
 
 /**
  * Hook to fetch invoices with filters
  */
 export function useInvoices(filters?: Partial<InvoiceFiltersValues>) {
+  const { user } = useAuth()
+  const companyId = user?.companyId || ''
+
   return useQuery({
-    queryKey: invoiceKeys.list(filters),
+    queryKey: invoiceKeys.list(companyId, filters),
     queryFn: async () => {
-      const result = await getInvoices(filters)
+      if (!companyId) {
+        return { invoices: [], total: 0 }
+      }
+      const result = await getInvoices(companyId, filters)
       if (!result.success) {
-        throw new Error(result.error)
+        console.error(result.error)
+        return { invoices: [], total: 0 }
       }
       return result.data
     },
+    enabled: !!companyId,
   })
 }
 
@@ -61,18 +73,55 @@ export function useInvoice(id: string) {
 }
 
 /**
- * Hook to fetch customers for dropdown
+ * Hook to fetch invoice summary stats
  */
-export function useCustomersDropdown() {
+export function useInvoicesSummary() {
+  const { user } = useAuth()
+  const companyId = user?.companyId || ''
+
   return useQuery({
-    queryKey: invoiceKeys.customers,
+    queryKey: invoiceKeys.summary(companyId),
     queryFn: async () => {
-      const result = await getCustomersForDropdown()
+      if (!companyId) {
+        return {
+          total: 0,
+          draft: 0,
+          sent: 0,
+          paid: 0,
+          overdue: 0,
+          totalAmount: 0,
+          paidAmount: 0,
+          outstandingAmount: 0,
+        }
+      }
+      const result = await getInvoicesSummary(companyId)
       if (!result.success) {
         throw new Error(result.error)
       }
       return result.data
     },
+    enabled: !!companyId,
+  })
+}
+
+/**
+ * Hook to fetch customers for dropdown
+ */
+export function useCustomersDropdown() {
+  const { user } = useAuth()
+  const companyId = user?.companyId || ''
+
+  return useQuery({
+    queryKey: invoiceKeys.customers(companyId),
+    queryFn: async () => {
+      if (!companyId) return []
+      const result = await getCustomersForDropdown(companyId)
+      if (!result.success) {
+        throw new Error(result.error)
+      }
+      return result.data
+    },
+    enabled: !!companyId,
   })
 }
 
@@ -80,15 +129,20 @@ export function useCustomersDropdown() {
  * Hook to fetch items for dropdown
  */
 export function useItemsDropdown() {
+  const { user } = useAuth()
+  const companyId = user?.companyId || ''
+
   return useQuery({
-    queryKey: invoiceKeys.items,
+    queryKey: invoiceKeys.items(companyId),
     queryFn: async () => {
-      const result = await getItemsForDropdown()
+      if (!companyId) return []
+      const result = await getItemsForDropdown(companyId)
       if (!result.success) {
         throw new Error(result.error)
       }
       return result.data
     },
+    enabled: !!companyId,
   })
 }
 
@@ -98,10 +152,14 @@ export function useItemsDropdown() {
 export function useCreateInvoice() {
   const queryClient = useQueryClient()
   const { toast } = useToast()
+  const { user } = useAuth()
 
   return useMutation({
     mutationFn: async (data: InvoiceFormValues) => {
-      const result = await createInvoice(data)
+      if (!user?.companyId) {
+        throw new Error('Not authenticated')
+      }
+      const result = await createInvoice(user.companyId, data)
       if (!result.success) {
         throw new Error(result.error)
       }
@@ -109,6 +167,7 @@ export function useCreateInvoice() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: invoiceKeys.lists() })
+      queryClient.invalidateQueries({ queryKey: invoiceKeys.summary(user?.companyId || '') })
       toast({
         title: 'Success',
         description: 'Invoice created successfully',
@@ -130,6 +189,7 @@ export function useCreateInvoice() {
 export function useUpdateInvoice() {
   const queryClient = useQueryClient()
   const { toast } = useToast()
+  const { user } = useAuth()
 
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: InvoiceFormValues }) => {
@@ -142,6 +202,7 @@ export function useUpdateInvoice() {
     onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: invoiceKeys.lists() })
       queryClient.invalidateQueries({ queryKey: invoiceKeys.detail(variables.id) })
+      queryClient.invalidateQueries({ queryKey: invoiceKeys.summary(user?.companyId || '') })
       toast({
         title: 'Success',
         description: 'Invoice updated successfully',
@@ -163,6 +224,7 @@ export function useUpdateInvoice() {
 export function useUpdateInvoiceStatus() {
   const queryClient = useQueryClient()
   const { toast } = useToast()
+  const { user } = useAuth()
 
   return useMutation({
     mutationFn: async ({ id, status }: { id: string; status: InvoiceStatus }) => {
@@ -175,6 +237,7 @@ export function useUpdateInvoiceStatus() {
     onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: invoiceKeys.lists() })
       queryClient.invalidateQueries({ queryKey: invoiceKeys.detail(variables.id) })
+      queryClient.invalidateQueries({ queryKey: invoiceKeys.summary(user?.companyId || '') })
       toast({
         title: 'Success',
         description: 'Invoice status updated',
@@ -196,6 +259,7 @@ export function useUpdateInvoiceStatus() {
 export function useCancelInvoice() {
   const queryClient = useQueryClient()
   const { toast } = useToast()
+  const { user } = useAuth()
 
   return useMutation({
     mutationFn: async (id: string) => {
@@ -207,6 +271,7 @@ export function useCancelInvoice() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: invoiceKeys.lists() })
+      queryClient.invalidateQueries({ queryKey: invoiceKeys.summary(user?.companyId || '') })
       toast({
         title: 'Success',
         description: 'Invoice cancelled',
@@ -216,6 +281,39 @@ export function useCancelInvoice() {
       toast({
         title: 'Error',
         description: error.message || 'Failed to cancel invoice',
+        variant: 'destructive',
+      })
+    },
+  })
+}
+/**
+ * Hook to delete an invoice
+ */
+export function useDeleteInvoice() {
+  const queryClient = useQueryClient()
+  const { toast } = useToast()
+  const { user } = useAuth()
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const result = await deleteInvoice(id)
+      if (!result.success) {
+        throw new Error(result.error)
+      }
+      return result
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: invoiceKeys.lists() })
+      queryClient.invalidateQueries({ queryKey: invoiceKeys.summary(user?.companyId || '') })
+      toast({
+        title: 'Success',
+        description: 'Invoice deleted permanently',
+      })
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to delete invoice',
         variant: 'destructive',
       })
     },

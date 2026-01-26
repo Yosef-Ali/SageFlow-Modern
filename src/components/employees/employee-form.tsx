@@ -1,7 +1,6 @@
-'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Loader2, AlertCircle, X } from 'lucide-react'
@@ -19,40 +18,7 @@ import { Switch } from '@/components/ui/switch'
 import { useCreateEmployee, useUpdateEmployee } from '@/hooks/use-employees'
 import { z } from 'zod'
 
-// Shared schema to match server action
-const employeeSchema = z.object({
-  employeeCode: z.string().min(1, 'Employee code is required'),
-  firstName: z.string().min(1, 'First name is required'),
-  lastName: z.string().min(1, 'Last name is required'),
-  jobTitle: z.string().optional(),
-  department: z.string().optional(),
-  email: z.string().email().optional().or(z.literal('')),
-  phone: z.string().optional(),
-  ssn: z.string().optional(),
-  payMethod: z.string().optional(),
-  payFrequency: z.string().optional(),
-  address: z.object({
-    street: z.string().optional(),
-    city: z.string().optional(),
-    state: z.string().optional(),
-    zipCode: z.string().optional(),
-    country: z.string().optional(),
-  }).optional(),
-  hireDate: z.string().optional().nullable(),
-  isActive: z.boolean().default(true),
-  // Peachtree payroll fields
-  employeeType: z.string().default('REGULAR'),
-  payRate: z.number().min(0).optional(),
-  overtimeRate: z.number().min(1).default(1.5),
-  bankAccountNo: z.string().optional(),
-  bankName: z.string().optional(),
-  taxId: z.string().optional(),
-  emergencyContactName: z.string().optional(),
-  emergencyContactPhone: z.string().optional(),
-  terminationDate: z.string().optional().nullable(),
-})
-
-type EmployeeFormTypes = z.infer<typeof employeeSchema>
+import { employeeSchema, type EmployeeFormValues } from '@/lib/validations/employee'
 
 interface EmployeeFormProps {
   employee?: any
@@ -60,13 +26,13 @@ interface EmployeeFormProps {
 }
 
 export function EmployeeForm({ employee, onSuccess }: EmployeeFormProps) {
-  const router = useRouter()
+  const navigate = useNavigate()
   const createEmployee = useCreateEmployee()
   const updateEmployee = useUpdateEmployee()
   const isEditing = !!employee
   const [formError, setFormError] = useState<string | null>(null)
 
-  const form = useForm<EmployeeFormTypes>({
+  const form = useForm<EmployeeFormValues>({
     resolver: zodResolver(employeeSchema),
     defaultValues: {
       employeeCode: employee?.employeeCode || '',
@@ -101,7 +67,7 @@ export function EmployeeForm({ employee, onSuccess }: EmployeeFormProps) {
     },
   })
 
-  const onSubmit = async (data: EmployeeFormTypes) => {
+  const onSubmit = async (data: EmployeeFormValues) => {
     setFormError(null)
     try {
       if (isEditing) {
@@ -112,7 +78,7 @@ export function EmployeeForm({ employee, onSuccess }: EmployeeFormProps) {
       if (onSuccess) {
         onSuccess()
       } else {
-        router.push('/dashboard/employees')
+        navigate('/dashboard/employees')
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'An error occurred'
@@ -276,7 +242,7 @@ export function EmployeeForm({ employee, onSuccess }: EmployeeFormProps) {
         <Button
           type="button"
           variant="outline"
-          onClick={() => router.push('/dashboard/employees')}
+          onClick={() => navigate('/dashboard/employees')}
         >
           Cancel
         </Button>

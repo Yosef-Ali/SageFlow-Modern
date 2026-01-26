@@ -1,443 +1,463 @@
-'use server'
+import { supabase } from "@/lib/supabase"
+import { PaymentFormValues } from "@/lib/validations/payment"
 
-import { db } from '@/db'
-import { payments, invoices, customers } from '@/db/schema'
-import { eq, and, ilike, gte, lte, inArray, desc, asc, count, sql } from 'drizzle-orm'
-import { getCurrentCompanyId } from '@/lib/customer-utils'
-import {
-  paymentSchema,
-  paymentFiltersSchema,
-  type PaymentFormValues,
-  type PaymentFiltersValues,
-} from '@/lib/validations/payment'
-import { revalidatePath } from 'next/cache'
-
-// Action result type
-type ActionResult<T = unknown> = {
-  success: boolean
-  data?: T
-  error?: string
-}
+// Import filters type if not already there, or use partial
+import { PaymentFiltersValues } from "@/lib/validations/payment"
 
 /**
- * Get list of payments with filters and pagination
+ * Generate Peachtree-style receipt number
+ * Format: REC-YYYYMM-XXXXX (e.g., REC-202601-00001)
  */
-export async function getPayments(
-  filters?: Partial<PaymentFiltersValues>
-): Promise<ActionResult<{ payments: any[]; total: number }>> {
+async function generateReceiptNumber(companyId: string): Promise<string> {
+  const now = new Date()
+  const yearMonth = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}`
+  const prefix = `REC-${yearMonth}-`
+
+  // Get the last receipt number for this month
+  const { data } = await supabase
+    .from('payments')
+    .select('reference')
+    .eq('company_id', companyId)
+    .like('reference', `${prefix}%`)
+    .order('created_at', { ascending: false })
+    .limit(1)
+
+  let nextNum = 1
+  if (data && data.length > 0 && data[0].reference) {
+    const lastNumMatch = data[0].reference.match(/(\d+)$/)
+    if (lastNumMatch) {
+      nextNum = parseInt(lastNumMatch[1]) + 1
+    }
+  }
+
+  return `${prefix}${String(nextNum).padStart(5, '0')}`
+}
+
+export async function getPayments(companyId: string, filters?: Partial<PaymentFiltersValues>) {
   try {
-    const companyId = await getCurrentCompanyId()
+    // Fetch payments for this company
+    let query = supabase
+      .from('payments')
+      .select('*')
+      .eq('company_id', companyId)
+      .order('payment_date', { ascending: false })
 
-    const validatedFilters = paymentFiltersSchema.parse(filters || {})
-
-    // Build where conditions
-    const conditions = [eq(payments.companyId, companyId)]
-
-    if (validatedFilters.customerId) {
-      conditions.push(eq(payments.customerId, validatedFilters.customerId))
+    if (filters?.customerId) {
+      query = query.eq('customer_id', filters.customerId)
     }
 
-    if (validatedFilters.invoiceId) {
-      conditions.push(eq(payments.invoiceId, validatedFilters.invoiceId))
+    const { data: payments, error } = await query
+
+    if (error) {
+      console.error('Payments query error:', error)
+      return { success: false, error: error.message }
     }
 
-    if (validatedFilters.paymentMethod) {
-      conditions.push(eq(payments.paymentMethod, validatedFilters.paymentMethod))
+    if (!payments || payments.length === 0) {
+      return { success: true, data: [] }
     }
 
-    if (validatedFilters.dateFrom) {
-      conditions.push(gte(payments.paymentDate, validatedFilters.dateFrom))
+    // Get unique customer IDs and invoice IDs
+    const customerIds = [...new Set(payments.map(p => p.customer_id))]
+    const invoiceIds = [...new Set(payments.filter(p => p.invoice_id).map(p => p.invoice_id))]
+
+    // Fetch customers
+    const { data: customers } = await supabase
+      .from('customers')
+      .select('id, name')
+      .in('id', customerIds)
+
+    // Fetch invoices if any
+    let invoices: any[] = []
+    if (invoiceIds.length > 0) {
+      const { data: invoicesData } = await supabase
+        .from('invoices')
+        .select('id, invoice_number, total')
+        .in('id', invoiceIds)
+      invoices = invoicesData || []
     }
 
-    if (validatedFilters.dateTo) {
-      conditions.push(lte(payments.paymentDate, validatedFilters.dateTo))
-    }
+    // Create lookup maps
+    const customerMap = new Map(customers?.map(c => [c.id, c]) || [])
+    const invoiceMap = new Map(invoices.map(i => [i.id, i]))
 
-    if (validatedFilters.search) {
-      const searchTerm = `%${validatedFilters.search}%`
-      conditions.push(ilike(payments.reference, searchTerm))
-    }
+    // Transform payments with customer and invoice data
+    const paymentsWithDetails = payments.map(payment => ({
+      id: payment.id,
+      amount: payment.amount,
+      paymentDate: payment.payment_date,
+      paymentMethod: payment.payment_method,
+      reference: payment.reference,
+      notes: payment.notes,
+      customer: customerMap.get(payment.customer_id) || { id: payment.customer_id, name: 'Unknown' },
+      invoice: payment.invoice_id ? (invoiceMap.get(payment.invoice_id) ? {
+        id: payment.invoice_id,
+        invoiceNumber: invoiceMap.get(payment.invoice_id)?.invoice_number,
+        total: invoiceMap.get(payment.invoice_id)?.total
+      } : null) : null
+    }))
 
-    const whereClause = and(...conditions)
-
-    // Get total count
-    const [{ value: total }] = await db
-      .select({ value: count() })
-      .from(payments)
-      .where(whereClause)
-
-    // Build orderBy - use a type-safe column map
-    const sortableColumns = {
-      id: payments.id,
-      amount: payments.amount,
-      paymentDate: payments.paymentDate,
-      paymentMethod: payments.paymentMethod,
-      reference: payments.reference,
-      createdAt: payments.createdAt,
-    } as const
-
-    const sortField = validatedFilters.sortBy || 'createdAt'
-    const sortOrder = validatedFilters.sortOrder || 'desc'
-    const orderByColumn = sortableColumns[sortField as keyof typeof sortableColumns] ?? payments.createdAt
-    const orderBy = sortOrder === 'asc' ? asc(orderByColumn) : desc(orderByColumn)
-
-    // Get payments with relations
-    const limit = validatedFilters.limit || 20
-    const page = validatedFilters.page || 1
-    const offset = (page - 1) * limit
-
-    const paymentList = await db.query.payments.findMany({
-      where: whereClause,
-      orderBy,
-      limit,
-      offset,
-      with: {
-        customer: {
-          columns: { id: true, name: true },
-        },
-        invoice: {
-          columns: { id: true, invoiceNumber: true, total: true },
-        },
-      },
-    })
-
-    return {
-      success: true,
-      data: { payments: paymentList, total },
-    }
-  } catch (error) {
-    console.error('Error fetching payments:', error)
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Failed to fetch payments',
-    }
+    return { success: true, data: paymentsWithDetails }
+  } catch (error: any) {
+    console.error("Error fetching payments:", error)
+    return { success: false, error: error.message || "Failed to fetch payments" }
   }
 }
 
-/**
- * Get a single payment by ID
- */
-export async function getPayment(id: string): Promise<ActionResult<any>> {
+export async function getPayment(id: string) {
   try {
-    const companyId = await getCurrentCompanyId()
-
-    const payment = await db.query.payments.findFirst({
-      where: and(eq(payments.id, id), eq(payments.companyId, companyId)),
-      with: {
-        customer: {
-          columns: { id: true, name: true, email: true, phone: true },
-        },
-        invoice: {
-          columns: { id: true, invoiceNumber: true, total: true, paidAmount: true },
-        },
-      },
-    })
-
-    if (!payment) {
-      return { success: false, error: 'Payment not found' }
+    // Fetch payment without nested relations (FK not configured in Supabase)
+    const { data, error } = await supabase.from('payments').select('*').eq('id', id).single()
+    if (error) {
+      console.error('Payment query error:', error)
+      return { success: false, error: error.message }
     }
-
-    return { success: true, data: payment }
-  } catch (error) {
-    console.error('Error fetching payment:', error)
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Failed to fetch payment',
-    }
+    return { success: true, data }
+  } catch (error: any) {
+    console.error("Error fetching payment:", error)
+    return { success: false, error: error.message || "Failed to fetch payment" }
   }
 }
 
-/**
- * Record a new payment
- */
-export async function createPayment(
-  data: PaymentFormValues
-): Promise<ActionResult<any>> {
+export async function createPayment(data: PaymentFormValues, companyId: string) {
   try {
-    const companyId = await getCurrentCompanyId()
+    console.log('[createPayment] Starting with:', { data, companyId })
 
-    const validatedData = paymentSchema.parse(data)
+    // Generate Peachtree-style receipt number if no reference provided
+    const receiptNumber = data.reference?.trim()
+      ? data.reference.trim()
+      : await generateReceiptNumber(companyId)
 
-    const payment = await db.transaction(async (tx) => {
-      // Create the payment
-      const [newPayment] = await tx
-        .insert(payments)
-        .values({
-          companyId,
-          customerId: validatedData.customerId,
-          invoiceId: validatedData.invoiceId || null,
-          amount: String(validatedData.amount),
-          paymentDate: validatedData.paymentDate,
-          paymentMethod: validatedData.paymentMethod,
-          reference: validatedData.reference || null,
-          notes: validatedData.notes || null,
+    // Determine invoice_id (handle 'none' and empty strings)
+    const invoiceId = (!data.invoiceId || data.invoiceId === 'none' || data.invoiceId.trim() === '')
+      ? null
+      : data.invoiceId
+
+    // Prepare payload - convert Date to ISO string for Supabase
+    const payload = {
+      id: crypto.randomUUID(),
+      company_id: companyId,
+      customer_id: data.customerId,
+      invoice_id: invoiceId,
+      amount: Number(data.amount),
+      // Use timestampz format: convert Date to string
+      payment_date: data.paymentDate instanceof Date
+        ? data.paymentDate.toISOString()
+        : new Date(data.paymentDate).toISOString(),
+      payment_method: data.paymentMethod,
+      reference: receiptNumber,
+      notes: data.notes || null
+    }
+
+    console.log('[createPayment] Payload:', JSON.stringify(payload, null, 2))
+
+    const { data: newPayment, error } = await supabase.from('payments').insert(payload).select().single()
+
+    if (error) throw error
+
+    // ============ PEACHTREE LOGIC: Update Customer Balance ============
+    // Reduce customer balance by payment amount (payment reduces AR)
+    const { data: customer } = await supabase
+      .from('customers')
+      .select('balance')
+      .eq('id', data.customerId)
+      .single()
+
+    if (customer) {
+      const newBalance = (Number(customer.balance) || 0) - Number(data.amount)
+      await supabase
+        .from('customers')
+        .update({
+          balance: newBalance,
+          updated_at: new Date().toISOString()
         })
-        .returning()
+        .eq('id', data.customerId)
+    }
 
-      // If linked to an invoice, update the invoice paid amount
-      if (validatedData.invoiceId) {
-        const invoice = await tx.query.invoices.findFirst({
-          where: eq(invoices.id, validatedData.invoiceId),
-          columns: { paidAmount: true, total: true },
-        })
+    // ============ PEACHTREE LOGIC: Update Invoice Status ============
+    if (invoiceId) {
+      // Fetch invoice total and paid amount
+      const { data: invoice } = await supabase
+        .from('invoices')
+        .select('total, paid_amount, status')
+        .eq('id', invoiceId)
+        .single()
 
-        if (invoice) {
-          const newPaidAmount = Number(invoice.paidAmount) + validatedData.amount
-          const total = Number(invoice.total)
+      if (invoice) {
+        const newPaidAmount = (Number(invoice.paid_amount) || 0) + Number(data.amount)
+        const invoiceTotal = Number(invoice.total)
 
-          // Determine new status based on payment
-          let newStatus: 'PARTIALLY_PAID' | 'PAID' = 'PARTIALLY_PAID'
-          if (newPaidAmount >= total) {
-            newStatus = 'PAID'
-          }
-
-          await tx
-            .update(invoices)
-            .set({
-              paidAmount: String(newPaidAmount),
-              status: newStatus,
-              updatedAt: new Date(),
-            })
-            .where(eq(invoices.id, validatedData.invoiceId))
+        // Peachtree-style status determination
+        let newStatus: string
+        if (newPaidAmount >= invoiceTotal) {
+          newStatus = 'PAID'
+        } else if (newPaidAmount > 0) {
+          newStatus = 'PARTIALLY_PAID'
+        } else {
+          newStatus = invoice.status // Keep current status
         }
+
+        await supabase.from('invoices').update({
+          paid_amount: newPaidAmount,
+          status: newStatus,
+          updated_at: new Date().toISOString()
+        }).eq('id', invoiceId)
+
+        console.log(`[createPayment] Invoice ${invoiceId} updated: paid=${newPaidAmount}, status=${newStatus}`)
       }
-
-      // Update customer balance (decrement by payment amount)
-      console.log('[Payment] Updating customer balance:', {
-        customerId: validatedData.customerId,
-        paymentAmount: validatedData.amount,
-        action: 'balance - amount'
-      })
-
-      await tx
-        .update(customers)
-        .set({
-          balance: sql`${customers.balance} - ${validatedData.amount}`,
-          updatedAt: new Date(),
-        })
-        .where(eq(customers.id, validatedData.customerId))
-
-      console.log('[Payment] Customer balance updated successfully')
-
-      return newPayment
-    })
-
-    revalidatePath('/dashboard/payments')
-    if (validatedData.invoiceId) {
-      revalidatePath(`/dashboard/invoices/${validatedData.invoiceId}`)
     }
-    revalidatePath('/dashboard/invoices')
 
-    return { success: true, data: payment }
-  } catch (error) {
-    console.error('Error creating payment:', error)
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Failed to record payment',
-    }
+    return { success: true, data: newPayment }
+  } catch (error: any) {
+    console.error("Error creating payment:", error)
+    return { success: false, error: error.message || "Failed to create payment" }
   }
 }
 
-/**
- * Update an existing payment
- */
-export async function updatePayment(
-  id: string,
-  data: PaymentFormValues
-): Promise<ActionResult<any>> {
+export async function updatePayment(id: string, data: PaymentFormValues) {
   try {
-    const companyId = await getCurrentCompanyId()
+    // ============ PEACHTREE LOGIC: Reverse old payment effects first ============
 
-    const validatedData = paymentSchema.parse(data)
+    // Fetch the original payment
+    const { data: oldPayment, error: fetchError } = await supabase
+      .from('payments')
+      .select('*')
+      .eq('id', id)
+      .single()
 
-    // Get the existing payment
-    const existingPayment = await db.query.payments.findFirst({
-      where: and(eq(payments.id, id), eq(payments.companyId, companyId)),
-    })
+    if (fetchError) throw fetchError
+    if (!oldPayment) throw new Error('Payment not found')
 
-    if (!existingPayment) {
-      return { success: false, error: 'Payment not found' }
-    }
+    const oldAmount = Number(oldPayment.amount)
+    const newAmount = Number(data.amount)
+    const amountDiff = newAmount - oldAmount
 
-    const payment = await db.transaction(async (tx) => {
-      const oldAmount = Number(existingPayment.amount)
-      const newAmount = validatedData.amount
-      const amountDiff = newAmount - oldAmount
-
-      // Update the payment
-      const [updatedPayment] = await tx
-        .update(payments)
-        .set({
-          customerId: validatedData.customerId,
-          invoiceId: validatedData.invoiceId || null,
-          amount: String(validatedData.amount),
-          paymentDate: validatedData.paymentDate,
-          paymentMethod: validatedData.paymentMethod,
-          reference: validatedData.reference || null,
-          notes: validatedData.notes || null,
-        })
-        .where(eq(payments.id, id))
-        .returning()
-
-      // Handle invoice updates if linked
-      if (validatedData.invoiceId === existingPayment.invoiceId && validatedData.invoiceId) {
-        // Same invoice - just update the amount difference
-        const invoice = await tx.query.invoices.findFirst({
-          where: eq(invoices.id, validatedData.invoiceId),
-          columns: { paidAmount: true, total: true },
-        })
-
-        if (invoice) {
-          const newPaidAmount = Number(invoice.paidAmount) + amountDiff
-          const total = Number(invoice.total)
-
-          let newStatus: 'SENT' | 'PARTIALLY_PAID' | 'PAID' = 'SENT'
-          if (newPaidAmount <= 0) {
-            newStatus = 'SENT'
-          } else if (newPaidAmount >= total) {
-            newStatus = 'PAID'
-          } else {
-            newStatus = 'PARTIALLY_PAID'
-          }
-
-          await tx
-            .update(invoices)
-            .set({
-              paidAmount: String(Math.max(0, newPaidAmount)),
-              status: newStatus,
-              updatedAt: new Date(),
-            })
-            .where(eq(invoices.id, validatedData.invoiceId))
-        }
-      }
-
-      // Update customer balance (adjust by amount difference)
+    // Handle customer balance changes
+    if (oldPayment.customer_id === data.customerId) {
+      // Same customer - just adjust the difference
       if (amountDiff !== 0) {
-        await tx
-          .update(customers)
-          .set({
-            balance: sql`${customers.balance} - ${amountDiff}`,
-            updatedAt: new Date(),
-          })
-          .where(eq(customers.id, validatedData.customerId))
+        const { data: customer } = await supabase
+          .from('customers')
+          .select('balance')
+          .eq('id', data.customerId)
+          .single()
+
+        if (customer) {
+          // Subtract the difference (if payment increased, balance decreases more)
+          const newBalance = (Number(customer.balance) || 0) - amountDiff
+          await supabase
+            .from('customers')
+            .update({ balance: newBalance, updated_at: new Date().toISOString() })
+            .eq('id', data.customerId)
+        }
+      }
+    } else {
+      // Different customer - reverse from old, apply to new
+      // Add back to old customer
+      const { data: oldCustomer } = await supabase
+        .from('customers')
+        .select('balance')
+        .eq('id', oldPayment.customer_id)
+        .single()
+
+      if (oldCustomer) {
+        const restoredBalance = (Number(oldCustomer.balance) || 0) + oldAmount
+        await supabase
+          .from('customers')
+          .update({ balance: restoredBalance, updated_at: new Date().toISOString() })
+          .eq('id', oldPayment.customer_id)
       }
 
-      return updatedPayment
-    })
+      // Subtract from new customer
+      const { data: newCustomer } = await supabase
+        .from('customers')
+        .select('balance')
+        .eq('id', data.customerId)
+        .single()
 
-    revalidatePath('/dashboard/payments')
-    revalidatePath(`/dashboard/payments/${id}`)
-    if (validatedData.invoiceId) {
-      revalidatePath(`/dashboard/invoices/${validatedData.invoiceId}`)
+      if (newCustomer) {
+        const newBalance = (Number(newCustomer.balance) || 0) - newAmount
+        await supabase
+          .from('customers')
+          .update({ balance: newBalance, updated_at: new Date().toISOString() })
+          .eq('id', data.customerId)
+      }
     }
-    revalidatePath('/dashboard/invoices')
 
-    return { success: true, data: payment }
-  } catch (error) {
-    console.error('Error updating payment:', error)
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Failed to update payment',
+    // Handle invoice changes
+    const newInvoiceId = (!data.invoiceId || data.invoiceId === 'none' || data.invoiceId.trim() === '')
+      ? null
+      : data.invoiceId
+
+    // Reverse from old invoice if exists
+    if (oldPayment.invoice_id) {
+      const { data: oldInvoice } = await supabase
+        .from('invoices')
+        .select('total, paid_amount, due_date')
+        .eq('id', oldPayment.invoice_id)
+        .single()
+
+      if (oldInvoice) {
+        const restoredPaid = Math.max(0, (Number(oldInvoice.paid_amount) || 0) - oldAmount)
+        const invoiceTotal = Number(oldInvoice.total)
+
+        let newStatus: string
+        if (restoredPaid >= invoiceTotal) {
+          newStatus = 'PAID'
+        } else if (restoredPaid > 0) {
+          newStatus = 'PARTIALLY_PAID'
+        } else {
+          const dueDate = new Date(oldInvoice.due_date)
+          newStatus = dueDate < new Date() ? 'OVERDUE' : 'SENT'
+        }
+
+        await supabase.from('invoices').update({
+          paid_amount: restoredPaid,
+          status: newStatus,
+          updated_at: new Date().toISOString()
+        }).eq('id', oldPayment.invoice_id)
+      }
     }
+
+    // Apply to new invoice if exists
+    if (newInvoiceId) {
+      const { data: newInvoice } = await supabase
+        .from('invoices')
+        .select('total, paid_amount')
+        .eq('id', newInvoiceId)
+        .single()
+
+      if (newInvoice) {
+        const newPaidAmount = (Number(newInvoice.paid_amount) || 0) + newAmount
+        const invoiceTotal = Number(newInvoice.total)
+
+        let newStatus: string
+        if (newPaidAmount >= invoiceTotal) {
+          newStatus = 'PAID'
+        } else if (newPaidAmount > 0) {
+          newStatus = 'PARTIALLY_PAID'
+        } else {
+          newStatus = 'SENT'
+        }
+
+        await supabase.from('invoices').update({
+          paid_amount: newPaidAmount,
+          status: newStatus,
+          updated_at: new Date().toISOString()
+        }).eq('id', newInvoiceId)
+      }
+    }
+
+    // Update the payment record
+    const { error } = await supabase.from('payments').update({
+      customer_id: data.customerId,
+      invoice_id: newInvoiceId,
+      amount: newAmount,
+      payment_date: data.paymentDate instanceof Date
+        ? data.paymentDate.toISOString()
+        : new Date(data.paymentDate).toISOString(),
+      payment_method: data.paymentMethod,
+      reference: data.reference || null,
+      notes: data.notes || null,
+      updated_at: new Date().toISOString()
+    }).eq('id', id)
+
+    if (error) throw error
+    return { success: true, data: { id } }
+  } catch (error: any) {
+    console.error("Error updating payment:", error)
+    return { success: false, error: error.message || "Failed to update payment" }
   }
 }
 
-/**
- * Delete a payment (and reverse invoice/customer updates)
- */
-export async function deletePayment(id: string): Promise<ActionResult> {
+export async function deletePayment(id: string) {
   try {
-    const companyId = await getCurrentCompanyId()
+    // ============ PEACHTREE LOGIC: Reverse payment effects before deletion ============
 
-    const payment = await db.query.payments.findFirst({
-      where: and(eq(payments.id, id), eq(payments.companyId, companyId)),
-      with: { invoice: true },
-    })
+    // First, fetch the payment to get details
+    const { data: payment, error: fetchError } = await supabase
+      .from('payments')
+      .select('*')
+      .eq('id', id)
+      .single()
 
-    if (!payment) {
-      return { success: false, error: 'Payment not found' }
+    if (fetchError) throw fetchError
+    if (!payment) throw new Error('Payment not found')
+
+    // Reverse customer balance (add the payment amount back)
+    const { data: customer } = await supabase
+      .from('customers')
+      .select('balance')
+      .eq('id', payment.customer_id)
+      .single()
+
+    if (customer) {
+      const restoredBalance = (Number(customer.balance) || 0) + Number(payment.amount)
+      await supabase
+        .from('customers')
+        .update({
+          balance: restoredBalance,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', payment.customer_id)
     }
 
-    await db.transaction(async (tx) => {
-      // If linked to invoice, reverse the paid amount
-      if (payment.invoiceId) {
-        const invoice = await tx.query.invoices.findFirst({
-          where: eq(invoices.id, payment.invoiceId),
-          columns: { paidAmount: true },
-        })
+    // Reverse invoice paid amount and status if linked
+    if (payment.invoice_id) {
+      const { data: invoice } = await supabase
+        .from('invoices')
+        .select('total, paid_amount, due_date')
+        .eq('id', payment.invoice_id)
+        .single()
 
-        if (invoice) {
-          const newPaidAmount = Number(invoice.paidAmount) - Number(payment.amount)
+      if (invoice) {
+        const newPaidAmount = Math.max(0, (Number(invoice.paid_amount) || 0) - Number(payment.amount))
+        const invoiceTotal = Number(invoice.total)
 
-          await tx
-            .update(invoices)
-            .set({
-              paidAmount: String(Math.max(0, newPaidAmount)),
-              status: newPaidAmount <= 0 ? 'SENT' : 'PARTIALLY_PAID',
-              updatedAt: new Date(),
-            })
-            .where(eq(invoices.id, payment.invoiceId))
+        // Determine new status
+        let newStatus: string
+        if (newPaidAmount >= invoiceTotal) {
+          newStatus = 'PAID'
+        } else if (newPaidAmount > 0) {
+          newStatus = 'PARTIALLY_PAID'
+        } else {
+          // Check if overdue
+          const dueDate = new Date(invoice.due_date)
+          const today = new Date()
+          newStatus = dueDate < today ? 'OVERDUE' : 'SENT'
         }
+
+        await supabase.from('invoices').update({
+          paid_amount: newPaidAmount,
+          status: newStatus,
+          updated_at: new Date().toISOString()
+        }).eq('id', payment.invoice_id)
       }
+    }
 
-      // Reverse customer balance update (increment by payment amount)
-      await tx
-        .update(customers)
-        .set({
-          balance: sql`${customers.balance} + ${Number(payment.amount)}`,
-          updatedAt: new Date(),
-        })
-        .where(eq(customers.id, payment.customerId))
-
-      // Delete the payment
-      await tx.delete(payments).where(eq(payments.id, id))
-    })
-
-    revalidatePath('/dashboard/payments')
-    revalidatePath('/dashboard/invoices')
+    // Now delete the payment
+    const { error } = await supabase.from('payments').delete().eq('id', id)
+    if (error) throw error
 
     return { success: true }
-  } catch (error) {
-    console.error('Error deleting payment:', error)
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Failed to delete payment',
-    }
+  } catch (error: any) {
+    console.error("Error deleting payment:", error)
+    return { success: false, error: error.message || "Failed to delete payment" }
   }
 }
 
-/**
- * Get unpaid invoices for a customer (for payment application)
- */
-export async function getUnpaidInvoicesForCustomer(
-  customerId: string
-): Promise<ActionResult<any[]>> {
+export async function getUnpaidInvoicesForCustomer(customerId: string) {
   try {
-    const companyId = await getCurrentCompanyId()
+    const { data: invoices, error } = await supabase
+      .from('invoices')
+      .select('*')
+      .eq('customer_id', customerId)
+      .neq('status', 'PAID') // OPEN, OVERDUE, PARTIALLY_PAID
+      .order('due_date', { ascending: true })
 
-    const unpaidInvoices = await db.query.invoices.findMany({
-      where: and(
-        eq(invoices.companyId, companyId),
-        eq(invoices.customerId, customerId),
-        inArray(invoices.status, ['SENT', 'PARTIALLY_PAID', 'OVERDUE'])
-      ),
-      columns: {
-        id: true,
-        invoiceNumber: true,
-        date: true,
-        dueDate: true,
-        total: true,
-        paidAmount: true,
-      },
-      orderBy: asc(invoices.dueDate),
-    })
-
-    return { success: true, data: unpaidInvoices }
+    if (error) throw error
+    return { success: true, data: invoices || [] }
   } catch (error) {
-    console.error('Error fetching unpaid invoices:', error)
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Failed to fetch invoices',
-    }
+    return { success: false, error: "Failed to fetch invoices" }
   }
 }

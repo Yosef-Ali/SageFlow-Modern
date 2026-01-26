@@ -1,14 +1,6 @@
 /**
  * Chapa Payment Gateway Integration
  * Ethiopian payment gateway supporting mobile money, bank transfers, and cards
- *
- * Supported payment methods:
- * - Telebirr
- * - CBE Birr
- * - M-Pesa
- * - Awash Birr
- * - Bank Transfer
- * - Visa/Mastercard
  */
 
 const CHAPA_BASE_URL = 'https://api.chapa.co/v1'
@@ -103,7 +95,8 @@ export interface ChapaResult<T> {
  * Get the Chapa API key from environment
  */
 function getApiKey(): string | null {
-  return process.env.CHAPA_SECRET_KEY || null
+  // Use import.meta.env for Vite, fallback to empty to safely fail rather than crash
+  return import.meta.env.VITE_CHAPA_SECRET_KEY || null
 }
 
 /**
@@ -125,7 +118,7 @@ export async function initializePayment(
   if (!apiKey) {
     return {
       success: false,
-      error: 'Chapa is not configured. Please set CHAPA_SECRET_KEY.',
+      error: 'Chapa is not configured. Please set VITE_CHAPA_SECRET_KEY.',
     }
   }
 
@@ -148,10 +141,10 @@ export async function initializePayment(
         return_url: options.returnUrl,
         customization: options.customization
           ? {
-              title: options.customization.title,
-              description: options.customization.description,
-              logo: options.customization.logo,
-            }
+            title: options.customization.title,
+            description: options.customization.description,
+            logo: options.customization.logo,
+          }
           : undefined,
         meta: options.meta,
       }),
@@ -194,7 +187,7 @@ export async function verifyPayment(
   if (!apiKey) {
     return {
       success: false,
-      error: 'Chapa is not configured. Please set CHAPA_SECRET_KEY.',
+      error: 'Chapa is not configured. Please set VITE_CHAPA_SECRET_KEY.',
     }
   }
 

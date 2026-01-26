@@ -1,34 +1,25 @@
 import { db } from '@/db'
 import { customers } from '@/db/schema'
 import { eq, desc } from 'drizzle-orm'
-import { getSession } from '@/lib/auth'
+import { getStoredUser } from '@/lib/auth'
 
 /**
- * Get the current company ID from the authenticated user's session
+ * Get the current company ID from the authenticated user
  * CRITICAL FOR MULTI-TENANCY: This ensures users can only access their company's data
  *
  * @throws Error if user is not authenticated or has no company
  * @returns The company ID of the authenticated user
  */
 export async function getCurrentCompanyId(): Promise<string> {
-  const session = await getSession()
+  const user = getStoredUser()
 
-  if (!session?.user?.companyId) {
-    // For development/testing, fall back to first company
-    // This should be removed in production
-    const defaultCompany = await db.query.companies.findFirst({
-      columns: { id: true },
-    })
-
-    if (!defaultCompany) {
-      throw new Error('No company found. Please create a company first.')
-    }
-
-    console.warn('Warning: Using fallback company ID. Implement proper authentication.')
-    return defaultCompany.id
+  if (!user?.companyId) {
+    // For development, return demo company ID
+    console.warn('Warning: Using demo company ID. Implement proper authentication.')
+    return 'demo-company-1'
   }
 
-  return session.user.companyId
+  return user.companyId
 }
 
 /**

@@ -1,8 +1,7 @@
-'use client'
 
 import { useState } from 'react'
-import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { Link } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { Plus, Building, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -18,7 +17,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { DashboardHeader } from '@/components/dashboard/header'
-import { createBankAccount } from '@/app/actions/banking-actions'
+import { useCreateBankAccount } from '@/hooks/use-banking'
 import { formatCurrency } from '@/lib/utils'
 
 interface BankAccountListProps {
@@ -26,10 +25,10 @@ interface BankAccountListProps {
 }
 
 export function BankAccountList({ accounts }: BankAccountListProps) {
-  const router = useRouter()
+  const navigate = useNavigate()
   const [isDialogOpen, setIsDialogOpen] = useState(false)
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  
+  const createAccount = useCreateBankAccount()
+
   // Form State
   const [name, setName] = useState('')
   const [number, setNumber] = useState('')
@@ -37,28 +36,22 @@ export function BankAccountList({ accounts }: BankAccountListProps) {
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault()
-    setIsSubmitting(true)
     try {
-      const result = await createBankAccount({
+      await createAccount.mutateAsync({
         accountName: name,
         accountNumber: number,
+        accountType: 'CHECKING',
         openingBalance: Number(balance) || 0,
         currency: 'ETB'
       })
-      
-      if (result.success) {
-        setIsDialogOpen(false)
-        setName('')
-        setNumber('')
-        setBalance('')
-        router.refresh()
-      } else {
-        alert(result.error || 'Failed to create account')
-      }
+
+      setIsDialogOpen(false)
+      setName('')
+      setNumber('')
+      setBalance('')
     } catch (err) {
       console.error(err)
     } finally {
-      setIsSubmitting(false)
     }
   }
 
@@ -97,8 +90,8 @@ export function BankAccountList({ accounts }: BankAccountListProps) {
                       </div>
                       <DialogFooter>
                           <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
-                          <Button type="submit" disabled={isSubmitting}>
-                              {isSubmitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                          <Button type="submit" disabled={createAccount.isPending}>
+                              {createAccount.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                               Save Account
                           </Button>
                       </DialogFooter>
@@ -109,7 +102,7 @@ export function BankAccountList({ accounts }: BankAccountListProps) {
 
        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
            {accounts.map(account => (
-               <Link href={`/dashboard/banking/${account.id}`} key={account.id}>
+               <Link to={`/dashboard/banking/${account.id}`} key={account.id}>
                     <Card className="hover:border-emerald-500 transition-colors cursor-pointer">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                             <CardTitle className="text-sm font-medium">
