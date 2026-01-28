@@ -61,12 +61,12 @@ export function StatsCards({ stats, isLoading }: StatsCardsProps) {
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {[1, 2, 3, 4].map((i) => (
-          <div key={i} className="bg-card p-6 rounded-xl shadow-sm border border-border">
-            <Skeleton className="h-10 w-10 rounded-lg mb-4" />
-            <Skeleton className="h-4 w-24 mb-2" />
-            <Skeleton className="h-8 w-32" />
+          <div key={i} className="bg-card p-5 rounded-xl shadow-elegant border border-border/60">
+            <Skeleton className="h-9 w-9 rounded-lg mb-3" />
+            <Skeleton className="h-3 w-20 mb-2" />
+            <Skeleton className="h-7 w-28" />
           </div>
         ))}
       </div>
@@ -74,29 +74,29 @@ export function StatsCards({ stats, isLoading }: StatsCardsProps) {
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
       {cards.map((card, index) => (
         <div
           key={index}
-          className="bg-card p-6 rounded-xl shadow-sm border border-border hover:shadow-md transition-shadow"
+          className="bg-card p-5 rounded-xl shadow-elegant-lg border border-border/60 hover:shadow-elegant-lg hover:border-primary/20 transition-all"
         >
-          <div className="flex items-center justify-between mb-4">
-            <div className={`p-3 rounded-lg ${card.color}`}>
-              <card.icon className="w-6 h-6" />
+          <div className="flex items-center justify-between mb-3">
+            <div className={`p-2 rounded-lg ${card.color} shadow-sm`}>
+              <card.icon className="w-5 h-5" />
             </div>
-            <div className={`flex items-center gap-1 text-sm font-medium ${
+            <div className={`flex items-center gap-0.5 text-[13px] font-semibold ${
               card.change >= 0 ? 'text-primary' : 'text-destructive'
             }`}>
               {card.change >= 0 ? (
-                <TrendingUp className="w-4 h-4" />
+                <TrendingUp className="w-3.5 h-3.5" />
               ) : (
-                <TrendingDown className="w-4 h-4" />
+                <TrendingDown className="w-3.5 h-3.5" />
               )}
               {Math.abs(card.change)}%
             </div>
           </div>
-          <p className="text-sm text-muted-foreground mb-1">{card.label}</p>
-          <p className="text-2xl font-bold text-foreground">{card.value}</p>
+          <p className="text-[13px] text-muted-foreground mb-1 font-medium">{card.label}</p>
+          <p className="text-xl font-bold text-foreground tracking-tight">{card.value}</p>
         </div>
       ))}
     </div>

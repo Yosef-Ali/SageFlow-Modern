@@ -50,24 +50,24 @@ export default function DashboardPage() {
   ]
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
-          <p className="text-muted-foreground">Welcome back! Here's an overview of your business.</p>
+          <h1 className="text-2xl font-bold text-foreground tracking-tight">Dashboard</h1>
+          <p className="text-muted-foreground text-sm mt-0.5">Welcome back! Here's an overview of your business.</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           {quickActions.map((action) => (
             <Link
               key={action.name}
               to={action.href}
-              className="flex items-center gap-2 px-4 py-2 bg-card border border-border rounded-lg text-sm font-medium text-foreground hover:bg-muted/50 hover:border-muted-foreground/20 transition-all shadow-sm"
+              className="flex items-center gap-2 px-3 py-1.5 bg-card border border-border rounded-lg text-[13px] font-medium text-foreground hover:bg-muted/50 hover:border-primary/20 hover:shadow-sm transition-all shadow-elegant"
             >
-              <div className={`p-1 rounded ${action.bg}`}>
-                <action.icon className={`w-4 h-4 ${action.color}`} />
+              <div className={`p-0.5 rounded ${action.bg}`}>
+                <action.icon className={`w-3.5 h-3.5 ${action.color}`} />
               </div>
-              {action.name}
+              <span className="hidden sm:inline">{action.name}</span>
             </Link>
           ))}
         </div>
@@ -77,35 +77,35 @@ export default function DashboardPage() {
       <StatsCards stats={MOCK_STATS} isLoading={statsLoading} />
 
       {/* Revenue Chart */}
-      <div className="bg-card p-6 rounded-xl shadow-sm border border-border">
-        <div className="flex items-center justify-between mb-6">
+      <div className="bg-card p-5 rounded-xl shadow-elegant-lg border border-border/60">
+        <div className="flex items-center justify-between mb-5">
           <div>
-            <h2 className="text-xl font-semibold text-foreground">Revenue Overview</h2>
-            <p className="text-sm text-muted-foreground">Invoiced vs Received - Last 6 months</p>
+            <h2 className="text-lg font-semibold text-foreground tracking-tight">Revenue Overview</h2>
+            <p className="text-[13px] text-muted-foreground mt-0.5">Invoiced vs Received - Last 6 months</p>
           </div>
         </div>
         {revenueLoading ? (
-          <Skeleton className="h-80 w-full" />
+          <Skeleton className="h-72 w-full" />
         ) : MOCK_REVENUE.length > 0 ? (
           <RevenueChart data={MOCK_REVENUE} />
         ) : (
-          <div className="h-80 flex items-center justify-center bg-muted/20 rounded-lg">
+          <div className="h-72 flex items-center justify-center bg-muted/20 rounded-lg">
             <div className="text-center">
-              <FileText className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
-              <p className="text-muted-foreground">No revenue data yet</p>
-              <p className="text-sm text-muted-foreground/80">Create invoices to see your revenue trend</p>
+              <FileText className="w-10 h-10 text-muted-foreground/30 mx-auto mb-2" />
+              <p className="text-muted-foreground text-sm">No revenue data yet</p>
+              <p className="text-[13px] text-muted-foreground/70">Create invoices to see your revenue trend</p>
             </div>
           </div>
         )}
       </div>
 
       {/* Recent Activity */}
-      <div className="grid md:grid-cols-2 gap-6">
+      <div className="grid md:grid-cols-2 gap-5">
         {/* Recent Invoices */}
-        <div className="bg-card p-6 rounded-xl shadow-sm border border-border">
+        <div className="bg-card p-5 rounded-xl shadow-elegant-lg border border-border/60">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-foreground">Recent Invoices</h2>
-            <Link to="/dashboard/invoices" className="text-sm text-primary hover:text-primary/80">
+            <h2 className="text-base font-semibold text-foreground tracking-tight">Recent Invoices</h2>
+            <Link to="/dashboard/invoices" className="text-[13px] text-primary hover:text-primary/80 font-medium transition-colors">
               View all
             </Link>
           </div>
@@ -139,9 +139,9 @@ export default function DashboardPage() {
             </div>
           ) : (
             <div className="py-8 text-center">
-              <FileText className="w-10 h-10 text-muted-foreground/30 mx-auto mb-2" />
-              <p className="text-muted-foreground">No invoices yet</p>
-              <Link to="/dashboard/invoices/new" className="text-sm text-primary hover:underline">
+              <FileText className="w-9 h-9 text-muted-foreground/30 mx-auto mb-2" />
+              <p className="text-muted-foreground text-sm">No invoices yet</p>
+              <Link to="/dashboard/invoices/new" className="text-[13px] text-primary hover:underline font-medium">
                 Create your first invoice
               </Link>
             </div>
@@ -149,10 +149,10 @@ export default function DashboardPage() {
         </div>
 
         {/* Pending Payments */}
-        <div className="bg-card p-6 rounded-xl shadow-sm border border-border">
+        <div className="bg-card p-5 rounded-xl shadow-elegant-lg border border-border/60">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-foreground">Overdue Payments</h2>
-            <Link to="/dashboard/invoices?status=OVERDUE" className="text-sm text-primary hover:text-primary/80">
+            <h2 className="text-base font-semibold text-foreground tracking-tight">Overdue Payments</h2>
+            <Link to="/dashboard/invoices?status=OVERDUE" className="text-[13px] text-primary hover:text-primary/80 font-medium transition-colors">
               View all
             </Link>
           </div>
@@ -187,9 +187,9 @@ export default function DashboardPage() {
             </div>
           ) : (
             <div className="py-8 text-center">
-              <AlertTriangle className="w-10 h-10 text-muted-foreground/30 mx-auto mb-2" />
-              <p className="text-muted-foreground">No overdue payments</p>
-              <p className="text-sm text-muted-foreground/70">Great job staying on top!</p>
+              <AlertTriangle className="w-9 h-9 text-muted-foreground/30 mx-auto mb-2" />
+              <p className="text-muted-foreground text-sm">No overdue payments</p>
+              <p className="text-[13px] text-muted-foreground/60">Great job staying on top!</p>
             </div>
           )}
         </div>

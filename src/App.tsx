@@ -6,6 +6,7 @@ import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
 
 // Lazy load pages for better performance
 const Login = lazy(() => import('@/pages/Login'))
+const Landing = lazy(() => import('@/pages/Landing'))
 const Dashboard = lazy(() => import('@/pages/Dashboard'))
 const CustomersPage = lazy(() => import('@/pages/dashboard/Customers'))
 const InvoicesPage = lazy(() => import('@/pages/dashboard/Invoices'))
@@ -91,9 +92,9 @@ export default function App() {
       <Suspense fallback={<PageLoader />}>
         <Routes>
           {/* Public Routes */}
+          <Route path="/" element={<Landing />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<PlaceholderPage title="Register" />} />
-          <Route path="/" element={<Navigate to="/login" replace />} />
 
           {/* Protected Dashboard Routes */}
           <Route

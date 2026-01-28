@@ -144,35 +144,35 @@ function NavSection({ item, expanded, onToggle, pathname }: {
       <button
         onClick={onToggle}
         className={cn(
-          "flex items-center justify-between w-full px-4 py-2.5 rounded-lg transition-colors text-left",
-          isChildActive 
-            ? "bg-sidebar-accent text-sidebar-accent-foreground" 
-            : "text-sidebar-foreground/80 hover:bg-sidebar-accent/50"
+          "flex items-center justify-between w-full px-3 py-2 rounded-lg transition-all text-left group",
+          isChildActive
+            ? "bg-sidebar-accent text-sidebar-accent-foreground shadow-sm"
+            : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
         )}
       >
-        <div className="flex items-center gap-3">
-          <item.icon className="w-5 h-5" />
-          <span className="font-medium text-sm">{item.name}</span>
+        <div className="flex items-center gap-2.5">
+          <item.icon className="w-4 h-4 flex-shrink-0" />
+          <span className="font-medium text-[13px]">{item.name}</span>
         </div>
         {expanded ? (
-          <ChevronDown className="w-4 h-4 text-sidebar-foreground/60" />
+          <ChevronDown className="w-3.5 h-3.5 text-sidebar-foreground/50 transition-transform" />
         ) : (
-          <ChevronRight className="w-4 h-4 text-sidebar-foreground/60" />
+          <ChevronRight className="w-3.5 h-3.5 text-sidebar-foreground/50 transition-transform" />
         )}
       </button>
 
       {/* Children */}
       {expanded && item.children && (
-        <div className="mt-1 ml-4 pl-4 border-l border-sidebar-border/50 space-y-0.5">
+        <div className="mt-0.5 ml-3 pl-3 border-l border-sidebar-border/40 space-y-0.5 py-1">
           {item.children.map((child) => (
             <Link
               key={child.href}
               to={child.href}
               className={cn(
-                "flex items-center py-2 px-3 rounded-lg text-sm transition-colors",
+                "flex items-center py-1.5 px-2.5 rounded-md text-[13px] transition-all",
                 pathname === child.href || pathname.startsWith(child.href + '/')
-                  ? "bg-sidebar-primary/10 text-sidebar-primary font-medium"
-                  : "text-sidebar-foreground/70 hover:bg-sidebar-accent/30 hover:text-sidebar-foreground"
+                  ? "bg-sidebar-primary/12 text-sidebar-primary font-medium shadow-sm"
+                  : "text-sidebar-foreground/65 hover:bg-sidebar-accent/40 hover:text-sidebar-foreground"
               )}
             >
               {child.name}
@@ -225,18 +225,18 @@ export function DashboardSidebar() {
   }
 
   return (
-    <aside className="w-64 bg-sidebar text-sidebar-foreground flex flex-col border-r border-sidebar-border h-screen overflow-hidden">
-      <div className="p-4 flex-1 overflow-y-auto">
+    <aside className="w-64 bg-sidebar text-sidebar-foreground flex flex-col border-r border-sidebar-border h-screen overflow-hidden shadow-elegant">
+      <div className="p-3.5 flex-1 overflow-y-auto">
         {/* Logo */}
         {/* Logo & Toggle */}
-        <div className="flex items-center justify-between mb-6 px-2">
-          <Link to="/dashboard" className="flex items-center gap-3">
-            <div className="w-9 h-9 bg-sidebar-primary rounded-lg flex items-center justify-center">
-              <TrendingUp className="w-5 h-5 text-sidebar-primary-foreground" />
+        <div className="flex items-center justify-between mb-5 px-1.5">
+          <Link to="/dashboard" className="flex items-center gap-2.5 group">
+            <div className="w-8 h-8 bg-sidebar-primary rounded-lg flex items-center justify-center shadow-sm group-hover:shadow-md transition-shadow">
+              <TrendingUp className="w-4 h-4 text-sidebar-primary-foreground" />
             </div>
             <div>
-              <h1 className="text-lg font-bold leading-tight">SageFlow</h1>
-              <p className="text-sidebar-foreground/60 text-xs">Modern Accounting</p>
+              <h1 className="text-base font-bold leading-tight tracking-tight">SageFlow</h1>
+              <p className="text-sidebar-foreground/55 text-[11px] font-medium">Modern Accounting</p>
             </div>
           </Link>
           <ModeToggle />
@@ -258,14 +258,14 @@ export function DashboardSidebar() {
                 key={item.name}
                 to={item.href!}
                 className={cn(
-                  "flex items-center gap-3 px-4 py-2.5 rounded-lg transition-colors",
+                  "flex items-center gap-2.5 px-3 py-2 rounded-lg transition-all",
                   pathname === item.href
-                    ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                    : "text-sidebar-foreground/80 hover:bg-sidebar-accent/50"
+                    ? "bg-sidebar-accent text-sidebar-accent-foreground shadow-sm"
+                    : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
                 )}
               >
-                <item.icon className="w-5 h-5" />
-                <span className="font-medium text-sm">{item.name}</span>
+                <item.icon className="w-4 h-4 flex-shrink-0" />
+                <span className="font-medium text-[13px]">{item.name}</span>
               </Link>
             )
           ))}
@@ -273,23 +273,23 @@ export function DashboardSidebar() {
       </div>
 
       {/* User Profile Section */}
-      <div className="p-4 border-t border-sidebar-border">
+      <div className="p-3 border-t border-sidebar-border/60 bg-sidebar/50">
         {user && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-sidebar-accent transition-colors w-full text-left">
-                <div className="w-8 h-8 bg-sidebar-primary rounded-full flex items-center justify-center">
-                  <User className="w-4 h-4 text-sidebar-primary-foreground" />
+              <button className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg hover:bg-sidebar-accent transition-all w-full text-left group shadow-sm hover:shadow">
+                <div className="w-7 h-7 bg-sidebar-primary rounded-full flex items-center justify-center shadow-sm">
+                  <User className="w-3.5 h-3.5 text-sidebar-primary-foreground" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold truncate">
+                  <p className="text-[13px] font-semibold truncate leading-tight">
                     {user.name || user.email}
                   </p>
-                  <p className="text-xs text-sidebar-foreground/60 truncate">
+                  <p className="text-[11px] text-sidebar-foreground/55 truncate leading-tight mt-0.5">
                     {user.companyName}
                   </p>
                 </div>
-                <ChevronDown className="w-4 h-4 text-sidebar-foreground/60" />
+                <ChevronDown className="w-3.5 h-3.5 text-sidebar-foreground/50 group-hover:text-sidebar-foreground/70 transition-colors" />
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
