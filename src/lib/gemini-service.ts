@@ -598,3 +598,90 @@ Only return valid JSON, no additional text.`
     }
   }
 }
+/**
+ * Analyze imported PTB data samples to provide professional accountant guidance
+ * Returns structured JSON for compact display
+ */
+export async function analyzeImportedData(data: {
+  customers: string[]
+  vendors: string[]
+  accounts: string[]
+}): Promise<{ analysis: string; error?: string }> {
+  try {
+    const genAI = getGenAI()
+    if (!genAI) {
+      return {
+        analysis: '',
+        error: 'Gemini API key not configured.',
+      }
+    }
+
+    const model = genAI.getGenerativeModel({ model: 'gemini-3-flash-preview' })
+
+    const hasData = data.customers.length > 0 || data.vendors.length > 0 || data.accounts.length > 0
+
+    // Default steps - practical, actionable advice
+    const defaultSteps = hasData
+      ? {
+          steps: [
+            { action: 'Review Imported Data', status: 'check', note: 'Verify names and numbers match' },
+            { action: 'Add Missing TINs', status: 'warning', note: 'Required for tax reports' },
+            { action: 'Set Opening Balances', status: 'info', note: 'Use last audit figures' },
+          ],
+        }
+      : {
+          steps: [
+            { action: 'Export as CSV Instead', status: 'info', note: 'Peachtree → File → Export' },
+            { action: 'Check File Password', status: 'warning', note: 'PTB may be encrypted' },
+            { action: 'Manual Entry Option', status: 'check', note: 'Add data directly in SageFlow' },
+          ],
+        }
+
+    const prompt = `You help accountants migrate from Peachtree to SageFlow. Return ONLY JSON.
+
+${hasData
+  ? `SUCCESS: Imported ${data.customers.length} customers, ${data.vendors.length} vendors, ${data.accounts.length} accounts.
+Give 3 NEXT STEPS the accountant should do (verify data, add TINs, reconcile, etc.)`
+  : `FAILED: PTB file extracted 0 records.
+Give 3 SOLUTIONS: (1) How to export CSV from Peachtree instead, (2) Why PTB might fail, (3) Alternative approach`}
+
+JSON format: {"steps":[{"action":"What to do","status":"check|warning|info","note":"How to do it (5 words)"}]}
+
+- action: Clear task name (e.g., "Export CSV from Peachtree")
+- note: Specific instruction (e.g., "File menu → Select Lists")
+- status: info=next step, warning=important, check=ready/done
+
+ONLY return the JSON object, nothing else.`
+
+    try {
+      const result = await model.generateContent(prompt)
+      const text = result.response.text().trim()
+
+      // Try to extract JSON
+      const jsonMatch = text.match(/\{[\s\S]*\}/)
+      if (jsonMatch) {
+        const parsed = JSON.parse(jsonMatch[0])
+        if (parsed?.steps?.length >= 1) {
+          return { analysis: JSON.stringify(parsed) }
+        }
+      }
+    } catch {
+      // AI failed, use defaults
+    }
+
+    // Return default steps if AI fails
+    return { analysis: JSON.stringify(defaultSteps) }
+  } catch (error) {
+    console.error('AI Analysis error:', error)
+    return {
+      analysis: JSON.stringify({
+        steps: [
+          { action: 'Try CSV Import', status: 'info', note: 'Export Peachtree as CSV' },
+          { action: 'Check File Format', status: 'warning', note: 'May need decryption' },
+          { action: 'Contact Support', status: 'info', note: 'We can help migrate' },
+        ],
+      }),
+      error: error instanceof Error ? error.message : 'Failed to analyze',
+    }
+  }
+}

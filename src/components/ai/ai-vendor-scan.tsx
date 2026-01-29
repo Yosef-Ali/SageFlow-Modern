@@ -137,7 +137,7 @@ export function AIVendorScan({ open, onOpenChange, onScanComplete }: AIVendorSca
               onDragOver={handleDragOver}
               onDrop={handleDrop}
               onClick={() => fileInputRef.current?.click()}
-              className="border-2 border-dashed border-border rounded-lg p-12 text-center hover:border-blue-500/50 transition-colors cursor-pointer bg-muted/30"
+              className="border-2 border-dashed border-border/60 rounded-lg p-12 text-center hover:border-blue-500/50 transition-colors cursor-pointer bg-muted/20"
             >
               <Upload className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
               <p className="text-sm font-medium mb-1">
@@ -161,7 +161,7 @@ export function AIVendorScan({ open, onOpenChange, onScanComplete }: AIVendorSca
               <img
                 src={selectedImage}
                 alt="Source preview"
-                className="w-full rounded-lg border border-slate-200"
+                className="w-full rounded-lg border border-border/50"
               />
               {!isScanning && !scannedData && (
                 <Button

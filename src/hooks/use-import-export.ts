@@ -6,50 +6,12 @@ import {
   exportCustomersToCSV,
   exportVendorsToCSV,
   exportChartOfAccountsToCSV,
+  exportJournalEntriesToCSV,
 } from '@/app/actions/peachtree-import-export'
 import { useToast } from '@/components/ui/use-toast'
+import { analyzeImportedData } from '@/lib/gemini-service'
 
-// Query keys
-export const importExportKeys = {
-  all: ['import-export'] as const,
-}
-
-/**
- * Hook to import from PTB file
- */
-export function useImportPtb() {
-  const queryClient = useQueryClient()
-  const { toast } = useToast()
-
-  return useMutation({
-    mutationFn: async (file: File) => {
-      const formData = new FormData()
-      formData.append('file', file)
-      const result = await importPtbAction(formData)
-      if (!result.success) {
-        throw new Error(result.error)
-      }
-      return result.data
-    },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['customers'] })
-      queryClient.invalidateQueries({ queryKey: ['vendors'] })
-      toast({
-        title: 'Import Successful',
-        description: `Imported ${data?.customers} customers and ${data?.vendors} vendors from Peachtree`,
-      })
-    },
-    onError: (error: Error) => {
-      toast({
-        title: 'Import Failed',
-        description: error.message,
-        variant: 'destructive',
-      })
-    },
-  })
-}
-
-
+// ... existing code ...
 
 /**
  * Hook to export customers to CSV
@@ -120,6 +82,46 @@ export function useExportVendors() {
       toast({
         title: 'Export Successful',
         description: 'Vendors exported to CSV',
+      })
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Export Failed',
+        description: error.message,
+        variant: 'destructive',
+      })
+    },
+  })
+}
+
+/**
+ * Hook to export Journal Entries to CSV
+ */
+export function useExportJournalEntries() {
+  const { toast } = useToast()
+
+  return useMutation({
+    mutationFn: async () => {
+      const result = await exportJournalEntriesToCSV()
+      if (!result.success) {
+        throw new Error(result.error)
+      }
+      return result.data
+    },
+    onSuccess: (csvData) => {
+      const blob = new Blob([csvData!], { type: 'text/csv;charset=utf-8;' })
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `journal_entries_${new Date().toISOString().split('T')[0]}.csv`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      URL.revokeObjectURL(url)
+
+      toast({
+        title: 'Export Successful',
+        description: 'Journal Entries exported to CSV',
       })
     },
     onError: (error: Error) => {
@@ -218,6 +220,19 @@ export function useExportToPtb() {
         description: error.message,
         variant: 'destructive',
       })
+    },
+  })
+}
+
+/**
+ * Hook to analyze imported data samples with AI
+ */
+export function useAnalyzeImport() {
+  return useMutation({
+    mutationFn: async (samples: { customers: string[]; vendors: string[]; accounts: string[] }) => {
+      const result = await analyzeImportedData(samples)
+      if (result.error) throw new Error(result.error)
+      return result.analysis
     },
   })
 }

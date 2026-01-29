@@ -465,7 +465,7 @@ function StatsWidgetComponent({ items }: { items: StatItem[] }) {
           {item.change && (
             <div className={cn(
               "flex items-center gap-1 mt-1 text-xs",
-              item.change.startsWith('+') ? "text-emerald-500" : "text-destructive"
+              item.change.startsWith('+') ? "text-emerald-500" : "text-red-500"
             )}>
               {item.change.startsWith('+') ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
               {item.change}
@@ -779,10 +779,30 @@ function TableWidgetComponent({ title, headers, rows }: Omit<TableWidget, 'type'
 
 function AlertWidgetComponent({ variant, title, message }: Omit<AlertWidget, 'type'>) {
   const config = {
-    info: { icon: Info, bg: 'bg-blue-50 dark:bg-blue-950/30', border: 'border-blue-200 dark:border-blue-800', text: 'text-blue-700 dark:text-blue-300' },
-    success: { icon: CheckCircle2, bg: 'bg-emerald-50 dark:bg-emerald-950/30', border: 'border-emerald-200 dark:border-emerald-800', text: 'text-emerald-700 dark:text-emerald-300' },
-    warning: { icon: AlertTriangle, bg: 'bg-amber-50 dark:bg-amber-950/30', border: 'border-amber-200 dark:border-amber-800', text: 'text-amber-700 dark:text-amber-300' },
-    error: { icon: AlertCircle, bg: 'bg-red-50 dark:bg-red-950/30', border: 'border-red-200 dark:border-red-800', text: 'text-red-700 dark:text-red-300' },
+    info: { 
+      icon: Info, 
+      bg: 'bg-[var(--alert-info-bg)]', 
+      border: 'border-[var(--alert-info-border)]', 
+      text: 'text-[var(--alert-info-text)]' 
+    },
+    success: { 
+      icon: CheckCircle2, 
+      bg: 'bg-[var(--alert-success-bg)]', 
+      border: 'border-[var(--alert-success-border)]', 
+      text: 'text-[var(--alert-success-text)]' 
+    },
+    warning: { 
+      icon: AlertTriangle, 
+      bg: 'bg-[var(--alert-warning-bg)]', 
+      border: 'border-[var(--alert-warning-border)]', 
+      text: 'text-[var(--alert-warning-text)]' 
+    },
+    error: { 
+      icon: AlertCircle, 
+      bg: 'bg-[var(--alert-error-bg)]', 
+      border: 'border-[var(--alert-error-border)]', 
+      text: 'text-[var(--alert-error-text)]' 
+    },
   }
   const { icon: Icon, bg, border, text } = config[variant]
 
@@ -1575,7 +1595,7 @@ export function AIAssistant() {
   return (
     <Card
       className={cn(
-        "fixed z-50 flex flex-col overflow-hidden transition-all duration-300",
+        "fixed z-50 flex flex-col overflow-hidden transition-all duration-300 bg-card border shadow-elegant-lg",
         isExpanded
           ? "bottom-4 right-4 w-[560px] h-[85vh] max-h-[800px]"
           : "bottom-6 right-6 w-[380px] h-[540px]"
@@ -1733,7 +1753,7 @@ export function AIAssistant() {
         )}
 
         {/* Input field */}
-        <div className="flex items-end gap-2 bg-muted rounded-lg p-2">
+        <div className="flex items-end gap-2 bg-muted/50 border border-border/40 rounded-lg p-2">
           <textarea
             ref={inputRef}
             value={inputValue}

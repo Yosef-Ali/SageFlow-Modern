@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Menu, X, BarChart2, ChevronRight, Sparkles } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import ThemeToggle from './ThemeToggle';
 
 
 const Navbar: React.FC = () => {
+  const navigate = useNavigate();
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -88,20 +90,10 @@ const Navbar: React.FC = () => {
               <ThemeToggle />
               
               <button 
-                className="group relative overflow-hidden rounded-xl bg-gradient-to-r 
-                         from-emerald-600 to-emerald-500
-                         px-5 py-2.5 text-sm font-semibold text-white shadow-lg 
-                         shadow-emerald-500/20 transition-all duration-300 
-                         hover:shadow-emerald-500/30 hover:-translate-y-0.5"
-                onClick={() => window.location.href = '/register'}
+                className="bg-emerald-600 hover:bg-emerald-500 text-white px-5 py-2.5 rounded-lg text-sm font-semibold transition-colors shadow-sm"
+                onClick={() => navigate('/register')}
               >
-                <span className="relative z-10 flex items-center gap-2">
-                  Get Started
-                  <ChevronRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-0.5" />
-                </span>
-                <div className="absolute inset-0 -translate-x-full bg-gradient-to-r 
-                              from-transparent via-white/20 to-transparent 
-                              group-hover:animate-shimmer" />
+                Get Started
               </button>
             </div>
           </div>
@@ -152,7 +144,7 @@ const Navbar: React.FC = () => {
             className="w-full mt-4 bg-emerald-500 text-white py-3.5 rounded-xl
                      font-semibold shadow-lg shadow-emerald-500/25 active:scale-[0.98]
                      transition-transform"
-            onClick={() => window.location.href = '/register'}
+            onClick={() => navigate('/register')}
           >
             Get Started
           </button>

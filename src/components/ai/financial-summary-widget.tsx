@@ -12,7 +12,7 @@ interface FinancialSummaryWidgetProps {
 
 export function FinancialSummaryWidget({ data }: FinancialSummaryWidgetProps) {
   return (
-    <Card className="w-full max-w-sm bg-card text-card-foreground shadow-sm">
+    <Card className="w-full max-w-sm bg-card text-card-foreground shadow-elegant-lg border-border/60">
       <CardHeader className="pb-2">
         <CardTitle className="text-sm font-medium text-muted-foreground">
           Financial Summary

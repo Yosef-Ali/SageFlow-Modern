@@ -9,7 +9,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Upload, FileText, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
+import { Upload, FileText, CheckCircle, AlertCircle, Loader2, FileWarning, RefreshCw } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 export function PtbImportDialog() {
@@ -24,6 +24,11 @@ export function PtbImportDialog() {
 
   const handleClose = () => {
     setOpen(false);
+    setFile(null);
+    reset();
+  };
+
+  const handleTryAgain = () => {
     setFile(null);
     reset();
   };
@@ -127,47 +132,138 @@ export function PtbImportDialog() {
               <span className="flex items-center gap-1">
                 <CheckCircle className="h-3 w-3 text-green-500" /> Chart of Accounts
               </span>
-              <span className="flex items-center gap-1 text-muted-foreground/50">
-                ⌛ Operations (Soon)
+              <span className="flex items-center gap-1">
+                <CheckCircle className="h-3 w-3 text-green-500" /> Inventory Items
+              </span>
+              <span className="flex items-center gap-1">
+                <CheckCircle className="h-3 w-3 text-green-500" /> Employees
+              </span>
+              <span className="flex items-center gap-1">
+                <CheckCircle className="h-3 w-3 text-green-500" /> Journal Entries
               </span>
             </div>
           </div>
         ) : (
-          <div className="space-y-6 pt-6 animate-in fade-in zoom-in duration-300">
-            <div className="flex flex-col items-center text-center space-y-2">
-              <div className="h-12 w-12 rounded-full bg-green-100 flex items-center justify-center">
-                <CheckCircle className="h-8 w-8 text-green-600" />
-              </div>
-              <h3 className="text-lg font-semibold text-foreground">
-                Import Successful!
-              </h3>
-              <p className="text-sm text-muted-foreground">
-                Your Peachtree data has been successfully imported.
-              </p>
-            </div>
+          <div className="space-y-5 pt-4 animate-in fade-in zoom-in duration-300">
+            {/* Check if import found any records */}
+            {(data?.customers || 0) + (data?.vendors || 0) + (data?.accounts || 0) + (data?.items || 0) + (data?.employees || 0) + (data?.journalEntries || 0) === 0 ? (
+              /* Empty Import - No Records Found */
+              <>
+                {/* Header */}
+                <div className="text-center py-4">
+                  <div className="inline-flex items-center justify-center h-14 w-14 rounded-full bg-amber-100 dark:bg-amber-900/30 mb-3">
+                    <FileWarning className="h-7 w-7 text-amber-600 dark:text-amber-400" />
+                  </div>
+                  <h3 className="text-lg font-semibold">No Records Found</h3>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    The PTB file couldn't be read
+                  </p>
+                </div>
 
-            <div className="bg-secondary/30 rounded-lg p-4 space-y-3">
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Customers:</span>
-                <span className="font-medium">{data?.customers || 0}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Vendors:</span>
-                <span className="font-medium">{data?.vendors || 0}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Accounts:</span>
-                <span className="font-medium">{data?.accounts || 0}</span>
-              </div>
-            </div>
+                {/* What to do - Simple options */}
+                <div className="space-y-2">
+                  <p className="text-xs text-muted-foreground text-center mb-3">What would you like to do?</p>
 
-            <Button
-              onClick={handleClose}
-              className="w-full"
-              variant="outline"
-            >
-              Close
-            </Button>
+                  <Button
+                    onClick={handleTryAgain}
+                    variant="outline"
+                    className="w-full justify-start h-auto py-3 px-4"
+                  >
+                    <RefreshCw className="h-5 w-5 mr-3 text-blue-600" />
+                    <div className="text-left">
+                      <p className="font-medium">Try Different File</p>
+                      <p className="text-xs text-muted-foreground">Select another .ptb backup</p>
+                    </div>
+                  </Button>
+
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start h-auto py-3 px-4"
+                    onClick={() => {
+                      handleClose();
+                      // Could navigate to CSV import or show CSV option
+                    }}
+                  >
+                    <FileText className="h-5 w-5 mr-3 text-emerald-600" />
+                    <div className="text-left">
+                      <p className="font-medium">Use CSV Import</p>
+                      <p className="text-xs text-muted-foreground">Export from Peachtree as CSV first</p>
+                    </div>
+                  </Button>
+
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start h-auto py-3 px-4"
+                    onClick={handleClose}
+                  >
+                    <Upload className="h-5 w-5 mr-3 text-gray-500" />
+                    <div className="text-left">
+                      <p className="font-medium">Enter Data Manually</p>
+                      <p className="text-xs text-muted-foreground">Add customers & vendors directly</p>
+                    </div>
+                  </Button>
+                </div>
+
+                <Button onClick={handleClose} variant="ghost" className="w-full mt-2">
+                  Cancel
+                </Button>
+              </>
+            ) : (
+              /* Success - Records Found */
+              <>
+                <div className="flex flex-col items-center text-center space-y-2">
+                  <div className="h-12 w-12 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+                    <CheckCircle className="h-7 w-7 text-green-600 dark:text-green-400" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-foreground">
+                    Import Successful!
+                  </h3>
+                </div>
+
+                <div className="bg-secondary/30 rounded-lg p-4 space-y-2">
+                  {(data?.customers || 0) > 0 && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Customers:</span>
+                      <span className="font-medium text-green-600">{data?.customers}</span>
+                    </div>
+                  )}
+                  {(data?.vendors || 0) > 0 && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Vendors:</span>
+                      <span className="font-medium text-green-600">{data?.vendors}</span>
+                    </div>
+                  )}
+                  {(data?.accounts || 0) > 0 && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Accounts:</span>
+                      <span className="font-medium text-green-600">{data?.accounts}</span>
+                    </div>
+                  )}
+                  {(data?.items || 0) > 0 && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Inventory Items:</span>
+                      <span className="font-medium text-green-600">{data?.items}</span>
+                    </div>
+                  )}
+                  {(data?.employees || 0) > 0 && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Employees:</span>
+                      <span className="font-medium text-green-600">{data?.employees}</span>
+                    </div>
+                  )}
+                  {(data?.journalEntries || 0) > 0 && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Journal Entries:</span>
+                      <span className="font-medium text-green-600">{data?.journalEntries}</span>
+                    </div>
+                  )}
+                </div>
+
+                <Button onClick={handleClose} className="w-full">
+                  Done
+                </Button>
+              </>
+            )}
           </div>
         )}
       </DialogContent>

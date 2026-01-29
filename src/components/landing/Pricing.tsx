@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Check, Sparkles, ArrowRight } from 'lucide-react';
 import { PricingPlan } from './types';
 
@@ -58,6 +59,7 @@ const plans: PricingPlan[] = [
 ];
 
 const Pricing: React.FC = () => {
+  const navigate = useNavigate();
   return (
     <section id="pricing" className="py-24 md:py-32 relative overflow-hidden">
       {/* Background decoration */}
@@ -160,13 +162,14 @@ const Pricing: React.FC = () => {
 
               {/* CTA Button */}
               <button 
-                onClick={() => window.location.href = '/register'}
                 className={`group w-full py-3.5 rounded-xl font-semibold transition-all duration-300 
                               flex items-center justify-center space-x-2
                 ${plan.highlighted 
                   ? 'bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/35' 
                   : 'bg-[var(--color-surface-hover)] hover:bg-emerald-500/10 text-[var(--color-text-primary)] border border-[var(--color-border-primary)] hover:border-emerald-500/30'
-                }`}>
+                }`}
+                onClick={() => navigate('/register')}
+              >
                 <span>{plan.cta}</span>
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
               </button>

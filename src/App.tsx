@@ -1,11 +1,13 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { Suspense, lazy } from 'react'
-import { Loader2 } from 'lucide-react'
+import { Loader2, Home } from 'lucide-react'
 import DashboardLayout from '@/components/layouts/DashboardLayout'
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
+import { Button } from '@/components/ui/button'
 
 // Lazy load pages for better performance
 const Login = lazy(() => import('@/pages/Login'))
+const Register = lazy(() => import('@/pages/Register'))
 const Landing = lazy(() => import('@/pages/Landing'))
 const Dashboard = lazy(() => import('@/pages/Dashboard'))
 const CustomersPage = lazy(() => import('@/pages/dashboard/Customers'))
@@ -80,9 +82,22 @@ const PageLoader = () => (
 
 // Placeholder for pages not yet migrated
 const PlaceholderPage = ({ title }: { title: string }) => (
-  <div className="flex flex-col items-center justify-center py-16 text-center">
-    <h2 className="text-2xl font-bold text-slate-700 mb-2">{title}</h2>
-    <p className="text-slate-500">This page is under development</p>
+  <div className="flex flex-col items-center justify-center py-20 text-center animate-in fade-in slide-in-from-top-4 duration-500">
+    <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-6">
+      <Loader2 className="w-8 h-8 text-muted-foreground opacity-20" />
+    </div>
+    <h2 className="text-2xl font-bold tracking-tight mb-2">{title}</h2>
+    <p className="text-muted-foreground max-w-sm mb-8">
+      This feature is currently being optimized for the Ethiopian market. Check back soon for updates!
+    </p>
+    <Button 
+      variant="outline" 
+      onClick={() => window.location.href = '/dashboard'}
+      className="flex items-center gap-2"
+    >
+      <Home className="w-4 h-4" />
+      Back to Dashboard
+    </Button>
   </div>
 )
 
@@ -94,7 +109,7 @@ export default function App() {
           {/* Public Routes */}
           <Route path="/" element={<Landing />} />
           <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<PlaceholderPage title="Register" />} />
+          <Route path="/register" element={<Register />} />
 
           {/* Protected Dashboard Routes */}
           <Route

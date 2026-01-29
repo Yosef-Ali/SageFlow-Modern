@@ -1,4 +1,5 @@
 import React from 'react';
+import '@/styles/landing.css';
 import Navbar from '@/components/landing/Navbar';
 import Hero from '@/components/landing/Hero';
 import Stats from '@/components/landing/Stats';
@@ -9,7 +10,7 @@ import Footer from '@/components/landing/Footer';
 
 export default function Landing() {
   return (
-    <div className="min-h-screen bg-[var(--color-bg-primary)] text-[var(--color-text-primary)] font-sans antialiased selection:bg-emerald-500/30">
+    <div className="landing-page min-h-screen bg-[var(--color-bg-primary)] text-[var(--color-text-primary)] font-sans antialiased selection:bg-emerald-500/30">
       <Navbar />
       <main>
         <Hero />

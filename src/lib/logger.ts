@@ -15,7 +15,9 @@ class Logger {
     }
 
     // In development, use console for better debugging
-    if (process.env.NODE_ENV === 'development') {
+    const isDev = typeof process !== 'undefined' && process.env?.NODE_ENV === 'development'
+
+    if (isDev) {
       switch (level) {
         case 'error':
           console.error(`[${timestamp}] ERROR:`, message, context || '')

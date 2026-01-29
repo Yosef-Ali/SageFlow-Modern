@@ -91,7 +91,7 @@ function LoginForm() {
             autoComplete="email"
             disabled={isLoading}
             {...register('email')}
-            className={errors.email ? 'border-red-500' : ''}
+            className={errors.email ? 'bg-slate-100 dark:bg-slate-800 border-0 focus-visible:ring-emerald-500' : 'bg-slate-100 dark:bg-slate-800 border-0 focus-visible:ring-emerald-500'}
           />
           {errors.email && (
             <p className="text-sm text-red-500">{errors.email.message}</p>
@@ -116,7 +116,7 @@ function LoginForm() {
               autoComplete="current-password"
               disabled={isLoading}
               {...register('password')}
-              className={errors.password ? 'border-red-500 pr-10' : 'pr-10'}
+              className={errors.password ? 'bg-slate-100 dark:bg-slate-800 border-0 focus-visible:ring-emerald-500 pr-10' : 'bg-slate-100 dark:bg-slate-800 border-0 focus-visible:ring-emerald-500 pr-10'}
             />
             <button
               type="button"

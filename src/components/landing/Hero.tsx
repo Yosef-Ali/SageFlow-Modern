@@ -1,9 +1,11 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ArrowRight, Play, Sparkles, Zap, Shield, Clock, TrendingUp } from 'lucide-react';
 import DashboardPreview from './DashboardPreview';
 import { useTheme } from '@/components/providers/theme-provider';
 
 const Hero: React.FC = () => {
+  const navigate = useNavigate();
   const { resolvedTheme } = useTheme();
   
   return (
@@ -109,25 +111,12 @@ const Hero: React.FC = () => {
             style={{ animationDelay: '300ms' }}
           >
             <button 
-              className="group w-full sm:w-auto relative overflow-hidden
-                       bg-gradient-to-r from-emerald-600 via-emerald-500 to-emerald-600 
-                       hover:from-emerald-500 hover:via-emerald-400 hover:to-emerald-500
-                       text-white px-9 py-4.5 rounded-2xl font-bold text-base
-                       transition-all duration-500 
-                       shadow-xl shadow-emerald-500/25 
-                       hover:shadow-2xl hover:shadow-emerald-500/35
-                       hover:-translate-y-1.5 active:translate-y-0 active:scale-[0.98]
-                       flex items-center justify-center gap-3
-                       border border-emerald-400/20"
-              style={{ backgroundSize: '200% 100%' }}
+              className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-500 text-white px-8 py-4 rounded-xl font-bold text-base transition-colors shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2"
+              onClick={() => navigate('/register')}
             >
-              {/* Shimmer effect */}
-              <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-out
-                            bg-gradient-to-r from-transparent via-white/25 to-transparent" />
-              
-              <Zap className="w-5 h-5 group-hover:scale-110 transition-transform duration-300" />
+              <Zap className="w-5 h-5" />
               <span>Start Free Trial</span>
-              <ArrowRight className="w-5 h-5 group-hover:translate-x-1.5 transition-transform duration-300" />
+              <ArrowRight className="w-5 h-5" />
             </button>
             
             <button 

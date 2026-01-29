@@ -17,7 +17,7 @@ interface AuthContextType {
   isAuthenticated: boolean
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>
   logout: () => Promise<void>
-  register: (email: string, password: string, name: string) => Promise<{ success: boolean; error?: string }>
+  register: (email: string, password: string, name: string, companyName: string) => Promise<{ success: boolean; error?: string }>
   updateUser: (user: User) => void
 }
 
@@ -248,7 +248,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const register = async (
     email: string,
     password: string,
-    name: string
+    name: string,
+    companyName: string
   ): Promise<{ success: boolean; error?: string }> => {
     setIsLoading(true)
     try {
@@ -273,7 +274,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const { data: company, error: companyError } = await supabase
         .from('companies')
         .insert({
-          name: `${name}'s Company`,
+          name: companyName,
           email: email,
           currency: 'ETB',
         })

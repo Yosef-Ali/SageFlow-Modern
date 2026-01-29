@@ -53,6 +53,7 @@
     "clsx": "^2.1.0",
     "date-fns": "^3.0.0",
     "drizzle-orm": "^0.30.0",
+    "jszip": "^3.10.1",
     "lucide-react": "^0.562.0",
     "papaparse": "^5.5.3",
     "pg": "^8.17.1",
@@ -75,6 +76,7 @@
   "devDependencies": {
     "@types/adm-zip": "^0.5.7",
     "@types/bcryptjs": "^2.4.6",
+    "@types/jszip": "^3.4.1",
     "@types/node": "^22.14.0",
     "@types/papaparse": "^5.5.2",
     "@types/react": "^19.0.0",

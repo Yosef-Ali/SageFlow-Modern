@@ -250,7 +250,7 @@ export function createPeachtreeConnection(config: PeachtreeConfig) {
  * Update these values in .env.local
  */
 export const defaultPeachtreeConfig: PeachtreeConfig = {
-  dsn: process.env.PEACHTREE_DSN || 'Peachtree',
-  username: process.env.PEACHTREE_USERNAME,
-  password: process.env.PEACHTREE_PASSWORD,
+  dsn: (typeof process !== 'undefined' ? process.env?.PEACHTREE_DSN : '') || 'Peachtree',
+  username: typeof process !== 'undefined' ? process.env?.PEACHTREE_USERNAME : undefined,
+  password: typeof process !== 'undefined' ? process.env?.PEACHTREE_PASSWORD : undefined,
 };
