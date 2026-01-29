@@ -87,7 +87,7 @@ export default function CustomerDetailPage() {
           </Link>
           <Button variant="destructive" size="sm" onClick={() => setShowDeleteConfirm(true)}>
             <Trash2 className="h-4 w-4 mr-2" />
-            Delete
+            Deactivate
           </Button>
         </div>
       </div>
@@ -95,10 +95,10 @@ export default function CustomerDetailPage() {
       <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogTitle>Deactivate Customer?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete customer "{customer.name}"
-              and remove all associated data.
+              This will mark customer "{customer.name}" as inactive.
+              They will no longer appear in selection lists for new invoices, but their history will be preserved.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -107,7 +107,7 @@ export default function CustomerDetailPage() {
               onClick={handleConfirmDelete}
               className="bg-red-600 hover:bg-red-700"
             >
-              Confirm Delete
+              Deactivate
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

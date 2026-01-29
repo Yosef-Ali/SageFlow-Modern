@@ -6,6 +6,7 @@ export {
   updateInvoice,
   updateInvoiceStatus,
   cancelInvoice,
+  deleteInvoice,
   getCustomersForDropdown,
   getItemsForDropdown,
   getInvoicesSummary,

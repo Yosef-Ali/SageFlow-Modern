@@ -376,7 +376,7 @@ export function InvoiceTable({ invoices, isLoading }: InvoiceTableProps) {
                           </DropdownMenuItem>
                         </>
                       )}
-                      {invoice.status === 'DRAFT' && (
+                      {(invoice.status === 'DRAFT' || (invoice.status === 'SENT' && Number(invoice.paidAmount) === 0)) && (
                         <DropdownMenuItem
                           onClick={() => handleDeleteClick(invoice.id)}
                           className="text-red-600"

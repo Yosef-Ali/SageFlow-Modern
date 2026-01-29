@@ -17,14 +17,14 @@ export const users = pgTable('users', {
   passwordHash: text('password_hash').notNull(),
   name: text('name'),
   role: userRoleEnum('role').notNull().default('EMPLOYEE'),
-  companyId: text('company_id').notNull(),
+  companyId: text('company_id').notNull().references(() => companies.id),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });
 
 export const sessions = pgTable('sessions', {
   id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  userId: text('user_id').notNull(),
+  userId: text('user_id').notNull().references(() => users.id),
   token: text('token').notNull().unique(),
   expiresAt: timestamp('expires_at').notNull(),
   createdAt: timestamp('created_at').notNull().defaultNow(),
@@ -63,7 +63,7 @@ export const paymentTermsEnum = pgEnum('payment_terms', [
 // Customers
 export const customers = pgTable('customers', {
   id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  companyId: text('company_id').notNull(),
+  companyId: text('company_id').notNull().references(() => companies.id),
   customerNumber: text('customer_number').notNull(),
   name: text('name').notNull(),
   email: text('email'),
@@ -83,7 +83,7 @@ export const customers = pgTable('customers', {
   taxExempt: boolean('tax_exempt').notNull().default(false),
   taxExemptNumber: text('tax_exempt_number'),  // Exemption certificate
   priceLevel: text('price_level').default('1'), // 1=Retail, 2=Wholesale, 3=Distributor
-  salesRepId: text('sales_rep_id'),            // FK to employees
+  salesRepId: text('sales_rep_id').references(() => employees.id),            // FK to employees
   openingBalance: decimal('opening_balance', { precision: 15, scale: 2 }).default('0'),
   openingBalanceDate: timestamp('opening_balance_date'),
   customerSince: timestamp('customer_since'),
@@ -94,8 +94,8 @@ export const customers = pgTable('customers', {
 // Invoices
 export const invoices = pgTable('invoices', {
   id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  companyId: text('company_id').notNull(),
-  customerId: text('customer_id').notNull(),
+  companyId: text('company_id').notNull().references(() => companies.id),
+  customerId: text('customer_id').notNull().references(() => customers.id),
   invoiceNumber: text('invoice_number').notNull(),
   date: timestamp('date').notNull(),
   dueDate: timestamp('due_date').notNull(),
@@ -108,7 +108,7 @@ export const invoices = pgTable('invoices', {
   notes: text('notes'),
   terms: text('terms'),
   // Peachtree-standard fields
-  salesRepId: text('sales_rep_id'),  // FK to employees
+  salesRepId: text('sales_rep_id').references(() => employees.id),  // FK to employees
   poNumber: text('po_number'),  // Customer's PO reference
   shipMethod: text('ship_method'),  // DHL, EMS, Local Delivery, etc.
   shipDate: timestamp('ship_date'),
@@ -121,8 +121,8 @@ export const invoices = pgTable('invoices', {
 // Invoice Items
 export const invoiceItems = pgTable('invoice_items', {
   id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  invoiceId: text('invoice_id').notNull(),
-  itemId: text('item_id'),
+  invoiceId: text('invoice_id').notNull().references(() => invoices.id, { onDelete: 'cascade' }),
+  itemId: text('item_id').references(() => items.id),
   description: text('description').notNull(),
   quantity: decimal('quantity', { precision: 15, scale: 4 }).notNull(),
   unitPrice: decimal('unit_price', { precision: 15, scale: 2 }).notNull(),
@@ -133,9 +133,9 @@ export const invoiceItems = pgTable('invoice_items', {
 // Payments
 export const payments = pgTable('payments', {
   id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  companyId: text('company_id').notNull(),
-  customerId: text('customer_id').notNull(),
-  invoiceId: text('invoice_id'),
+  companyId: text('company_id').notNull().references(() => companies.id),
+  customerId: text('customer_id').notNull().references(() => customers.id),
+  invoiceId: text('invoice_id').references(() => invoices.id),
   amount: decimal('amount', { precision: 15, scale: 2 }).notNull(),
   paymentDate: timestamp('payment_date').notNull(),
   paymentMethod: text('payment_method').notNull(),
@@ -147,7 +147,7 @@ export const payments = pgTable('payments', {
 // Inventory Items
 export const items = pgTable('items', {
   id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  companyId: text('company_id').notNull(),
+  companyId: text('company_id').notNull().references(() => companies.id),
   sku: text('sku').notNull(),
   name: text('name').notNull(),
   description: text('description'),
@@ -163,7 +163,7 @@ export const items = pgTable('items', {
   // Peachtree-standard fields
   sellingPrice2: decimal('selling_price_2', { precision: 15, scale: 2 }),  // Wholesale price
   sellingPrice3: decimal('selling_price_3', { precision: 15, scale: 2 }),  // Distributor price
-  preferredVendorId: text('preferred_vendor_id'),  // FK to vendors
+  preferredVendorId: text('preferred_vendor_id').references(() => vendors.id),  // FK to vendors
   taxable: boolean('taxable').notNull().default(true),  // Subject to 15% VAT
   weight: decimal('weight', { precision: 10, scale: 4 }),
   weightUnit: text('weight_unit').default('Kg'),  // Kg, Gram, etc.
@@ -177,15 +177,15 @@ export const items = pgTable('items', {
 // Item Categories
 export const itemCategories = pgTable('item_categories', {
   id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  companyId: text('company_id').notNull(),
+  companyId: text('company_id').notNull().references(() => companies.id),
   name: text('name').notNull(),
-  parentId: text('parent_id'),
+  parentId: text('parent_id').references((): any => itemCategories.id),
 });
 
 // Stock Movements
 export const stockMovements = pgTable('stock_movements', {
   id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  itemId: text('item_id').notNull(),
+  itemId: text('item_id').notNull().references(() => items.id),
   type: movementTypeEnum('type').notNull(),
   quantity: decimal('quantity', { precision: 15, scale: 4 }).notNull(),
   cost: decimal('cost', { precision: 15, scale: 2 }),
@@ -201,7 +201,7 @@ export const vendorTypeEnum = pgEnum('vendor_type', ['SUPPLIER', 'CONTRACTOR', '
 // Vendors
 export const vendors = pgTable('vendors', {
   id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  companyId: text('company_id').notNull(),
+  companyId: text('company_id').notNull().references(() => companies.id),
   vendorNumber: text('vendor_number').notNull(),
   name: text('name').notNull(),
   email: text('email'),
@@ -229,11 +229,11 @@ export const vendors = pgTable('vendors', {
 // Chart of Accounts
 export const chartOfAccounts = pgTable('chart_of_accounts', {
   id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  companyId: text('company_id').notNull(),
+  companyId: text('company_id').notNull().references(() => companies.id),
   accountNumber: text('account_number').notNull(),
   accountName: text('account_name').notNull(),
   type: accountTypeEnum('type').notNull(),
-  parentId: text('parent_id'),
+  parentId: text('parent_id').references((): any => chartOfAccounts.id),
   balance: decimal('balance', { precision: 15, scale: 2 }).notNull().default('0'),
   isActive: boolean('is_active').notNull().default(true),
   createdAt: timestamp('created_at').notNull().defaultNow(),
@@ -245,7 +245,7 @@ export const bankAccountTypeEnum = pgEnum('bank_account_type', ['CHECKING', 'SAV
 // Bank Accounts
 export const bankAccounts = pgTable('bank_accounts', {
   id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  companyId: text('company_id').notNull(),
+  companyId: text('company_id').notNull().references(() => companies.id),
   accountName: text('account_name').notNull(),
   accountNumber: text('account_number'),
   bankName: text('bank_name'),
@@ -261,7 +261,7 @@ export const bankAccounts = pgTable('bank_accounts', {
 // Journal Entries
 export const journalEntries = pgTable('journal_entries', {
   id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  companyId: text('company_id').notNull(),
+  companyId: text('company_id').notNull().references(() => companies.id),
   date: timestamp('date').notNull(),
   reference: text('reference'),
   description: text('description').notNull(),
@@ -275,8 +275,8 @@ export const journalEntries = pgTable('journal_entries', {
 // Journal Lines
 export const journalLines = pgTable('journal_lines', {
   id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  journalEntryId: text('journal_entry_id').notNull(),
-  accountId: text('account_id').notNull(),
+  journalEntryId: text('journal_entry_id').notNull().references(() => journalEntries.id, { onDelete: 'cascade' }),
+  accountId: text('account_id').notNull().references(() => chartOfAccounts.id),
   description: text('description'),
   debit: decimal('debit', { precision: 15, scale: 2 }).notNull().default('0'),
   credit: decimal('credit', { precision: 15, scale: 2 }).notNull().default('0'),
@@ -285,8 +285,8 @@ export const journalLines = pgTable('journal_lines', {
 // Employees
 export const employees = pgTable('employees', {
   id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  companyId: text('company_id').notNull(),
-  userId: text('user_id'), // Optional link to system user
+  companyId: text('company_id').notNull().references(() => companies.id),
+  userId: text('user_id').references(() => users.id), // Optional link to system user
   employeeCode: text('employee_code').notNull(), // Peachtree ID
   firstName: text('first_name').notNull(),
   lastName: text('last_name').notNull(),
@@ -317,9 +317,10 @@ export const employees = pgTable('employees', {
 // Audit Logs
 
 // ... (existing audit logs)
+// auditLogs
 export const auditLogs = pgTable('audit_logs', {
   id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  companyId: text('company_id').notNull(),
+  companyId: text('company_id').notNull().references(() => companies.id),
   action: text('action').notNull().default('UNKNOWN'),
   entityType: text('entity_type'),
   entityId: text('entity_id'),
@@ -336,8 +337,8 @@ export const billStatusEnum = pgEnum('bill_status', ['OPEN', 'PAID', 'OVERDUE', 
 // Purchase Orders
 export const purchaseOrders = pgTable('purchase_orders', {
   id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  companyId: text('company_id').notNull(),
-  vendorId: text('vendor_id').notNull(),
+  companyId: text('company_id').notNull().references(() => companies.id),
+  vendorId: text('vendor_id').notNull().references(() => vendors.id),
   poNumber: text('po_number').notNull(),
   date: timestamp('date').notNull(),
   expectedDate: timestamp('expected_date'),
@@ -351,8 +352,8 @@ export const purchaseOrders = pgTable('purchase_orders', {
 // Purchase Order Items
 export const purchaseOrderItems = pgTable('purchase_order_items', {
   id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  poId: text('po_id').notNull(),
-  itemId: text('item_id').notNull(),
+  poId: text('po_id').notNull().references(() => purchaseOrders.id, { onDelete: 'cascade' }),
+  itemId: text('item_id').notNull().references(() => items.id),
   description: text('description'),
   quantity: decimal('quantity', { precision: 15, scale: 4 }).notNull(),
   unitCost: decimal('unit_cost', { precision: 15, scale: 2 }).notNull(),
@@ -362,9 +363,9 @@ export const purchaseOrderItems = pgTable('purchase_order_items', {
 // Bills
 export const bills = pgTable('bills', {
   id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  companyId: text('company_id').notNull(),
-  vendorId: text('vendor_id').notNull(),
-  poId: text('po_id'), // Optional link to PO
+  companyId: text('company_id').notNull().references(() => companies.id),
+  vendorId: text('vendor_id').notNull().references(() => vendors.id),
+  poId: text('po_id').references(() => purchaseOrders.id), // Optional link to PO
   billNumber: text('bill_number').notNull(),
   date: timestamp('date').notNull(),
   dueDate: timestamp('due_date').notNull(),
@@ -379,9 +380,9 @@ export const bills = pgTable('bills', {
 // Bill Payments
 export const billPayments = pgTable('bill_payments', {
   id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  companyId: text('company_id').notNull(),
-  vendorId: text('vendor_id').notNull(),
-  billId: text('bill_id'), // Can be null if deposit/prepayment, but usually linked
+  companyId: text('company_id').notNull().references(() => companies.id),
+  vendorId: text('vendor_id').notNull().references(() => vendors.id),
+  billId: text('bill_id').references(() => bills.id), // Can be null if deposit/prepayment, but usually linked
   amount: decimal('amount', { precision: 15, scale: 2 }).notNull(),
   paymentDate: timestamp('payment_date').notNull(),
   paymentMethod: text('payment_method').notNull(),
@@ -394,7 +395,7 @@ export const billPayments = pgTable('bill_payments', {
 // Bank Transactions
 export const bankTransactions = pgTable('bank_transactions', {
   id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  bankAccountId: text('bank_account_id').notNull(),
+  bankAccountId: text('bank_account_id').notNull().references(() => bankAccounts.id),
   date: timestamp('date').notNull(),
   description: text('description').notNull(),
   type: text('type').notNull(), // 'DEPOSIT' | 'WITHDRAWAL' | 'TRANSFER'
@@ -410,8 +411,8 @@ export const bankTransactions = pgTable('bank_transactions', {
 // Assemblies (Bill of Materials)
 export const assemblies = pgTable('assemblies', {
   id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  companyId: text('company_id').notNull(),
-  itemId: text('item_id').notNull(), // The item being built
+  companyId: text('company_id').notNull().references(() => companies.id),
+  itemId: text('item_id').notNull().references(() => items.id), // The item being built
   description: text('description'),
   yieldQuantity: decimal('yield_quantity', { precision: 15, scale: 4 }).notNull().default('1'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
@@ -421,15 +422,15 @@ export const assemblies = pgTable('assemblies', {
 // Assembly Items (Components)
 export const assemblyItems = pgTable('assembly_items', {
   id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  assemblyId: text('assembly_id').notNull(),
-  itemId: text('item_id').notNull(), // The component item
+  assemblyId: text('assembly_id').notNull().references(() => assemblies.id, { onDelete: 'cascade' }),
+  itemId: text('item_id').notNull().references(() => items.id), // The component item
   quantity: decimal('quantity', { precision: 15, scale: 4 }).notNull(), // Qty required per yield
 });
 
 // Inventory Adjustments
 export const inventoryAdjustments = pgTable('inventory_adjustments', {
   id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  companyId: text('company_id').notNull(),
+  companyId: text('company_id').notNull().references(() => companies.id),
   date: timestamp('date').notNull().defaultNow(),
   reference: text('reference'),
   reason: text('reason'),
@@ -439,8 +440,8 @@ export const inventoryAdjustments = pgTable('inventory_adjustments', {
 // Adjustment Items (Lines)
 export const adjustmentItems = pgTable('adjustment_items', {
   id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  adjustmentId: text('adjustment_id').notNull(),
-  itemId: text('item_id').notNull(),
+  adjustmentId: text('adjustment_id').notNull().references(() => inventoryAdjustments.id, { onDelete: 'cascade' }),
+  itemId: text('item_id').notNull().references(() => items.id),
   quantity: decimal('quantity', { precision: 15, scale: 4 }).notNull(), // Positive = add, Negative = remove
   unitCost: decimal('unit_cost', { precision: 15, scale: 2 }), // Cost at time of adjustment
 });
@@ -449,7 +450,7 @@ export const adjustmentItems = pgTable('adjustment_items', {
 
 export const bankReconciliations = pgTable('bank_reconciliations', {
   id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  bankAccountId: text('bank_account_id').notNull(),
+  bankAccountId: text('bank_account_id').notNull().references(() => bankAccounts.id),
   statementDate: timestamp('statement_date').notNull(),
   statementBalance: decimal('statement_balance', { precision: 15, scale: 2 }).notNull(),
   status: text('status').notNull().default('DRAFT'), // DRAFT, COMPLETED
@@ -459,8 +460,8 @@ export const bankReconciliations = pgTable('bank_reconciliations', {
 
 export const reconciliationItems = pgTable('reconciliation_items', {
   id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  reconciliationId: text('reconciliation_id').notNull(),
-  transactionId: text('transaction_id').notNull(),
+  reconciliationId: text('reconciliation_id').notNull().references(() => bankReconciliations.id, { onDelete: 'cascade' }),
+  transactionId: text('transaction_id').notNull().references(() => bankTransactions.id),
   isCleared: boolean('is_cleared').notNull().default(false),
 });
 
@@ -819,7 +820,7 @@ export const syncStatusEnum = pgEnum('sync_status', ['PENDING', 'IN_PROGRESS', '
 // Sync Jobs - Track each migration/sync operation
 export const syncJobs = pgTable('sync_jobs', {
   id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  companyId: text('company_id').notNull(),
+  companyId: text('company_id').notNull().references(() => companies.id),
   jobType: text('job_type').notNull(), // 'FULL_MIGRATION' | 'SELECTIVE_SYNC' | 'INCREMENTAL_SYNC'
   status: syncStatusEnum('status').notNull().default('PENDING'),
   entities: json('entities').$type<string[]>(), // ['customers', 'invoices', 'items']
@@ -837,7 +838,7 @@ export const syncJobs = pgTable('sync_jobs', {
 // Sync Entity Map - Track individual record mappings
 export const syncEntityMap = pgTable('sync_entity_map', {
   id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  companyId: text('company_id').notNull(),
+  companyId: text('company_id').notNull().references(() => companies.id),
   entityType: text('entity_type').notNull(), // 'customer', 'invoice', 'item', 'vendor', etc.
   peachtreeId: text('peachtree_id').notNull(), // Original ID in Peachtree
   sageflowId: text('sageflow_id').notNull(), // New ID in SageFlow
@@ -849,7 +850,7 @@ export const syncEntityMap = pgTable('sync_entity_map', {
 // Sync Configuration - Store connection settings
 export const syncConfigs = pgTable('sync_configs', {
   id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  companyId: text('company_id').notNull().unique(),
+  companyId: text('company_id').notNull().unique().references(() => companies.id),
   connectionType: text('connection_type').notNull().default('ODBC'), // 'ODBC' | 'FILE_IMPORT'
   dsn: text('dsn'),
   username: text('username'),

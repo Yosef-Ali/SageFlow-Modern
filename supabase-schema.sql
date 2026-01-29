@@ -479,30 +479,98 @@ CREATE INDEX IF NOT EXISTS idx_items_company ON items(company_id);
 CREATE INDEX IF NOT EXISTS idx_bank_accounts_company ON bank_accounts(company_id);
 CREATE INDEX IF NOT EXISTS idx_bank_transactions_account ON bank_transactions(bank_account_id);
 
+-- ============= RLS HELPERS =============
+-- Helper function to get the company_id of the currently authenticated user
+CREATE OR REPLACE FUNCTION get_my_company_id()
+RETURNS text AS $$
+  SELECT company_id FROM public.users WHERE id = auth.uid()::text;
+$$ LANGUAGE sql STABLE SECURITY DEFINER;
+
 -- ============= RLS POLICIES =============
--- Enable RLS on key tables
-ALTER TABLE companies ENABLE ROW LEVEL SECURITY;
-ALTER TABLE users ENABLE ROW LEVEL SECURITY;
-ALTER TABLE customers ENABLE ROW LEVEL SECURITY;
-ALTER TABLE vendors ENABLE ROW LEVEL SECURITY;
-ALTER TABLE invoices ENABLE ROW LEVEL SECURITY;
-ALTER TABLE items ENABLE ROW LEVEL SECURITY;
-ALTER TABLE bank_accounts ENABLE ROW LEVEL SECURITY;
 
--- For now, allow all authenticated users (customize based on your needs)
--- You may want to restrict by company_id using auth.jwt() claims
+-- Enable RLS on all tables
+DO $$ 
+DECLARE 
+  r RECORD;
+BEGIN
+  FOR r IN (SELECT tablename FROM pg_tables WHERE schemaname = 'public') 
+  LOOP
+    EXECUTE 'ALTER TABLE public.' || quote_ident(r.tablename) || ' ENABLE ROW LEVEL SECURITY;';
+  END LOOP;
+END $$;
 
-CREATE POLICY "Allow all for authenticated" ON companies FOR ALL TO authenticated USING (true);
-CREATE POLICY "Allow all for authenticated" ON users FOR ALL TO authenticated USING (true);
-CREATE POLICY "Allow all for authenticated" ON customers FOR ALL TO authenticated USING (true);
-CREATE POLICY "Allow all for authenticated" ON vendors FOR ALL TO authenticated USING (true);
-CREATE POLICY "Allow all for authenticated" ON invoices FOR ALL TO authenticated USING (true);
-CREATE POLICY "Allow all for authenticated" ON items FOR ALL TO authenticated USING (true);
-CREATE POLICY "Allow all for authenticated" ON bank_accounts FOR ALL TO authenticated USING (true);
+-- Companies: Users can only see their own company
+DROP POLICY IF EXISTS "Allow all for authenticated" ON companies;
+CREATE POLICY "Tenant isolation" ON companies FOR ALL TO authenticated 
+USING (id = get_my_company_id());
 
--- Grant usage to anon for demo mode
+-- Users: Users can see themselves and colleagues (same company)
+DROP POLICY IF EXISTS "Allow all for authenticated" ON users;
+CREATE POLICY "Tenant isolation" ON users FOR ALL TO authenticated 
+USING (company_id = get_my_company_id())
+WITH CHECK (company_id = get_my_company_id());
+
+-- Standard tenant isolation for tables with company_id
+DO $$ 
+DECLARE 
+  t_name TEXT;
+  tables_with_company_id TEXT[] := ARRAY[
+    'customers', 'vendors', 'invoices', 'items', 'item_categories', 
+    'chart_of_accounts', 'bank_accounts', 'journal_entries', 
+    'employees', 'audit_logs', 'purchase_orders', 'bills', 
+    'bill_payments', 'assemblies', 'inventory_adjustments', 
+    'payments', 'sync_jobs', 'sync_entity_map', 'sync_configs'
+  ];
+BEGIN
+  FOREACH t_name IN ARRAY tables_with_company_id LOOP
+    EXECUTE format('DROP POLICY IF EXISTS "Allow all for authenticated" ON %I', t_name);
+    EXECUTE format('DROP POLICY IF EXISTS "Tenant isolation" ON %I', t_name);
+    EXECUTE format('CREATE POLICY "Tenant isolation" ON %I FOR ALL TO authenticated USING (company_id = get_my_company_id()) WITH CHECK (company_id = get_my_company_id())', t_name);
+  END LOOP;
+END $$;
+
+-- Child table isolation (checking parent ownership)
+
+-- Invoice Items
+CREATE POLICY "Tenant isolation" ON invoice_items FOR ALL TO authenticated 
+USING (EXISTS (SELECT 1 FROM invoices WHERE id = invoice_id AND company_id = get_my_company_id()));
+
+-- Stock Movements
+CREATE POLICY "Tenant isolation" ON stock_movements FOR ALL TO authenticated 
+USING (EXISTS (SELECT 1 FROM items WHERE id = item_id AND company_id = get_my_company_id()));
+
+-- Journal Lines
+CREATE POLICY "Tenant isolation" ON journal_lines FOR ALL TO authenticated 
+USING (EXISTS (SELECT 1 FROM journal_entries WHERE id = journal_entry_id AND company_id = get_my_company_id()));
+
+-- Purchase Order Items
+CREATE POLICY "Tenant isolation" ON purchase_order_items FOR ALL TO authenticated 
+USING (EXISTS (SELECT 1 FROM purchase_orders WHERE id = po_id AND company_id = get_my_company_id()));
+
+-- Bank Transactions
+CREATE POLICY "Tenant isolation" ON bank_transactions FOR ALL TO authenticated 
+USING (EXISTS (SELECT 1 FROM bank_accounts WHERE id = bank_account_id AND company_id = get_my_company_id()));
+
+-- Assembly Items
+CREATE POLICY "Tenant isolation" ON assembly_items FOR ALL TO authenticated 
+USING (EXISTS (SELECT 1 FROM assemblies WHERE id = assembly_id AND company_id = get_my_company_id()));
+
+-- Adjustment Items
+CREATE POLICY "Tenant isolation" ON adjustment_items FOR ALL TO authenticated 
+USING (EXISTS (SELECT 1 FROM inventory_adjustments WHERE id = adjustment_id AND company_id = get_my_company_id()));
+
+-- Bank Reconciliations
+CREATE POLICY "Tenant isolation" ON bank_reconciliations FOR ALL TO authenticated 
+USING (EXISTS (SELECT 1 FROM bank_accounts WHERE id = bank_account_id AND company_id = get_my_company_id()));
+
+-- Reconciliation Items
+CREATE POLICY "Tenant isolation" ON reconciliation_items FOR ALL TO authenticated 
+USING (EXISTS (SELECT 1 FROM bank_reconciliations WHERE id = reconciliation_id AND 
+  EXISTS (SELECT 1 FROM bank_accounts WHERE id = bank_account_id AND company_id = get_my_company_id())));
+
+-- Grant usage (demo mode)
 GRANT USAGE ON SCHEMA public TO anon;
 GRANT ALL ON ALL TABLES IN SCHEMA public TO anon;
 GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO anon;
 
-SELECT 'Schema created successfully!' as result;
+SELECT 'RLS Multi-Tenancy applied successfully!' as result;

@@ -220,7 +220,7 @@ export default function VendorsPage() {
                           className="text-red-600"
                         >
                           <Trash2 className="h-4 w-4 mr-2" />
-                          Delete
+                          Deactivate
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -249,10 +249,9 @@ export default function VendorsPage() {
       <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogTitle>Deactivate Vendor?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action will permanently delete the vendor and cannot be undone.
-              Any associated data might be affected.
+              This will mark the vendor as inactive. They will no longer appear in new purchase orders or search results, but their transaction history will be kept.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -261,7 +260,7 @@ export default function VendorsPage() {
               onClick={handleConfirmDelete}
               className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
             >
-              Delete Vendor
+              Deactivate
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

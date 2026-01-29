@@ -92,7 +92,7 @@ export default function ItemDetailPage() {
           </Link>
           <Button variant="destructive" size="sm" onClick={() => setShowDeleteConfirm(true)}>
             <Trash2 className="h-4 w-4 mr-2" />
-            Delete
+            Deactivate
           </Button>
         </div>
       </div>
@@ -100,10 +100,10 @@ export default function ItemDetailPage() {
       <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogTitle>Deactivate Item?</AlertDialogTitle>
             <AlertDialogDescription>
               This action will mark item "{item.name}" as inactive.
-              It will no longer appear in selection lists.
+              It will no longer appear in selection lists for new invoices or transactions.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -112,7 +112,7 @@ export default function ItemDetailPage() {
               onClick={handleConfirmDelete}
               className="bg-red-600 hover:bg-red-700"
             >
-              Confirm Delete
+              Deactivate Item
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

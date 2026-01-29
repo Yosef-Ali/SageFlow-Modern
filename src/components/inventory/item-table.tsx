@@ -172,7 +172,7 @@ export function ItemTable({ items, isLoading }: ItemTableProps) {
                           className="text-destructive"
                         >
                           <Trash2 className="h-4 w-4 mr-2" />
-                          Delete
+                          Deactivate Item
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -188,9 +188,9 @@ export function ItemTable({ items, isLoading }: ItemTableProps) {
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Item</AlertDialogTitle>
+            <AlertDialogTitle>Deactivate Item?</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete this inventory item? This action cannot be undone.
+              Are you sure you want to deactivate this inventory item? It will no longer appear in new invoices or selection lists, but historical data will be preserved.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -199,7 +199,7 @@ export function ItemTable({ items, isLoading }: ItemTableProps) {
               onClick={handleDeleteConfirm}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Delete
+              Deactivate
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

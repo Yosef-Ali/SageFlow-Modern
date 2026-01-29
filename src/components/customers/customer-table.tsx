@@ -160,7 +160,7 @@ export function CustomerTable({ customers, isLoading }: CustomerTableProps) {
                           className="text-red-600"
                         >
                           <Trash2 className="h-4 w-4 mr-2" />
-                          Delete
+                          Deactivate
                         </DropdownMenuItem>
                       ) : (
                         <DropdownMenuItem onClick={() => handleRestore(customer.id)}>
@@ -187,9 +187,9 @@ export function CustomerTable({ customers, isLoading }: CustomerTableProps) {
       <AlertDialog open={!!deletingCustomerId} onOpenChange={(open) => !open && setDeletingCustomerId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogTitle>Deactivate Customer?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will deactivate the customer. You can restore them later from the inactive customers list.
+              This will mark the customer as inactive. They won't appear in selection lists for new invoices, but all their history will be preserved. You can restore them later.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -198,7 +198,7 @@ export function CustomerTable({ customers, isLoading }: CustomerTableProps) {
               onClick={handleDeleteConfirm}
               className="bg-red-600 hover:bg-red-700"
             >
-              Delete
+              Deactivate
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
