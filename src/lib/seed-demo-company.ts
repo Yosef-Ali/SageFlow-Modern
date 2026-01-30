@@ -222,7 +222,7 @@ export async function seedDemoConstructionCompany() {
         phone: '+251-91-234-5678',
         tax_id: 'TIN-0090123456',
         customer_type: 'RETAIL',
-        payment_terms: 'CASH',
+        payment_terms: 'COD',
         credit_limit: 500000,
         billing_address: { street: 'Sarbet', city: 'Addis Ababa', region: 'Addis Ababa', country: 'Ethiopia' }
       },
@@ -247,8 +247,12 @@ export async function seedDemoConstructionCompany() {
       balance: Math.floor(Math.random() * 500000)
     }))
 
+    console.log('Inserting customers:', customerRecords.length)
     const { error: custError } = await supabase.from('customers').insert(customerRecords)
-    if (custError) throw custError
+    if (custError) {
+      console.error('Customer insert error:', JSON.stringify(custError, null, 2))
+      throw new Error(`Customers: ${custError.message}`)
+    }
     console.log('✅ Customers created:', customerRecords.length)
 
     // ============================================
@@ -322,7 +326,7 @@ export async function seedDemoConstructionCompany() {
         phone: '+251-11-551-3456',
         tax_id: 'TIN-0077777777',
         vendor_type: 'SUPPLIER',
-        payment_terms: 'CASH',
+        payment_terms: 'COD',
         address: { street: 'Merkato', city: 'Addis Ababa', country: 'Ethiopia' }
       },
       {
