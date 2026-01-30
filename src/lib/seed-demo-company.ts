@@ -20,23 +20,21 @@ export async function seedDemoConstructionCompany() {
     const companyId = generateId()
     const company = {
       id: companyId,
-      name: 'Abyssinia Heavy Equipment Rental (አቢሲኒያ ከባድ መሳሪያ ኪራይ)',
+      name: 'Abyssinia Heavy Equipment Rental',
       email: 'info@abyssinia-equipment.com.et',
       phone: '+251-11-551-2345',
       address: 'Bole Road, Africa Avenue, Addis Ababa, Ethiopia',
       tax_id: 'TIN-0012345678',
-      currency: 'ETB',
-      settings: {
-        industry: 'Construction Equipment Rental',
-        vat_number: 'VAT-0012345678',
-        fiscal_year_start: '2024-07-08',
-        founded_year: 2018
-      }
+      currency: 'ETB'
     }
 
-    const { error: companyError } = await supabase.from('companies').insert(company)
-    if (companyError) throw companyError
-    console.log('✅ Company created:', company.name)
+    console.log('Inserting company:', company)
+    const { data: companyData, error: companyError } = await supabase.from('companies').insert(company).select()
+    if (companyError) {
+      console.error('Company insert error:', JSON.stringify(companyError, null, 2))
+      throw new Error(`Company: ${companyError.message} - ${companyError.details || ''}`)
+    }
+    console.log('✅ Company created:', companyData)
 
     // ============================================
     // 2. DEMO USER
@@ -119,7 +117,10 @@ export async function seedDemoConstructionCompany() {
     }))
 
     const { error: coaError } = await supabase.from('chart_of_accounts').insert(chartOfAccounts)
-    if (coaError) throw coaError
+    if (coaError) {
+      console.error('Chart of Accounts error:', coaError)
+      throw new Error(`Chart of Accounts: ${coaError.message}`)
+    }
     console.log('✅ Chart of Accounts created:', chartOfAccounts.length, 'accounts')
 
     // ============================================
@@ -310,7 +311,7 @@ export async function seedDemoConstructionCompany() {
         email: 'corporate@nyalainsurance.com',
         phone: '+251-11-552-6000',
         tax_id: 'TIN-0066666666',
-        vendor_type: 'SERVICE',
+        vendor_type: 'SERVICE_PROVIDER',
         payment_terms: 'NET_30',
         address: { street: 'Churchill Road', city: 'Addis Ababa', country: 'Ethiopia' }
       },
