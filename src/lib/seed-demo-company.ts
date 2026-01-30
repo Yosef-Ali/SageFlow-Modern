@@ -20,28 +20,21 @@ export async function seedDemoConstructionCompany() {
     const companyId = generateId()
     const company = {
       id: companyId,
-      name: 'Abyssinia Heavy Equipment Rental',
-      name_amharic: 'አቢሲኒያ ከባድ መሳሪያ ኪራይ',
+      name: 'Abyssinia Heavy Equipment Rental (አቢሲኒያ ከባድ መሳሪያ ኪራይ)',
       email: 'info@abyssinia-equipment.com.et',
       phone: '+251-11-551-2345',
-      address: {
-        street: 'Bole Road, Africa Avenue',
-        city: 'Addis Ababa',
-        region: 'Addis Ababa',
-        postal_code: '1000',
-        country: 'Ethiopia'
-      },
-      tin_number: 'TIN-0012345678',
-      vat_number: 'VAT-0012345678',
+      address: 'Bole Road, Africa Avenue, Addis Ababa, Ethiopia',
+      tax_id: 'TIN-0012345678',
       currency: 'ETB',
-      fiscal_year_start: '2024-07-08', // Ethiopian New Year (Meskerem 1)
-      industry: 'Construction Equipment Rental',
-      founded_year: 2018,
-      employee_count: 45,
-      is_active: true
+      settings: {
+        industry: 'Construction Equipment Rental',
+        vat_number: 'VAT-0012345678',
+        fiscal_year_start: '2024-07-08',
+        founded_year: 2018
+      }
     }
 
-    const { error: companyError } = await supabase.from('companies').upsert(company)
+    const { error: companyError } = await supabase.from('companies').insert(company)
     if (companyError) throw companyError
     console.log('✅ Company created:', company.name)
 
@@ -135,11 +128,10 @@ export async function seedDemoConstructionCompany() {
     const customers = [
       {
         customer_number: 'CUST-001',
-        name: 'MIDROC Construction PLC',
-        name_amharic: 'ሚድሮክ ኮንስትራክሽን',
+        name: 'MIDROC Construction PLC (ሚድሮክ ኮንስትራክሽን)',
         email: 'procurement@midroc.com.et',
         phone: '+251-11-661-5000',
-        tin_number: 'TIN-0034567890',
+        tax_id: 'TIN-0034567890',
         customer_type: 'CORPORATE',
         payment_terms: 'NET_30',
         credit_limit: 5000000,
@@ -147,11 +139,10 @@ export async function seedDemoConstructionCompany() {
       },
       {
         customer_number: 'CUST-002',
-        name: 'Sur Construction Share Company',
-        name_amharic: 'ሱር ኮንስትራክሽን',
+        name: 'Sur Construction Share Company (ሱር ኮንስትራክሽን)',
         email: 'info@surconstruction.com.et',
         phone: '+251-11-552-3456',
-        tin_number: 'TIN-0045678901',
+        tax_id: 'TIN-0045678901',
         customer_type: 'CORPORATE',
         payment_terms: 'NET_30',
         credit_limit: 3500000,
@@ -159,23 +150,21 @@ export async function seedDemoConstructionCompany() {
       },
       {
         customer_number: 'CUST-003',
-        name: 'Ethiopian Roads Authority',
-        name_amharic: 'የኢትዮጵያ መንገዶች ባለስልጣን',
+        name: 'Ethiopian Roads Authority (የኢትዮጵያ መንገዶች ባለስልጣን)',
         email: 'era@ethionet.et',
         phone: '+251-11-551-6000',
-        tin_number: 'TIN-0001234567',
-        customer_type: 'GOVERNMENT',
+        tax_id: 'TIN-0001234567',
+        customer_type: 'CORPORATE',
         payment_terms: 'NET_45',
         credit_limit: 10000000,
         billing_address: { street: 'Ras Abebe Aregay Street', city: 'Addis Ababa', region: 'Addis Ababa', country: 'Ethiopia' }
       },
       {
         customer_number: 'CUST-004',
-        name: 'CGC Overseas Construction Group',
-        name_amharic: 'ሲጂሲ ኦቨርሲዝ',
+        name: 'CGC Overseas Construction Group (ሲጂሲ ኦቨርሲዝ)',
         email: 'ethiopia@cgcoc.com.cn',
         phone: '+251-11-662-8900',
-        tin_number: 'TIN-0056789012',
+        tax_id: 'TIN-0056789012',
         customer_type: 'CORPORATE',
         payment_terms: 'NET_15',
         credit_limit: 8000000,
@@ -183,11 +172,10 @@ export async function seedDemoConstructionCompany() {
       },
       {
         customer_number: 'CUST-005',
-        name: 'Yotek Construction',
-        name_amharic: 'ዮቴክ ኮንስትራክሽን',
+        name: 'Yotek Construction (ዮቴክ ኮንስትራክሽን)',
         email: 'yotek@ethionet.et',
         phone: '+251-11-553-2100',
-        tin_number: 'TIN-0067890123',
+        tax_id: 'TIN-0067890123',
         customer_type: 'CORPORATE',
         payment_terms: 'NET_30',
         credit_limit: 2500000,
@@ -195,11 +183,10 @@ export async function seedDemoConstructionCompany() {
       },
       {
         customer_number: 'CUST-006',
-        name: 'Ovid Construction PLC',
-        name_amharic: 'ኦቪድ ኮንስትራክሽን',
+        name: 'Ovid Construction PLC (ኦቪድ ኮንስትራክሽን)',
         email: 'info@ovidconstruction.com',
         phone: '+251-11-554-7800',
-        tin_number: 'TIN-0078901234',
+        tax_id: 'TIN-0078901234',
         customer_type: 'CORPORATE',
         payment_terms: 'NET_30',
         credit_limit: 4000000,
@@ -207,11 +194,10 @@ export async function seedDemoConstructionCompany() {
       },
       {
         customer_number: 'CUST-007',
-        name: 'Sunshine Construction',
-        name_amharic: 'ሳንሻይን ኮንስትራክሽን',
+        name: 'Sunshine Construction (ሳንሻይን ኮንስትራክሽን)',
         email: 'sunshine@gmail.com',
         phone: '+251-91-123-4567',
-        tin_number: 'TIN-0089012345',
+        tax_id: 'TIN-0089012345',
         customer_type: 'CORPORATE',
         payment_terms: 'NET_15',
         credit_limit: 1500000,
@@ -219,36 +205,33 @@ export async function seedDemoConstructionCompany() {
       },
       {
         customer_number: 'CUST-008',
-        name: 'Metals & Engineering Corporation (METEC)',
-        name_amharic: 'ሜቴክ',
+        name: 'METEC (ሜቴክ)',
         email: 'metec@ethionet.et',
         phone: '+251-11-646-5000',
-        tin_number: 'TIN-0002345678',
-        customer_type: 'GOVERNMENT',
+        tax_id: 'TIN-0002345678',
+        customer_type: 'CORPORATE',
         payment_terms: 'NET_60',
         credit_limit: 15000000,
         billing_address: { street: 'Akaki Kality', city: 'Addis Ababa', region: 'Addis Ababa', country: 'Ethiopia' }
       },
       {
         customer_number: 'CUST-009',
-        name: 'Ato Mulugeta Tadesse',
-        name_amharic: 'አቶ ሙሉጌታ ታደሰ',
+        name: 'Ato Mulugeta Tadesse (አቶ ሙሉጌታ ታደሰ)',
         email: 'mulugeta.tadesse@gmail.com',
         phone: '+251-91-234-5678',
-        tin_number: 'TIN-0090123456',
-        customer_type: 'INDIVIDUAL',
+        tax_id: 'TIN-0090123456',
+        customer_type: 'RETAIL',
         payment_terms: 'CASH',
         credit_limit: 500000,
         billing_address: { street: 'Sarbet', city: 'Addis Ababa', region: 'Addis Ababa', country: 'Ethiopia' }
       },
       {
         customer_number: 'CUST-010',
-        name: 'Addis Ababa City Roads Authority',
-        name_amharic: 'የአዲስ አበባ ከተማ መንገዶች ባለስልጣን',
+        name: 'Addis Ababa City Roads Authority (የአዲስ አበባ ከተማ መንገዶች)',
         email: 'aacra@addisababa.gov.et',
         phone: '+251-11-551-1234',
-        tin_number: 'TIN-0003456789',
-        customer_type: 'GOVERNMENT',
+        tax_id: 'TIN-0003456789',
+        customer_type: 'CORPORATE',
         payment_terms: 'NET_45',
         credit_limit: 8000000,
         billing_address: { street: 'Mexico Square', city: 'Addis Ababa', region: 'Addis Ababa', country: 'Ethiopia' }
@@ -260,7 +243,7 @@ export async function seedDemoConstructionCompany() {
       company_id: companyId,
       ...c,
       is_active: true,
-      balance: Math.floor(Math.random() * 500000) // Random outstanding balance
+      balance: Math.floor(Math.random() * 500000)
     }))
 
     const { error: custError } = await supabase.from('customers').insert(customerRecords)
@@ -273,88 +256,80 @@ export async function seedDemoConstructionCompany() {
     const vendors = [
       {
         vendor_number: 'VEND-001',
-        name: 'NOC Ethiopia (National Oil Company)',
-        name_amharic: 'ብሔራዊ ነዳጅ ኩባንያ',
+        name: 'NOC Ethiopia (ብሔራዊ ነዳጅ ኩባንያ)',
         email: 'sales@noc.com.et',
         phone: '+251-11-551-8000',
-        tin_number: 'TIN-0011111111',
+        tax_id: 'TIN-0011111111',
         vendor_type: 'SUPPLIER',
         payment_terms: 'NET_15',
         address: { street: 'Gotera', city: 'Addis Ababa', country: 'Ethiopia' }
       },
       {
         vendor_number: 'VEND-002',
-        name: 'Total Ethiopia',
-        name_amharic: 'ቶታል ኢትዮጵያ',
+        name: 'Total Ethiopia (ቶታል ኢትዮጵያ)',
         email: 'ethiopia@total.com',
         phone: '+251-11-552-9000',
-        tin_number: 'TIN-0022222222',
+        tax_id: 'TIN-0022222222',
         vendor_type: 'SUPPLIER',
         payment_terms: 'NET_30',
         address: { street: 'Bole Road', city: 'Addis Ababa', country: 'Ethiopia' }
       },
       {
         vendor_number: 'VEND-003',
-        name: 'Tsehay Tractor & Equipment',
-        name_amharic: 'ፀሐይ ትራክተር',
+        name: 'Tsehay Tractor & Equipment (ፀሐይ ትራክተር)',
         email: 'info@tsehaytractor.com',
         phone: '+251-11-661-2345',
-        tin_number: 'TIN-0033333333',
+        tax_id: 'TIN-0033333333',
         vendor_type: 'SUPPLIER',
         payment_terms: 'NET_30',
         address: { street: 'Kality', city: 'Addis Ababa', country: 'Ethiopia' }
       },
       {
         vendor_number: 'VEND-004',
-        name: 'Moenco (Motor & Engineering Co.)',
-        name_amharic: 'ሞኢንኮ',
+        name: 'Moenco (ሞኢንኮ)',
         email: 'parts@moenco.com.et',
         phone: '+251-11-442-5000',
-        tin_number: 'TIN-0044444444',
+        tax_id: 'TIN-0044444444',
         vendor_type: 'SUPPLIER',
         payment_terms: 'NET_30',
         address: { street: 'Addis Ketema', city: 'Addis Ababa', country: 'Ethiopia' }
       },
       {
         vendor_number: 'VEND-005',
-        name: 'Kaleb Steel Industry',
-        name_amharic: 'ካሌብ ብረታ ብረት',
+        name: 'Kaleb Steel Industry (ካሌብ ብረታ ብረት)',
         email: 'sales@kalebsteel.com',
         phone: '+251-11-439-1234',
-        tin_number: 'TIN-0055555555',
+        tax_id: 'TIN-0055555555',
         vendor_type: 'SUPPLIER',
         payment_terms: 'NET_15',
         address: { street: 'Akaki Industrial Zone', city: 'Addis Ababa', country: 'Ethiopia' }
       },
       {
         vendor_number: 'VEND-006',
-        name: 'Nyala Insurance S.C.',
-        name_amharic: 'ንያላ ኢንሹራንስ',
+        name: 'Nyala Insurance S.C. (ንያላ ኢንሹራንስ)',
         email: 'corporate@nyalainsurance.com',
         phone: '+251-11-552-6000',
-        tin_number: 'TIN-0066666666',
+        tax_id: 'TIN-0066666666',
         vendor_type: 'SERVICE',
         payment_terms: 'NET_30',
         address: { street: 'Churchill Road', city: 'Addis Ababa', country: 'Ethiopia' }
       },
       {
         vendor_number: 'VEND-007',
-        name: 'Hibret Tyre',
-        name_amharic: 'ህብረት ጎማ',
+        name: 'Hibret Tyre (ህብረት ጎማ)',
         email: 'hibrettyre@ethionet.et',
         phone: '+251-11-551-3456',
-        tin_number: 'TIN-0077777777',
+        tax_id: 'TIN-0077777777',
         vendor_type: 'SUPPLIER',
         payment_terms: 'CASH',
         address: { street: 'Merkato', city: 'Addis Ababa', country: 'Ethiopia' }
       },
       {
         vendor_number: 'VEND-008',
-        name: 'Sino Truck Ethiopia',
-        name_amharic: 'ሲኖ ትራክ ኢትዮጵያ',
+        name: 'Sino Truck Ethiopia (ሲኖ ትራክ ኢትዮጵያ)',
         email: 'ethiopia@sinotruk.com',
         phone: '+251-11-662-4567',
-        tin_number: 'TIN-0088888888',
+        tax_id: 'TIN-0088888888',
         vendor_type: 'SUPPLIER',
         payment_terms: 'NET_45',
         address: { street: 'Kality', city: 'Addis Ababa', country: 'Ethiopia' }
@@ -366,7 +341,7 @@ export async function seedDemoConstructionCompany() {
       company_id: companyId,
       ...v,
       is_active: true,
-      balance: Math.floor(Math.random() * 200000) // Random payable balance
+      balance: Math.floor(Math.random() * 200000)
     }))
 
     const { error: vendError } = await supabase.from('vendors').insert(vendorRecords)

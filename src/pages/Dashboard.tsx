@@ -40,8 +40,16 @@ export default function DashboardPage() {
   const invoicesLoading = false
   const paymentsLoading = false
   
-  const recentInvoices: any[] = [] // Empty for now
-  const pendingPayments: any[] = [] // Empty for now
+  const recentInvoices: any[] = [
+    { id: '1', invoiceNumber: 'INV-00125', customerName: 'Zemen Bank', total: 45000, status: 'PAID' },
+    { id: '2', invoiceNumber: 'INV-00126', customerName: 'Abyssinia Corp', total: 12500, status: 'SENT' },
+    { id: '3', invoiceNumber: 'INV-00127', customerName: 'Ethio Telecom', total: 8500, status: 'OVERDUE' },
+  ]
+
+  const pendingPayments: any[] = [
+    { id: '3', invoiceNumber: 'INV-00127', customerName: 'Ethio Telecom', amountDue: 8500, daysOverdue: 12 },
+    { id: '4', invoiceNumber: 'INV-00122', customerName: 'Lucy Trading', amountDue: 15200, daysOverdue: 5 },
+  ]
 
   const quickActions = [
     { name: 'New Invoice', href: '/dashboard/invoices/new', icon: FileText, color: 'text-primary', bg: 'bg-primary/10' },

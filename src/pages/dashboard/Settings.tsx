@@ -17,6 +17,12 @@ const settingsLinks = [
     icon: Building,
   },
   {
+    title: 'Team Management',
+    description: 'Invite team members and manage their access levels.',
+    href: '/dashboard/settings/users',
+    icon: User,
+  },
+  {
     title: 'API Keys',
     description: 'Manage API keys for AI assistant and payment gateways.',
     href: '/dashboard/settings/api-keys',

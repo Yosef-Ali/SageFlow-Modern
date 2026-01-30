@@ -10,35 +10,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { useQuery } from '@tanstack/react-query'
-
-// Mock Data Action until backend is ready
-const getAuditLogs = async () => {
-  // Simulate delay
-  await new Promise(resolve => setTimeout(resolve, 800))
-  
-  return [
-    { id: 1, action: 'CREATE', entity: 'Invoice', entityId: 'INV-001', user: 'Demo User', timestamp: new Date(Date.now() - 1000 * 60 * 5).toISOString(), details: 'Created invoice for $1,200' },
-    { id: 2, action: 'UPDATE', entity: 'Customer', entityId: 'CUST-005', user: 'Admin', timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(), details: 'Updated billing address' },
-    { id: 3, action: 'DELETE', entity: 'Item', entityId: 'ITEM-X', user: 'Demo User', timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(), details: 'Deleted discontinued item' },
-    { id: 4, action: 'LOGIN', entity: 'System', entityId: '-', user: 'Demo User', timestamp: new Date(Date.now() - 1000 * 60 * 60 * 48).toISOString(), details: 'User logged in' },
-    { id: 5, action: 'EXPORT', entity: 'Report', entityId: 'P&L', user: 'Manager', timestamp: new Date(Date.now() - 1000 * 60 * 60 * 50).toISOString(), details: 'Exported Profit & Loss report' },
-  ]
-}
+import { useAuditLogs } from '@/hooks/use-audit-logs'
 
 export default function AuditTrailPage() {
   const [searchTerm, setSearchTerm] = useState('')
-  
-  const { data: logs, isLoading } = useQuery({
-    queryKey: ['audit-logs'],
-    queryFn: getAuditLogs
-  })
+  const { data: logs, isLoading } = useAuditLogs()
 
   // Basic client-side search logic
   const filteredLogs = logs?.filter(log => 
-    log.user.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    log.entity.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    log.details.toLowerCase().includes(searchTerm.toLowerCase())
+    (log.user_id || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (log.entity_type || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (log.action || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (log.details || '').toLowerCase().includes(searchTerm.toLowerCase())
   ) || []
 
   const getActionColor = (action: string) => {
@@ -105,9 +88,9 @@ export default function AuditTrailPage() {
                     <td className="p-4 align-middle font-medium">
                         <div className="flex items-center gap-2">
                             <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-xs text-primary font-bold">
-                                {log.user.substring(0,2).toUpperCase()}
+                                {(log.user_id || 'U').substring(0,2).toUpperCase()}
                             </div>
-                            {log.user}
+                            {log.user_id || 'System'}
                         </div>
                     </td>
                     <td className="p-4 align-middle">
@@ -116,7 +99,7 @@ export default function AuditTrailPage() {
                         </Badge>
                     </td>
                     <td className="p-4 align-middle">
-                        {log.entity} <span className="text-xs text-muted-foreground ml-1">{log.entityId}</span>
+                        {log.entity_type} <span className="text-xs text-muted-foreground ml-1">{log.entity_id}</span>
                     </td>
                     <td className="p-4 align-middle text-muted-foreground">
                         {log.details}

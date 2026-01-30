@@ -121,6 +121,9 @@ const navigation: NavItem[] = [
     name: 'Settings', 
     icon: Settings,
     children: [
+      { name: 'Profile', href: '/dashboard/settings/profile' },
+      { name: 'Company Profile', href: '/dashboard/settings/company' },
+      { name: 'User Management', href: '/dashboard/settings/users' },
       { name: 'System Config', href: '/dashboard/settings' },
       { name: 'Tax Rules', href: '/dashboard/settings/taxes' },
       { name: 'Audit Trail', href: '/dashboard/audit-trail' },

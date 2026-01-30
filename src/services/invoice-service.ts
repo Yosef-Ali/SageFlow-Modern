@@ -4,6 +4,8 @@ import { formatSupabaseError } from "@/lib/error-utils"
 import type { ActionResult } from "@/types/api"
 import type { InvoiceStatus } from "@/db/schema"
 import { updateItemStock } from "@/app/actions/inventory-actions"
+import { logAuditAction } from "@/app/actions/audit-actions"
+import { verifyRole } from "@/app/actions/auth-helpers"
 
 export interface InvoiceWithCustomer {
   id: string
@@ -243,6 +245,9 @@ export async function createInvoice(
   data: InvoiceFormValues
 ): Promise<ActionResult<InvoiceWithCustomer>> {
   try {
+    const auth = await verifyRole(['ADMIN', 'ACCOUNTANT', 'MANAGER'])
+    if (!auth.success) return { success: false, error: auth.error }
+
     const { subtotal, taxAmount, total } = calculateInvoiceTotals(data.items)
     const invoiceNumber = await generateInvoiceNumber(companyId)
     // Generate ID upfront to be resilient to RLS select failures
@@ -367,6 +372,17 @@ export async function createInvoice(
     }
 
     console.log('[createInvoice] SUCCESS: Invoice created with ID:', invoiceId)
+
+    // Log the action
+    await logAuditAction({
+      company_id: companyId,
+      user_id: (await supabase.auth.getUser()).data.user?.id,
+      action: 'CREATE',
+      entity_type: 'INVOICE',
+      entity_id: invoiceId,
+      details: `Created invoice ${invoiceNumber} for total ${total}`,
+    })
+
     return { success: true, data: mapInvoiceFromDb(finalInvoice) }
   } catch (error) {
     console.error("Error creating invoice:", error)
@@ -382,6 +398,9 @@ export async function updateInvoice(
   data: InvoiceFormValues
 ): Promise<ActionResult<InvoiceWithCustomer>> {
   try {
+    const auth = await verifyRole(['ADMIN', 'ACCOUNTANT', 'MANAGER'])
+    if (!auth.success) return { success: false, error: auth.error }
+
     // ============ PEACHTREE LOGIC: Fetch current invoice for balance reversal ============
     const { data: oldInvoice, error: fetchError } = await supabase
       .from('invoices')
@@ -502,6 +521,16 @@ export async function updateInvoice(
       }
     }
 
+    // Log the change
+    await logAuditAction({
+      company_id: updated.company_id,
+      user_id: (await supabase.auth.getUser()).data.user?.id,
+      action: 'UPDATE',
+      entity_type: 'INVOICE',
+      entity_id: id,
+      details: `Updated invoice ${updated.invoice_number}`,
+    })
+
     return { success: true, data: mapInvoiceFromDb(updated) }
   } catch (error) {
     console.error("Error updating invoice:", error)
@@ -575,8 +604,10 @@ export async function cancelInvoice(id: string): Promise<ActionResult<void>> {
  */
 export async function deleteInvoice(id: string): Promise<ActionResult<void>> {
   try {
-    // ============ PEACHTREE LOGIC: Reverse balance before deletion ============
+    const auth = await verifyRole(['ADMIN'])
+    if (!auth.success) return { success: false, error: auth.error }
 
+    // ============ PEACHTREE LOGIC: Reverse balance before deletion ============
     // Fetch invoice first to get details
     const { data: invoice, error: fetchError } = await supabase
       .from('invoices')
@@ -614,6 +645,17 @@ export async function deleteInvoice(id: string): Promise<ActionResult<void>> {
       .eq('id', id)
 
     if (error) throw error
+
+    // Log the deletion
+    await logAuditAction({
+      company_id: invoice.company_id,
+      user_id: auth.userId,
+      action: 'DELETE',
+      entity_type: 'INVOICE',
+      entity_id: id,
+      details: `Deleted invoice ${invoice.invoice_number}`,
+    })
+
     return { success: true }
   } catch (error) {
     console.error("Error deleting invoice:", error)

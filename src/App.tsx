@@ -54,6 +54,8 @@ const BalanceSheetPage = lazy(() => import('@/pages/dashboard/reports/BalanceShe
 const NewAccountPage = lazy(() => import('@/pages/dashboard/accounts/NewAccount'))
 
 const ProfileSettingsPage = lazy(() => import('@/pages/dashboard/settings/Profile'))
+const CompanySettingsPage = lazy(() => import('@/pages/dashboard/settings/Company'))
+const UserManagementPage = lazy(() => import('@/pages/dashboard/settings/Users'))
 const ImportExportPage = lazy(() => import('@/pages/dashboard/settings/ImportExport'))
 const AuditTrailPage = lazy(() => import('@/pages/dashboard/AuditTrail'))
 const ApiKeysPage = lazy(() => import('@/pages/dashboard/settings/ApiKeys'))
@@ -196,7 +198,8 @@ export default function App() {
             {/* Settings */}
             <Route path="settings" element={<SettingsPage />} />
             <Route path="settings/profile" element={<ProfileSettingsPage />} />
-            <Route path="settings/company" element={<PlaceholderPage title="Company Settings" />} />
+            <Route path="settings/company" element={<CompanySettingsPage />} />
+            <Route path="settings/users" element={<UserManagementPage />} />
             <Route path="settings/api-keys" element={<ApiKeysPage />} />
             <Route path="settings/import-export" element={<ImportExportPage />} />
             <Route path="settings/billing" element={<PlaceholderPage title="Billing" />} />

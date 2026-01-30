@@ -1,5 +1,7 @@
 import { supabase } from "@/lib/supabase"
 import { ItemFormValues, ItemFiltersValues, AssemblyFormValues } from "@/lib/validations/inventory"
+import { logAuditAction } from "./audit-actions"
+import { verifyRole } from "./auth-helpers"
 export type { ItemFormValues, ItemFiltersValues, AssemblyFormValues }
 
 // ============ Peachtree-style Adjustment Number Generation ============
@@ -125,6 +127,9 @@ export async function getItem(id: string) {
 
 export async function createItem(data: ItemFormValues & { companyId: string }) {
   try {
+    const auth = await verifyRole(['ADMIN', 'MANAGER'])
+    if (!auth.success) return { success: false, error: auth.error }
+
     if (!data.companyId) {
       return { success: false, error: "Company ID is required" }
     }
@@ -143,6 +148,17 @@ export async function createItem(data: ItemFormValues & { companyId: string }) {
     }).select().single()
 
     if (error) throw error
+
+    // Log the creation
+    await logAuditAction({
+      company_id: data.companyId,
+      user_id: (await supabase.auth.getUser()).data.user?.id,
+      action: 'CREATE',
+      entity_type: 'ITEM',
+      entity_id: newItem.id,
+      details: `Created item ${newItem.name} (SKU: ${newItem.sku})`,
+    })
+
     return { success: true, data: newItem }
   } catch (error) {
     console.error("Error creating item:", error)
@@ -152,6 +168,9 @@ export async function createItem(data: ItemFormValues & { companyId: string }) {
 
 export async function updateItem(id: string, data: ItemFormValues) {
   try {
+    const auth = await verifyRole(['ADMIN', 'MANAGER'])
+    if (!auth.success) return { success: false, error: auth.error }
+
     const { error } = await supabase.from('items').update({
       sku: data.sku,
       name: data.name,
@@ -162,6 +181,17 @@ export async function updateItem(id: string, data: ItemFormValues) {
     }).eq('id', id)
 
     if (error) throw error
+
+    // Log the update
+    await logAuditAction({
+      company_id: (await supabase.from('items').select('company_id').eq('id', id).single()).data?.company_id || 'unknown',
+      user_id: (await supabase.auth.getUser()).data.user?.id,
+      action: 'UPDATE',
+      entity_type: 'ITEM',
+      entity_id: id,
+      details: `Updated item details for ${data.name}`,
+    })
+
     return { success: true, data: { id } }
   } catch (error) {
     console.error("Error updating item:", error)
@@ -171,6 +201,9 @@ export async function updateItem(id: string, data: ItemFormValues) {
 
 export async function deleteItem(id: string) {
   try {
+    const auth = await verifyRole(['ADMIN'])
+    if (!auth.success) return { success: false, error: auth.error }
+
     const { error } = await supabase.from('items').update({ is_active: false }).eq('id', id)
     if (error) throw error
     return { success: true }
@@ -295,6 +328,9 @@ export async function updateItemStock(id: string, delta: number) {
 
 export async function createInventoryAdjustment(data: any, companyId?: string) {
   try {
+    const auth = await verifyRole(['ADMIN', 'MANAGER', 'ACCOUNTANT'])
+    if (!auth.success) return { success: false, error: auth.error }
+
     // 1. Validate data
     if (!data.items || data.items.length === 0) {
       return { success: false, error: "No items to adjust" }
@@ -356,6 +392,17 @@ export async function createInventoryAdjustment(data: any, companyId?: string) {
     }
 
     console.log(`[createInventoryAdjustment] Successfully adjusted ${results.length} items`)
+
+    // Log the adjustment
+    await logAuditAction({
+      company_id: companyId || 'unknown',
+      user_id: (await supabase.auth.getUser()).data.user?.id,
+      action: 'ADJUST_INVENTORY',
+      entity_type: 'STOCK',
+      entity_id: adjustmentNumber,
+      details: `Adjusted stock for ${results.length} items. Reason: ${data.reason}`,
+    })
+
     return {
       success: true,
       data: {
