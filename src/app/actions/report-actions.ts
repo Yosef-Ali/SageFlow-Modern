@@ -6,12 +6,16 @@ export interface GLFilterValues {
   dateTo?: Date
 }
 
-export async function getGeneralLedger(filters?: GLFilterValues): Promise<ActionResult<any[]>> {
+export async function getGeneralLedger(companyId: string, filters?: GLFilterValues): Promise<ActionResult<any[]>> {
   try {
+    if (!companyId) {
+      return { success: false, error: "Company ID is required" }
+    }
     // Simplified query - FK relationships not configured in Supabase
     const { data, error } = await supabase
       .from('journal_entries')
       .select('*')
+      .eq('company_id', companyId)
       .order('date', { ascending: false })
 
     if (error) throw error
@@ -39,12 +43,16 @@ export async function getGLSummary(filters?: GLFilterValues) {
 
 // ============ Financial Reports ============
 
-export async function getProfitLossReport({ startDate, endDate }: { startDate: string, endDate: string }) {
+export async function getProfitLossReport(companyId: string, { startDate, endDate }: { startDate: string, endDate: string }) {
   try {
+    if (!companyId) {
+      return { success: true, data: { income: [], expenses: [], totalIncome: 0, totalExpenses: 0, netIncome: 0 } }
+    }
     // Fetch Revenue Accounts (use account_name, not name)
     const { data: revenueAccounts, error: revError } = await supabase
       .from('chart_of_accounts')
       .select('id, account_name, type, balance')
+      .eq('company_id', companyId)
       .eq('type', 'REVENUE')
 
     if (revError) {
@@ -55,6 +63,7 @@ export async function getProfitLossReport({ startDate, endDate }: { startDate: s
     const { data: expenseAccounts, error: expError } = await supabase
       .from('chart_of_accounts')
       .select('id, account_name, type, balance')
+      .eq('company_id', companyId)
       .eq('type', 'EXPENSE')
 
     if (expError) {
@@ -100,11 +109,15 @@ export async function getProfitLossReport({ startDate, endDate }: { startDate: s
   }
 }
 
-export async function getTrialBalanceReport({ date }: { date: string }) {
+export async function getTrialBalanceReport(companyId: string, { date }: { date: string }) {
   try {
+    if (!companyId) {
+      return { success: true, data: { accounts: [], totals: { debit: 0, credit: 0 } } }
+    }
     const { data: accounts, error } = await supabase
       .from('chart_of_accounts')
       .select('id, account_number, account_name, type, balance')
+      .eq('company_id', companyId)
       .order('account_number', { ascending: true })
 
     if (error) {
@@ -152,12 +165,16 @@ export async function getTrialBalanceReport({ date }: { date: string }) {
   }
 }
 
-export async function getBalanceSheetReport({ date }: { date: string }) {
+export async function getBalanceSheetReport(companyId: string, { date }: { date: string }) {
   try {
+    if (!companyId) {
+      return { success: true, data: { assets: [], liabilities: [], equity: [], totalAssets: 0, totalLiabilities: 0, totalEquity: 0 } }
+    }
     // Fetch Assets
     const { data: assets, error: assetsError } = await supabase
       .from('chart_of_accounts')
       .select('id, account_number, account_name, type, balance')
+      .eq('company_id', companyId)
       .eq('type', 'ASSET')
 
     if (assetsError) console.error('Assets error:', assetsError)
@@ -166,6 +183,7 @@ export async function getBalanceSheetReport({ date }: { date: string }) {
     const { data: liabilities, error: liabError } = await supabase
       .from('chart_of_accounts')
       .select('id, account_number, account_name, type, balance')
+      .eq('company_id', companyId)
       .eq('type', 'LIABILITY')
 
     if (liabError) console.error('Liabilities error:', liabError)
@@ -174,6 +192,7 @@ export async function getBalanceSheetReport({ date }: { date: string }) {
     const { data: equity, error: equityError } = await supabase
       .from('chart_of_accounts')
       .select('id, account_number, account_name, type, balance')
+      .eq('company_id', companyId)
       .eq('type', 'EQUITY')
 
     if (equityError) console.error('Equity error:', equityError)

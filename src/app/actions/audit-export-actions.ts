@@ -20,11 +20,16 @@ function formatBirr(amount: number): string {
  * Export Journal Entries / General Ledger for Audit
  * የጠቅላላ ደብተር ወጪ
  */
-export async function exportJournalEntriesCSV(dateFrom?: string, dateTo?: string) {
+export async function exportJournalEntriesCSV(companyId: string, dateFrom?: string, dateTo?: string) {
   try {
+    if (!companyId) {
+      return { success: false, error: 'Company ID is required' };
+    }
+
     let query = supabase
       .from('journal_entries')
       .select('*')
+      .eq('company_id', companyId)
       .order('date', { ascending: true });
 
     if (dateFrom) query = query.gte('date', dateFrom);
@@ -69,18 +74,23 @@ export async function exportJournalEntriesCSV(dateFrom?: string, dateTo?: string
  * Export Invoices with VAT for ERCA
  * የደረሰኝ ወጪ ከተ.እ.ታ ጋር
  */
-export async function exportInvoicesCSV(dateFrom?: string, dateTo?: string) {
+export async function exportInvoicesCSV(companyId: string, dateFrom?: string, dateTo?: string) {
   try {
+    if (!companyId) {
+      return { success: false, error: 'Company ID is required' };
+    }
+
     let query = supabase
       .from('invoices')
       .select(`
         *,
         customers:customer_id (name, tin_number, email, phone)
       `)
-      .order('invoice_date', { ascending: true });
+      .eq('company_id', companyId)
+      .order('date', { ascending: true });
 
-    if (dateFrom) query = query.gte('invoice_date', dateFrom);
-    if (dateTo) query = query.lte('invoice_date', dateTo);
+    if (dateFrom) query = query.gte('date', dateFrom);
+    if (dateTo) query = query.lte('date', dateTo);
 
     const { data, error } = await query;
     if (error) throw error;
@@ -132,11 +142,16 @@ export async function exportInvoicesCSV(dateFrom?: string, dateTo?: string) {
  * Export Trial Balance Report
  * የሙከራ ሚዛን ሪፖርት
  */
-export async function exportTrialBalanceCSV() {
+export async function exportTrialBalanceCSV(companyId: string) {
   try {
+    if (!companyId) {
+      return { success: false, error: 'Company ID is required' };
+    }
+
     const { data, error } = await supabase
       .from('chart_of_accounts')
       .select('*')
+      .eq('company_id', companyId)
       .eq('is_active', true)
       .order('account_number', { ascending: true });
 
@@ -195,18 +210,35 @@ export async function exportTrialBalanceCSV() {
  * Export Bank Transactions for Audit
  * የባንክ ግብይቶች ወጪ
  */
-export async function exportBankTransactionsCSV(dateFrom?: string, dateTo?: string) {
+export async function exportBankTransactionsCSV(companyId: string, dateFrom?: string, dateTo?: string) {
   try {
+    if (!companyId) {
+      return { success: false, error: 'Company ID is required' };
+    }
+
+    // First get bank accounts for this company
+    const { data: bankAccounts } = await supabase
+      .from('bank_accounts')
+      .select('id')
+      .eq('company_id', companyId);
+
+    const bankAccountIds = bankAccounts?.map(b => b.id) || [];
+
+    if (bankAccountIds.length === 0) {
+      return { success: true, data: 'No bank accounts found' };
+    }
+
     let query = supabase
       .from('bank_transactions')
       .select(`
         *,
         bank_accounts:bank_account_id (account_name, account_number, bank_name)
       `)
-      .order('transaction_date', { ascending: true });
+      .in('bank_account_id', bankAccountIds)
+      .order('date', { ascending: true });
 
-    if (dateFrom) query = query.gte('transaction_date', dateFrom);
-    if (dateTo) query = query.lte('transaction_date', dateTo);
+    if (dateFrom) query = query.gte('date', dateFrom);
+    if (dateTo) query = query.lte('date', dateTo);
 
     const { data, error } = await query;
     if (error) throw error;
@@ -253,11 +285,16 @@ export async function exportBankTransactionsCSV(dateFrom?: string, dateTo?: stri
  * Export Customer List with TIN for Tax Audit
  * የደንበኞች ዝርዝር ከቲን ጋር
  */
-export async function exportCustomersWithTinCSV() {
+export async function exportCustomersWithTinCSV(companyId: string) {
   try {
+    if (!companyId) {
+      return { success: false, error: 'Company ID is required' };
+    }
+
     const { data, error } = await supabase
       .from('customers')
       .select('*')
+      .eq('company_id', companyId)
       .eq('is_active', true)
       .order('name', { ascending: true });
 
@@ -298,11 +335,16 @@ export async function exportCustomersWithTinCSV() {
  * Export Vendor List with TIN for Tax Audit
  * የአቅራቢዎች ዝርዝር ከቲን ጋር
  */
-export async function exportVendorsWithTinCSV() {
+export async function exportVendorsWithTinCSV(companyId: string) {
   try {
+    if (!companyId) {
+      return { success: false, error: 'Company ID is required' };
+    }
+
     const { data, error } = await supabase
       .from('vendors')
       .select('*')
+      .eq('company_id', companyId)
       .eq('is_active', true)
       .order('name', { ascending: true });
 
@@ -341,8 +383,12 @@ export async function exportVendorsWithTinCSV() {
  * Generate Full Audit Package (ZIP with all reports)
  * ሙሉ የኦዲት ፓኬጅ
  */
-export async function generateFullAuditPackage(dateFrom?: string, dateTo?: string) {
+export async function generateFullAuditPackage(companyId: string, dateFrom?: string, dateTo?: string) {
   try {
+    if (!companyId) {
+      return { success: false, error: 'Company ID is required' };
+    }
+
     // Get all reports
     const [
       journalResult,
@@ -352,12 +398,12 @@ export async function generateFullAuditPackage(dateFrom?: string, dateTo?: strin
       customersResult,
       vendorsResult,
     ] = await Promise.all([
-      exportJournalEntriesCSV(dateFrom, dateTo),
-      exportInvoicesCSV(dateFrom, dateTo),
-      exportTrialBalanceCSV(),
-      exportBankTransactionsCSV(dateFrom, dateTo),
-      exportCustomersWithTinCSV(),
-      exportVendorsWithTinCSV(),
+      exportJournalEntriesCSV(companyId, dateFrom, dateTo),
+      exportInvoicesCSV(companyId, dateFrom, dateTo),
+      exportTrialBalanceCSV(companyId),
+      exportBankTransactionsCSV(companyId, dateFrom, dateTo),
+      exportCustomersWithTinCSV(companyId),
+      exportVendorsWithTinCSV(companyId),
     ]);
 
     return {

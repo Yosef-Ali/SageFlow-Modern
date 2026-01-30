@@ -6,8 +6,12 @@ import { Label } from '@/components/ui/label'
 import { useQuery } from '@tanstack/react-query'
 import { getProfitLossReport } from '@/app/actions/report-actions'
 import { formatCurrency } from '@/lib/utils'
+import { useAuth } from '@/lib/auth-context'
 
 export default function ProfitLossPage() {
+  const { user } = useAuth()
+  const companyId = user?.companyId || ''
+
   const [startDate, setStartDate] = useState(
     new Date(new Date().getFullYear(), 0, 1).toISOString().split('T')[0]
   )
@@ -16,8 +20,9 @@ export default function ProfitLossPage() {
   )
 
   const { data: report, isLoading, refetch } = useQuery({
-    queryKey: ['reports', 'pl', startDate, endDate],
-    queryFn: () => getProfitLossReport({ startDate, endDate }),
+    queryKey: ['reports', 'pl', companyId, startDate, endDate],
+    queryFn: () => getProfitLossReport(companyId, { startDate, endDate }),
+    enabled: !!companyId,
   })
 
   // Safe data accessor

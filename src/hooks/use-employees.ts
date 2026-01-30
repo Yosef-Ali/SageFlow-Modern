@@ -10,11 +10,12 @@ import {
   EmployeeFormValues,
 } from '@/app/actions/employee-actions'
 import { useToast } from '@/components/ui/use-toast'
+import { useAuth } from '@/lib/auth-context'
 
 // Query keys
 export const employeeKeys = {
   all: ['employees'] as const,
-  list: (filters?: { search?: string }) => [...employeeKeys.all, 'list', filters] as const,
+  list: (companyId: string, filters?: { search?: string }) => [...employeeKeys.all, 'list', companyId, filters] as const,
   detail: (id: string) => [...employeeKeys.all, 'detail', id] as const,
 }
 
@@ -22,15 +23,19 @@ export const employeeKeys = {
  * Hook to fetch all employees
  */
 export function useEmployees(filters?: { search?: string }) {
+  const { user } = useAuth()
+  const companyId = user?.companyId || ''
+
   return useQuery({
-    queryKey: employeeKeys.list(filters),
+    queryKey: employeeKeys.list(companyId, filters),
     queryFn: async () => {
-      const result = await getEmployees(filters)
+      const result = await getEmployees(companyId, filters)
       if (!result.success) {
         throw new Error(result.error)
       }
       return result.data
     },
+    enabled: !!companyId,
   })
 }
 
@@ -57,10 +62,11 @@ export function useEmployee(id: string) {
 export function useCreateEmployee() {
   const queryClient = useQueryClient()
   const { toast } = useToast()
+  const { user } = useAuth()
 
   return useMutation({
     mutationFn: async (data: EmployeeFormValues) => {
-      const result = await createEmployee(data)
+      const result = await createEmployee({ ...data, companyId: user?.companyId || '' })
       if (!result.success) {
         throw new Error(result.error)
       }

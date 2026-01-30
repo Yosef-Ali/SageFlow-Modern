@@ -14,17 +14,18 @@ import {
   type ItemFiltersValues,
 } from '@/app/actions/inventory-actions'
 import { useToast } from '@/components/ui/use-toast'
+import { useAuth } from '@/lib/auth-context'
 
 // Query keys
 export const inventoryKeys = {
   all: ['inventory'] as const,
-  lists: () => [...inventoryKeys.all, 'list'] as const,
-  list: (filters?: Partial<ItemFiltersValues>) =>
-    [...inventoryKeys.lists(), filters] as const,
+  lists: (companyId: string) => [...inventoryKeys.all, 'list', companyId] as const,
+  list: (companyId: string, filters?: Partial<ItemFiltersValues>) =>
+    [...inventoryKeys.lists(companyId), filters] as const,
   details: () => [...inventoryKeys.all, 'detail'] as const,
   detail: (id: string) => [...inventoryKeys.details(), id] as const,
-  categories: () => [...inventoryKeys.all, 'categories'] as const,
-  summary: () => [...inventoryKeys.all, 'summary'] as const,
+  categories: (companyId: string) => [...inventoryKeys.all, 'categories', companyId] as const,
+  summary: (companyId: string) => [...inventoryKeys.all, 'summary', companyId] as const,
   assemblies: () => [...inventoryKeys.all, 'assemblies'] as const,
 }
 
@@ -32,16 +33,20 @@ export const inventoryKeys = {
  * Hook to fetch inventory items with filters
  */
 export function useItems(filters?: Partial<ItemFiltersValues>) {
+  const { user } = useAuth()
+  const companyId = user?.companyId || ''
+
   return useQuery({
-    queryKey: inventoryKeys.list(filters),
+    queryKey: inventoryKeys.list(companyId, filters),
     queryFn: async () => {
-      const result = await getItems(filters)
+      const result = await getItems(companyId, filters)
       if (!result.success) {
         console.error(result.error)
         return []
       }
       return result.data
     },
+    enabled: !!companyId,
   })
 }
 
@@ -66,15 +71,19 @@ export function useItem(id: string) {
  * Hook to fetch item categories
  */
 export function useItemCategories() {
+  const { user } = useAuth()
+  const companyId = user?.companyId || ''
+
   return useQuery({
-    queryKey: inventoryKeys.categories(),
+    queryKey: inventoryKeys.categories(companyId),
     queryFn: async () => {
-      const result = await getItemCategories()
+      const result = await getItemCategories(companyId)
       if (!result.success) {
         throw new Error(result.error)
       }
       return result.data
     },
+    enabled: !!companyId,
   })
 }
 
@@ -82,15 +91,19 @@ export function useItemCategories() {
  * Hook to fetch inventory summary
  */
 export function useInventorySummary() {
+  const { user } = useAuth()
+  const companyId = user?.companyId || ''
+
   return useQuery({
-    queryKey: inventoryKeys.summary(),
+    queryKey: inventoryKeys.summary(companyId),
     queryFn: async () => {
-      const result = await getInventorySummary()
+      const result = await getInventorySummary(companyId)
       if (!result.success) {
         throw new Error(result.error)
       }
       return result.data
     },
+    enabled: !!companyId,
   })
 }
 
@@ -117,18 +130,20 @@ export function useAssemblyDefinitions() {
 export function useCreateItem() {
   const queryClient = useQueryClient()
   const { toast } = useToast()
+  const { user } = useAuth()
+  const companyId = user?.companyId || ''
 
   return useMutation({
     mutationFn: async (data: ItemFormValues) => {
-      const result = await createItem(data)
+      const result = await createItem({ ...data, companyId })
       if (!result.success) {
         throw new Error(result.error)
       }
       return result.data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: inventoryKeys.lists() })
-      queryClient.invalidateQueries({ queryKey: inventoryKeys.summary() })
+      queryClient.invalidateQueries({ queryKey: inventoryKeys.lists(companyId) })
+      queryClient.invalidateQueries({ queryKey: inventoryKeys.summary(companyId) })
       toast({
         title: 'Success',
         description: 'Item created successfully',
@@ -150,6 +165,8 @@ export function useCreateItem() {
 export function useUpdateItem() {
   const queryClient = useQueryClient()
   const { toast } = useToast()
+  const { user } = useAuth()
+  const companyId = user?.companyId || ''
 
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: ItemFormValues }) => {
@@ -160,9 +177,9 @@ export function useUpdateItem() {
       return result.data
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: inventoryKeys.lists() })
+      queryClient.invalidateQueries({ queryKey: inventoryKeys.lists(companyId) })
       queryClient.invalidateQueries({ queryKey: inventoryKeys.detail(variables.id) })
-      queryClient.invalidateQueries({ queryKey: inventoryKeys.summary() })
+      queryClient.invalidateQueries({ queryKey: inventoryKeys.summary(companyId) })
       toast({
         title: 'Success',
         description: 'Item updated successfully',
@@ -184,6 +201,8 @@ export function useUpdateItem() {
 export function useDeleteItem() {
   const queryClient = useQueryClient()
   const { toast } = useToast()
+  const { user } = useAuth()
+  const companyId = user?.companyId || ''
 
   return useMutation({
     mutationFn: async (id: string) => {
@@ -194,8 +213,8 @@ export function useDeleteItem() {
       return result
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: inventoryKeys.lists() })
-      queryClient.invalidateQueries({ queryKey: inventoryKeys.summary() })
+      queryClient.invalidateQueries({ queryKey: inventoryKeys.lists(companyId) })
+      queryClient.invalidateQueries({ queryKey: inventoryKeys.summary(companyId) })
       toast({
         title: 'Success',
         description: 'Item deleted',

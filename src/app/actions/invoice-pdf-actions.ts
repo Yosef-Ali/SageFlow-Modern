@@ -65,11 +65,11 @@ export async function getInvoiceForPDF(id: string): Promise<ActionResult<Invoice
       })
     )
 
-    // Fetch company info (use first company or default)
+    // Fetch company info from invoice's company_id
     const { data: company } = await supabase
       .from('companies')
       .select('*')
-      .limit(1)
+      .eq('id', invoice.company_id)
       .single()
 
     const pdfData: InvoicePDFData = {

@@ -325,52 +325,66 @@ export async function importPtbAction(formData: FormData): Promise<ActionResult<
 }
 
 /**
- * Export Customers to CSV (Peachtree Format)
+ * Export Customers to CSV (Peachtree/Sage 50 Format)
+ * Compatible with Sage 50 US 2010-2024
  */
-export async function exportCustomersToCSV(): Promise<ActionResult<string>> {
+export async function exportCustomersToCSV(companyId: string): Promise<ActionResult<string>> {
   try {
+    if (!companyId) {
+      return { success: false, error: 'Company ID is required' };
+    }
+
     const { data: customers, error } = await supabase
       .from('customers')
-      .select('*');
+      .select('*')
+      .eq('company_id', companyId)
+      .eq('is_active', true)
+      .order('customer_number', { ascending: true });
 
     if (error) throw error;
     if (!customers || customers.length === 0) {
       return { success: false, error: 'No customers found to export' };
     }
 
-    // Peachtree Standard Headers
+    // Peachtree/Sage 50 Standard Import Headers (compatible with older versions)
     const headers = [
       'Customer ID',
       'Customer Name',
-      'Contact',
-      'Address Line 1',
-      'City',
-      'State',
-      'Zip',
-      'Country',
+      'Bill to Contact',
+      'Bill to Address-Line One',
+      'Bill to City',
+      'Bill to State',
+      'Bill to Zip Code',
+      'Bill to Country',
       'Telephone 1',
       'E-mail',
-      'Tax ID'
+      'Resale Number',
+      'Customer Type',
+      'Terms',
+      'Credit Limit'
     ];
 
     const rows = customers.map(c => [
-      c.customer_number,
-      c.name,
-      '', // Contact
+      c.customer_number || '',
+      c.name || '',
+      c.contact_name || '',
       c.billing_address?.street || '',
       c.billing_address?.city || '',
       c.billing_address?.state || '',
       c.billing_address?.zipCode || '',
-      c.billing_address?.country || '',
+      c.billing_address?.country || 'Ethiopia',
       c.phone || '',
       c.email || '',
-      c.tax_id || ''
+      c.tax_id || c.tax_exempt_number || '',
+      c.customer_type || 'RETAIL',
+      c.payment_terms || 'Net 30 Days',
+      String(c.credit_limit || 0)
     ]);
 
     const csv = [
       headers.join(','),
       ...rows.map(row => row.map(cell => `"${String(cell || '').replace(/"/g, '""')}"`).join(','))
-    ].join('\n');
+    ].join('\r\n'); // Use Windows line endings for Peachtree
 
     return { success: true, data: csv };
   } catch (error: any) {
@@ -379,51 +393,66 @@ export async function exportCustomersToCSV(): Promise<ActionResult<string>> {
 }
 
 /**
- * Export Vendors to CSV (Peachtree Format)
+ * Export Vendors to CSV (Peachtree/Sage 50 Format)
+ * Compatible with Sage 50 US 2010-2024
  */
-export async function exportVendorsToCSV(): Promise<ActionResult<string>> {
+export async function exportVendorsToCSV(companyId: string): Promise<ActionResult<string>> {
   try {
+    if (!companyId) {
+      return { success: false, error: 'Company ID is required' };
+    }
+
     const { data: vendors, error } = await supabase
       .from('vendors')
-      .select('*');
+      .select('*')
+      .eq('company_id', companyId)
+      .eq('is_active', true)
+      .order('vendor_number', { ascending: true });
 
     if (error) throw error;
     if (!vendors || vendors.length === 0) {
       return { success: false, error: 'No vendors found to export' };
     }
 
+    // Peachtree/Sage 50 Standard Vendor Import Headers
     const headers = [
       'Vendor ID',
       'Vendor Name',
       'Contact',
-      'Address Line 1',
+      'Address-Line One',
       'City',
       'State',
-      'Zip',
+      'Zip Code',
       'Country',
       'Telephone 1',
       'E-mail',
-      'Tax ID'
+      'Tax ID Number',
+      'Vendor Type',
+      'Terms',
+      '1099 Type'
     ];
 
     const rows = vendors.map(v => [
-      v.vendor_number,
-      v.name,
-      '', // Contact
+      v.vendor_number || '',
+      v.name || '',
+      v.contact_name || '',
       v.address?.street || '',
       v.address?.city || '',
       v.address?.state || '',
       v.address?.zipCode || '',
-      v.address?.country || '',
+      v.address?.country || 'Ethiopia',
       v.phone || '',
       v.email || '',
-      v.tax_id || ''
+      v.tax_id || '',
+      v.vendor_type || 'Trade',
+      v.payment_terms || 'Net 30 Days',
+      '' // 1099 Type - leave blank for international
     ]);
 
     const csv = [
       headers.join(','),
       ...rows.map(row => row.map(cell => `"${String(cell || '').replace(/"/g, '""')}"`).join(','))
-    ].join('\n');
+    ].join('\r\n');
 
     return { success: true, data: csv };
   } catch (error: any) {
@@ -432,32 +461,57 @@ export async function exportVendorsToCSV(): Promise<ActionResult<string>> {
 }
 
 /**
- * Export Chart of Accounts to CSV (Peachtree Format)
+ * Export Chart of Accounts to CSV (Peachtree/Sage 50 Format)
+ * Compatible with Sage 50 US 2010-2024
  */
-export async function exportChartOfAccountsToCSV(): Promise<ActionResult<string>> {
+export async function exportChartOfAccountsToCSV(companyId: string): Promise<ActionResult<string>> {
   try {
+    if (!companyId) {
+      return { success: false, error: 'Company ID is required' };
+    }
+
     const { data: accounts, error } = await supabase
       .from('chart_of_accounts')
-      .select('*');
+      .select('*')
+      .eq('company_id', companyId)
+      .order('account_number', { ascending: true });
 
     if (error) throw error;
     if (!accounts || accounts.length === 0) {
       return { success: false, error: 'No accounts found to export' };
     }
 
-    const headers = ['Account ID', 'Description', 'Account Type', 'Inactive'];
+    // Map internal types to Peachtree account types
+    const mapAccountType = (type: string): string => {
+      const typeMap: Record<string, string> = {
+        'ASSET': 'Cash',
+        'LIABILITY': 'Accounts Payable',
+        'EQUITY': 'Equity-doesn\'t close',
+        'REVENUE': 'Income',
+        'EXPENSE': 'Expenses'
+      };
+      return typeMap[type] || 'Other Current Assets';
+    };
+
+    // Peachtree/Sage 50 Chart of Accounts Import Headers
+    const headers = [
+      'Account ID',
+      'Description',
+      'Account Type',
+      'Inactive'
+    ];
 
     const rows = accounts.map(a => [
-      a.account_number,
-      a.account_name,
-      a.type, // TODO: Map internal types (ASSET) to Peachtree types (Cash, Accounts Receivable, etc.) if needed
+      a.account_number || '',
+      a.account_name || '',
+      mapAccountType(a.type),
       a.is_active ? 'FALSE' : 'TRUE'
     ]);
 
     const csv = [
       headers.join(','),
       ...rows.map(row => row.map(cell => `"${String(cell || '').replace(/"/g, '""')}"`).join(','))
-    ].join('\n');
+    ].join('\r\n');
 
     return { success: true, data: csv };
   } catch (error: any) {
@@ -466,15 +520,16 @@ export async function exportChartOfAccountsToCSV(): Promise<ActionResult<string>
 }
 
 /**
- * Export Journal Entries to CSV (General Ledger)
+ * Export Journal Entries to CSV (Sage 50/Peachtree Import Compatible)
+ * Format: Date, Reference, Account ID, Description, Debit Amount, Credit Amount
+ * Compatible with Sage 50 US 2010-2024
  */
-/**
- * Export Journal Entries to CSV (Sage 50 Import Compatible)
- * Format: Date, Reference, Account ID, Description, Amount
- * Note: Amount is Positive for Debit, Negative for Credit
- */
-export async function exportJournalEntriesToCSV(): Promise<ActionResult<string>> {
+export async function exportJournalEntriesToCSV(companyId: string): Promise<ActionResult<string>> {
   try {
+    if (!companyId) {
+      return { success: false, error: 'Company ID is required' };
+    }
+
     const { data: entries, error } = await supabase
       .from('journal_entries')
       .select(`
@@ -487,6 +542,7 @@ export async function exportJournalEntriesToCSV(): Promise<ActionResult<string>>
           )
         )
       `)
+      .eq('company_id', companyId)
       .order('date', { ascending: true });
 
     if (error) throw error;
@@ -494,13 +550,14 @@ export async function exportJournalEntriesToCSV(): Promise<ActionResult<string>>
       return { success: false, error: 'No journal entries found to export' };
     }
 
-    // Sage 50 US / Peachtree Standard Import Headers
+    // Sage 50/Peachtree General Journal Import Headers
     const headers = [
       'Date',
       'Reference',
-      'Account ID',
+      'GL Account',
       'Description',
-      'Amount'
+      'Debit Amount',
+      'Credit Amount'
     ];
 
     const rows: string[][] = [];
@@ -512,18 +569,16 @@ export async function exportJournalEntriesToCSV(): Promise<ActionResult<string>>
 
       if (entry.lines && entry.lines.length > 0) {
         entry.lines.forEach((line: any) => {
-          // Calculate Signed Amount (Debit +, Credit -)
           const debit = parseFloat(line.debit || '0');
           const credit = parseFloat(line.credit || '0');
-          // If both exist (rare), net them. Usually one is 0.
-          const amount = debit - credit;
 
           rows.push([
             dateStr,
-            entry.reference || 'REF', // Reference is required
+            entry.reference || `JE-${entry.id?.substring(0, 8) || 'REF'}`,
             line.account?.account_number || line.account_id || '',
             line.description || entry.description || '',
-            amount.toFixed(2) // 2 decimal places
+            debit > 0 ? debit.toFixed(2) : '',
+            credit > 0 ? credit.toFixed(2) : ''
           ]);
         });
       }
@@ -532,7 +587,138 @@ export async function exportJournalEntriesToCSV(): Promise<ActionResult<string>>
     const csv = [
       headers.join(','),
       ...rows.map(row => row.map(cell => `"${String(cell || '').replace(/"/g, '""')}"`).join(','))
-    ].join('\n');
+    ].join('\r\n');
+
+    return { success: true, data: csv };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * Export Inventory Items to CSV (Peachtree/Sage 50 Format)
+ * Compatible with Sage 50 US 2010-2024
+ */
+export async function exportItemsToCSV(companyId: string): Promise<ActionResult<string>> {
+  try {
+    if (!companyId) {
+      return { success: false, error: 'Company ID is required' };
+    }
+
+    const { data: items, error } = await supabase
+      .from('items')
+      .select('*')
+      .eq('company_id', companyId)
+      .eq('is_active', true)
+      .order('sku', { ascending: true });
+
+    if (error) throw error;
+    if (!items || items.length === 0) {
+      return { success: false, error: 'No items found to export' };
+    }
+
+    // Peachtree/Sage 50 Inventory Item Import Headers
+    const headers = [
+      'Item ID',
+      'Description',
+      'Item Class',
+      'Item Type',
+      'Description for Sales',
+      'Price Level 1',
+      'Cost Method',
+      'Costing',
+      'Quantity on Hand',
+      'Reorder Quantity',
+      'Minimum Stock',
+      'Item Tax Type',
+      'UPC / SKU',
+      'Stocking U/M'
+    ];
+
+    const rows = items.map(item => [
+      item.sku || '',
+      item.name || '',
+      item.type === 'SERVICE' ? 'Service' : 'Stock item',
+      item.type === 'SERVICE' ? 'Labor' : 'Stock item',
+      item.description || item.name || '',
+      String(item.selling_price || 0),
+      'Average', // Cost method
+      String(item.cost_price || 0),
+      String(item.quantity_on_hand || 0),
+      String(item.reorder_quantity || 0),
+      String(item.reorder_point || 0),
+      item.taxable !== false ? '1' : '2', // 1=Taxable, 2=Exempt
+      item.barcode || item.sku || '',
+      item.unit_of_measure || 'Each'
+    ]);
+
+    const csv = [
+      headers.join(','),
+      ...rows.map(row => row.map(cell => `"${String(cell || '').replace(/"/g, '""')}"`).join(','))
+    ].join('\r\n');
+
+    return { success: true, data: csv };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * Export Employees to CSV (Peachtree/Sage 50 Format)
+ */
+export async function exportEmployeesToCSV(companyId: string): Promise<ActionResult<string>> {
+  try {
+    if (!companyId) {
+      return { success: false, error: 'Company ID is required' };
+    }
+
+    const { data: employees, error } = await supabase
+      .from('employees')
+      .select('*')
+      .eq('company_id', companyId)
+      .eq('is_active', true)
+      .order('employee_code', { ascending: true });
+
+    if (error) throw error;
+    if (!employees || employees.length === 0) {
+      return { success: false, error: 'No employees found to export' };
+    }
+
+    // Peachtree/Sage 50 Employee Import Headers
+    const headers = [
+      'Employee ID',
+      'Employee Name',
+      'Address Line 1',
+      'City',
+      'State',
+      'Zip Code',
+      'Telephone 1',
+      'E-mail',
+      'Social Security #',
+      'Pay Method',
+      'Pay Frequency',
+      'Hourly Rate'
+    ];
+
+    const rows = employees.map(emp => [
+      emp.employee_code || '',
+      `${emp.first_name || ''} ${emp.last_name || ''}`.trim(),
+      emp.address?.street || '',
+      emp.address?.city || '',
+      emp.address?.state || '',
+      emp.address?.zipCode || '',
+      emp.phone || '',
+      emp.email || '',
+      emp.ssn || emp.tax_id || '',
+      emp.pay_method || 'Hourly',
+      emp.pay_frequency || 'Weekly',
+      String(emp.pay_rate || 0)
+    ]);
+
+    const csv = [
+      headers.join(','),
+      ...rows.map(row => row.map(cell => `"${String(cell || '').replace(/"/g, '""')}"`).join(','))
+    ].join('\r\n');
 
     return { success: true, data: csv };
   } catch (error: any) {

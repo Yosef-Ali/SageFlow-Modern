@@ -6,15 +6,20 @@ import { Label } from '@/components/ui/label'
 import { useQuery } from '@tanstack/react-query'
 import { getTrialBalanceReport } from '@/app/actions/report-actions'
 import { formatCurrency } from '@/lib/utils'
+import { useAuth } from '@/lib/auth-context'
 
 export default function TrialBalancePage() {
+  const { user } = useAuth()
+  const companyId = user?.companyId || ''
+
   const [date, setDate] = useState(
     new Date().toISOString().split('T')[0]
   )
 
   const { data: report, isLoading, refetch } = useQuery({
-    queryKey: ['reports', 'tb', date],
-    queryFn: () => getTrialBalanceReport({ date }),
+    queryKey: ['reports', 'tb', companyId, date],
+    queryFn: () => getTrialBalanceReport(companyId, { date }),
+    enabled: !!companyId,
   })
 
   const accounts = report?.data?.accounts || []

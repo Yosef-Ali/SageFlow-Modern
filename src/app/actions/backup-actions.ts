@@ -6,15 +6,19 @@ import AdmZip from "adm-zip"
  * Generate Peachtree-compatible backup (.ptb) file
  * PTB files are ZIP archives containing .DAT files
  */
-export async function generatePtbBackup(): Promise<ActionResult<string>> {
+export async function generatePtbBackup(companyId: string): Promise<ActionResult<string>> {
   try {
-    // Fetch all data from database
-    const { data: customers } = await supabase.from('customers').select('*')
-    const { data: vendors } = await supabase.from('vendors').select('*')
-    const { data: accounts } = await supabase.from('chart_of_accounts').select('*')
-    const { data: items } = await supabase.from('items').select('*')
-    const { data: invoices } = await supabase.from('invoices').select('*')
-    const { data: bills } = await supabase.from('bills').select('*')
+    if (!companyId) {
+      return { success: false, error: 'Company ID is required' }
+    }
+
+    // Fetch all data from database filtered by company
+    const { data: customers } = await supabase.from('customers').select('*').eq('company_id', companyId)
+    const { data: vendors } = await supabase.from('vendors').select('*').eq('company_id', companyId)
+    const { data: accounts } = await supabase.from('chart_of_accounts').select('*').eq('company_id', companyId)
+    const { data: items } = await supabase.from('items').select('*').eq('company_id', companyId)
+    const { data: invoices } = await supabase.from('invoices').select('*').eq('company_id', companyId)
+    const { data: bills } = await supabase.from('bills').select('*').eq('company_id', companyId)
 
     // Create ZIP archive
     const zip = new AdmZip()

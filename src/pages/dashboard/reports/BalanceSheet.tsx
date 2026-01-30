@@ -6,15 +6,20 @@ import { Label } from '@/components/ui/label'
 import { useQuery } from '@tanstack/react-query'
 import { getBalanceSheetReport } from '@/app/actions/report-actions'
 import { formatCurrency } from '@/lib/utils'
+import { useAuth } from '@/lib/auth-context'
 
 export default function BalanceSheetPage() {
+  const { user } = useAuth()
+  const companyId = user?.companyId || ''
+
   const [date, setDate] = useState(
     new Date().toISOString().split('T')[0]
   )
 
   const { data: report, isLoading, refetch } = useQuery({
-    queryKey: ['reports', 'bs', date],
-    queryFn: () => getBalanceSheetReport({ date }),
+    queryKey: ['reports', 'bs', companyId, date],
+    queryFn: () => getBalanceSheetReport(companyId, { date }),
+    enabled: !!companyId,
   })
 
   // Safe accessors

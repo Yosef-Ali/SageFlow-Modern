@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { FileUp, FileDown, Download, Loader2, AlertCircle, FileSpreadsheet, Database, Shield, Calendar, Building2, Users, BookOpen, Landmark } from 'lucide-react'
+import { Download, Loader2, AlertCircle, FileSpreadsheet, Database, Shield, Calendar, Building2, Users, BookOpen, Landmark } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
@@ -11,6 +11,8 @@ import {
   useExportVendors,
   useExportChartOfAccounts,
   useExportJournalEntries,
+  useExportItems,
+  useExportEmployees,
 } from '@/hooks/use-import-export'
 import { PtbImportDialogSimple } from '@/components/peachtree/ptb-import-dialog-simple'
 import { CsvImportDialog } from '@/components/peachtree/csv-import-dialog'
@@ -23,15 +25,25 @@ export default function ImportExportPage() {
   const exportCustomers = useExportCustomers()
   const exportVendors = useExportVendors()
   const exportChartOfAccounts = useExportChartOfAccounts()
-  
+  const exportItems = useExportItems()
+  const exportEmployees = useExportEmployees()
+
   // Audit exports
   const exportJournalEntries = useExportJournalEntries()
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Import & Export</h1>
-        <p className="text-muted-foreground mt-1">Manage data migration, backups and audit reports</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">Import & Export</h1>
+          <p className="text-muted-foreground mt-1">Manage data migration, backups and audit reports</p>
+        </div>
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800">
+          <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+          <span className="text-xs font-medium text-emerald-700 dark:text-emerald-400">
+            {import.meta.env.VITE_SUPABASE_URL ? 'Database Connected' : 'Connection Error'}
+          </span>
+        </div>
       </div>
 
       <Tabs defaultValue="import" className="space-y-4">
@@ -146,6 +158,34 @@ export default function ImportExportPage() {
                 </div>
                 <Button variant="outline" size="sm" onClick={() => exportChartOfAccounts.mutate()} disabled={exportChartOfAccounts.isPending}>
                   {exportChartOfAccounts.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4 mr-1" />}
+                  CSV
+                </Button>
+              </div>
+
+              <div className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50">
+                <div className="space-y-0.5">
+                  <div className="font-medium flex items-center text-sm">
+                    <Database className="w-4 h-4 mr-2 text-orange-500" />
+                    Inventory Items (እቃዎች)
+                  </div>
+                  <p className="text-xs text-muted-foreground">Export all products and services</p>
+                </div>
+                <Button variant="outline" size="sm" onClick={() => exportItems.mutate()} disabled={exportItems.isPending}>
+                  {exportItems.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4 mr-1" />}
+                  CSV
+                </Button>
+              </div>
+
+              <div className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50">
+                <div className="space-y-0.5">
+                  <div className="font-medium flex items-center text-sm">
+                    <Users className="w-4 h-4 mr-2 text-cyan-500" />
+                    Employees (ሰራተኞች)
+                  </div>
+                  <p className="text-xs text-muted-foreground">Export employee records</p>
+                </div>
+                <Button variant="outline" size="sm" onClick={() => exportEmployees.mutate()} disabled={exportEmployees.isPending}>
+                  {exportEmployees.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4 mr-1" />}
                   CSV
                 </Button>
               </div>

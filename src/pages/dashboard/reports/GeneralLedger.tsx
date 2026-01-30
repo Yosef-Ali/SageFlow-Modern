@@ -6,8 +6,12 @@ import { Label } from '@/components/ui/label'
 import { useQuery } from '@tanstack/react-query'
 import { getGeneralLedger } from '@/app/actions/report-actions'
 import { formatCurrency, formatDate } from '@/lib/utils'
+import { useAuth } from '@/lib/auth-context'
 
 export default function GeneralLedgerPage() {
+  const { user } = useAuth()
+  const companyId = user?.companyId || ''
+
   const [startDate, setStartDate] = useState(
     new Date(new Date().getFullYear(), 0, 1).toISOString().split('T')[0]
   )
@@ -17,11 +21,12 @@ export default function GeneralLedgerPage() {
   const [searchTerm, setSearchTerm] = useState('')
 
   const { data: report, isLoading, refetch } = useQuery({
-    queryKey: ['reports', 'gl', startDate, endDate],
-    queryFn: () => getGeneralLedger({ 
-        dateFrom: new Date(startDate), 
-        dateTo: new Date(endDate) 
+    queryKey: ['reports', 'gl', companyId, startDate, endDate],
+    queryFn: () => getGeneralLedger(companyId, {
+        dateFrom: new Date(startDate),
+        dateTo: new Date(endDate)
     }),
+    enabled: !!companyId,
   })
 
   const entries = report?.data || []

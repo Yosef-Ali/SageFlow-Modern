@@ -3,10 +3,13 @@ import { EmployeeFormValues } from "@/lib/validations/employee"
 import { ActionResult } from "@/types/api"
 export type { EmployeeFormValues }
 
-export async function getEmployees(filters?: { search?: string }): Promise<ActionResult<any[]>> {
+export async function getEmployees(companyId: string, filters?: { search?: string }): Promise<ActionResult<any[]>> {
   try {
+    if (!companyId) {
+      return { success: false, error: "Company ID is required" }
+    }
     // Fetch employees without nested company relation (FK not configured in Supabase)
-    let query = supabase.from('employees').select('*').order('created_at', { ascending: false })
+    let query = supabase.from('employees').select('*').eq('company_id', companyId).order('created_at', { ascending: false })
 
     if (filters?.search) {
       query = query.or(`first_name.ilike.%${filters.search}%,last_name.ilike.%${filters.search}%,employee_code.ilike.%${filters.search}%`)
@@ -34,9 +37,13 @@ export async function getEmployee(id: string) {
   }
 }
 
-export async function createEmployee(data: EmployeeFormValues) {
+export async function createEmployee(data: EmployeeFormValues & { companyId: string }) {
   try {
+    if (!data.companyId) {
+      return { success: false, error: "Company ID is required" }
+    }
     const { data: newEmployee, error } = await supabase.from('employees').insert({
+      company_id: data.companyId,
       employee_code: data.employeeCode,
       first_name: data.firstName,
       last_name: data.lastName,

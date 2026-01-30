@@ -39,11 +39,15 @@ async function generateAdjustmentNumber(companyId?: string): Promise<string> {
   }
 }
 
-export async function getItems(filters?: Partial<ItemFiltersValues>) {
+export async function getItems(companyId: string, filters?: Partial<ItemFiltersValues>) {
   try {
+    if (!companyId) {
+      return { success: false, error: "Company ID is required" }
+    }
     let query = supabase
       .from('items')
       .select('*')
+      .eq('company_id', companyId)
       .order('created_at', { ascending: false })
 
     const { data: items, error } = await query
@@ -119,9 +123,13 @@ export async function getItem(id: string) {
   }
 }
 
-export async function createItem(data: ItemFormValues) {
+export async function createItem(data: ItemFormValues & { companyId: string }) {
   try {
+    if (!data.companyId) {
+      return { success: false, error: "Company ID is required" }
+    }
     const { data: newItem, error } = await supabase.from('items').insert({
+      company_id: data.companyId,
       sku: data.sku,
       name: data.name,
       description: data.description,
@@ -130,6 +138,7 @@ export async function createItem(data: ItemFormValues) {
       reorder_point: data.reorderPoint,
       reorder_quantity: data.reorderQuantity,
       category_id: data.categoryId,
+      unit_of_measure: 'Each',
       // Add other mapped fields
     }).select().single()
 
@@ -170,19 +179,25 @@ export async function deleteItem(id: string) {
   }
 }
 
-export async function getItemCategories() {
+export async function getItemCategories(companyId: string) {
   try {
-    const { data } = await supabase.from('item_categories').select('*')
+    if (!companyId) {
+      return { success: true, data: [] }
+    }
+    const { data } = await supabase.from('item_categories').select('*').eq('company_id', companyId)
     return { success: true, data: data || [] }
   } catch (error) {
     return { success: false, error: "Failed to fetch categories" }
   }
 }
 
-export async function getInventorySummary() {
+export async function getInventorySummary(companyId: string) {
   try {
-    const { count: totalItems } = await supabase.from('items').select('*', { count: 'exact', head: true })
-    const { count: lowStock } = await supabase.from('items').select('*', { count: 'exact', head: true }).lt('quantity_on_hand', 10) // Simplified rule
+    if (!companyId) {
+      return { success: true, data: { totalItems: 0, lowStockItems: 0, totalValue: 0 } }
+    }
+    const { count: totalItems } = await supabase.from('items').select('*', { count: 'exact', head: true }).eq('company_id', companyId)
+    const { count: lowStock } = await supabase.from('items').select('*', { count: 'exact', head: true }).eq('company_id', companyId).lt('quantity_on_hand', 10) // Simplified rule
 
     return {
       success: true,

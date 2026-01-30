@@ -10,9 +10,12 @@ export interface AccountFormValues {
   isActive?: boolean
 }
 
-export async function getChartOfAccounts(filters?: { type?: string; search?: string }) {
+export async function getChartOfAccounts(companyId: string, filters?: { type?: string; search?: string }) {
   try {
-    let query = supabase.from('chart_of_accounts').select('*').order('account_number', { ascending: true })
+    if (!companyId) {
+      return { success: false, error: "Company ID is required" }
+    }
+    let query = supabase.from('chart_of_accounts').select('*').eq('company_id', companyId).order('account_number', { ascending: true })
 
     if (filters?.type && filters.type !== 'all') {
       query = query.eq('type', filters.type)
@@ -90,9 +93,12 @@ export async function deleteAccount(id: string) {
   }
 }
 
-export async function getAccountsSummary() {
+export async function getAccountsSummary(companyId: string) {
   try {
-    const { count } = await supabase.from('chart_of_accounts').select('*', { count: 'exact', head: true })
+    if (!companyId) {
+      return { success: true, data: { totalAccounts: 0 } }
+    }
+    const { count } = await supabase.from('chart_of_accounts').select('*', { count: 'exact', head: true }).eq('company_id', companyId)
     return {
       success: true,
       data: {

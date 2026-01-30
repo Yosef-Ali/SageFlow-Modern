@@ -7,23 +7,28 @@ import {
   getRecentInvoices,
   getPendingPayments,
 } from '@/app/actions/dashboard-actions'
+import { useAuth } from '@/lib/auth-context'
 
 export const dashboardKeys = {
   all: ['dashboard'] as const,
-  stats: () => [...dashboardKeys.all, 'stats'] as const,
+  stats: (companyId: string) => [...dashboardKeys.all, 'stats', companyId] as const,
   revenue: () => [...dashboardKeys.all, 'revenue'] as const,
-  recentInvoices: () => [...dashboardKeys.all, 'recent-invoices'] as const,
+  recentInvoices: (companyId: string) => [...dashboardKeys.all, 'recent-invoices', companyId] as const,
   pendingPayments: () => [...dashboardKeys.all, 'pending-payments'] as const,
 }
 
 export function useDashboardStats() {
+  const { user } = useAuth()
+  const companyId = user?.companyId || ''
+
   return useQuery({
-    queryKey: dashboardKeys.stats(),
+    queryKey: dashboardKeys.stats(companyId),
     queryFn: async () => {
-      const result = await getDashboardStats()
+      const result = await getDashboardStats(companyId)
       if (!result.success) throw new Error(result.error)
       return result.data
     },
+    enabled: !!companyId,
   })
 }
 
@@ -39,13 +44,17 @@ export function useMonthlyRevenue() {
 }
 
 export function useRecentInvoices() {
+  const { user } = useAuth()
+  const companyId = user?.companyId || ''
+
   return useQuery({
-    queryKey: dashboardKeys.recentInvoices(),
+    queryKey: dashboardKeys.recentInvoices(companyId),
     queryFn: async () => {
-      const result = await getRecentInvoices()
+      const result = await getRecentInvoices(companyId)
       if (!result.success) throw new Error(result.error)
       return result.data
     },
+    enabled: !!companyId,
   })
 }
 

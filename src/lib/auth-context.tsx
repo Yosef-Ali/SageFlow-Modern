@@ -24,6 +24,8 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 const AUTH_STORAGE_KEY = 'sageflow_auth'
+const SESSION_DURATION_DAYS = 7 // Keep user logged in for 7 days
+const SESSION_DURATION_MS = SESSION_DURATION_DAYS * 24 * 60 * 60 * 1000
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
@@ -103,10 +105,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (stored) {
       try {
         const parsed = JSON.parse(stored)
-        // Use cached data if less than 24 hours old
-        if (parsed.user && parsed.timestamp && Date.now() - parsed.timestamp < 24 * 60 * 60 * 1000) {
-          console.log('Using cached user:', parsed.user.email)
+        const sessionAge = Date.now() - (parsed.timestamp || 0)
+        const daysRemaining = Math.ceil((SESSION_DURATION_MS - sessionAge) / (24 * 60 * 60 * 1000))
+
+        // Use cached data if session is still valid (within 7 days)
+        if (parsed.user && parsed.timestamp && sessionAge < SESSION_DURATION_MS) {
+          console.log(`Using cached user: ${parsed.user.email} (${daysRemaining} days remaining)`)
           setUser(parsed.user)
+
+          // Refresh session timestamp if more than 1 day old (extends session on activity)
+          if (sessionAge > 24 * 60 * 60 * 1000) {
+            console.log('Refreshing session timestamp')
+            localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify({
+              user: parsed.user,
+              timestamp: Date.now()
+            }))
+          }
         } else {
           console.log('Cached user expired, clearing')
           localStorage.removeItem(AUTH_STORAGE_KEY)

@@ -1,18 +1,21 @@
 import { supabase } from "@/lib/supabase"
 import type { ActionResult } from "@/types/api"
 
-export async function getDashboardStats(): Promise<ActionResult<{
+export async function getDashboardStats(companyId: string): Promise<ActionResult<{
   totalRevenue: number
   pendingInvoices: number
   activeCustomers: number
   totalExpenses: number
 }>> {
   try {
+    if (!companyId) {
+      return { success: false, error: "Company ID is required" }
+    }
     // Parallel queries
     const [invoices, expenses, customers] = await Promise.all([
-      supabase.from('invoices').select('total').eq('status', 'PAID'),
-      supabase.from('invoices').select('total').eq('status', 'SENT'), // Pending
-      supabase.from('customers').select('*', { count: 'exact', head: true })
+      supabase.from('invoices').select('total').eq('company_id', companyId).eq('status', 'PAID'),
+      supabase.from('invoices').select('total').eq('company_id', companyId).eq('status', 'SENT'), // Pending
+      supabase.from('customers').select('*', { count: 'exact', head: true }).eq('company_id', companyId)
     ])
 
     const totalRevenue = invoices.data?.reduce((acc, curr) => acc + (Number(curr.total) || 0), 0) || 0
@@ -37,12 +40,16 @@ export async function getMonthlyRevenue(): Promise<ActionResult<any[]>> {
   return { success: true, data: [] }
 }
 
-export async function getRecentInvoices(): Promise<ActionResult<any[]>> {
+export async function getRecentInvoices(companyId: string): Promise<ActionResult<any[]>> {
   try {
+    if (!companyId) {
+      return { success: true, data: [] }
+    }
     // Fetch invoices without nested customer (FK not configured in Supabase)
     const { data, error } = await supabase
       .from('invoices')
       .select('*')
+      .eq('company_id', companyId)
       .limit(5)
       .order('created_at', { ascending: false })
 

@@ -11,28 +11,33 @@ import {
   AccountFormValues,
 } from '@/app/actions/account-actions'
 import { useToast } from '@/components/ui/use-toast'
+import { useAuth } from '@/lib/auth-context'
 
 // Query keys
 export const accountKeys = {
   all: ['accounts'] as const,
-  list: (filters?: { type?: string; search?: string }) => [...accountKeys.all, 'list', filters] as const,
+  list: (companyId: string, filters?: { type?: string; search?: string }) => [...accountKeys.all, 'list', companyId, filters] as const,
   detail: (id: string) => [...accountKeys.all, 'detail', id] as const,
-  summary: () => [...accountKeys.all, 'summary'] as const,
+  summary: (companyId: string) => [...accountKeys.all, 'summary', companyId] as const,
 }
 
 /**
  * Hook to fetch all accounts
  */
 export function useAccounts(filters?: { type?: string; search?: string }) {
+  const { user } = useAuth()
+  const companyId = user?.companyId || ''
+
   return useQuery({
-    queryKey: accountKeys.list(filters),
+    queryKey: accountKeys.list(companyId, filters),
     queryFn: async () => {
-      const result = await getChartOfAccounts(filters)
+      const result = await getChartOfAccounts(companyId, filters)
       if (!result.success) {
         throw new Error(result.error)
       }
       return result.data
     },
+    enabled: !!companyId,
   })
 }
 
@@ -57,15 +62,19 @@ export function useAccount(id: string) {
  * Hook to get accounts summary
  */
 export function useAccountsSummary() {
+  const { user } = useAuth()
+  const companyId = user?.companyId || ''
+
   return useQuery({
-    queryKey: accountKeys.summary(),
+    queryKey: accountKeys.summary(companyId),
     queryFn: async () => {
-      const result = await getAccountsSummary()
+      const result = await getAccountsSummary(companyId)
       if (!result.success) {
         throw new Error(result.error)
       }
       return result.data
     },
+    enabled: !!companyId,
   })
 }
 
@@ -75,10 +84,11 @@ export function useAccountsSummary() {
 export function useCreateAccount() {
   const queryClient = useQueryClient()
   const { toast } = useToast()
+  const { user } = useAuth()
 
   return useMutation({
     mutationFn: async (data: AccountFormValues) => {
-      const result = await createAccount(data)
+      const result = await createAccount({ ...data, companyId: user?.companyId })
       if (!result.success) {
         throw new Error(result.error)
       }

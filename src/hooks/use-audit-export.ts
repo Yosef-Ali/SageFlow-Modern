@@ -5,6 +5,7 @@
 
 import { useMutation } from '@tanstack/react-query'
 import { useToast } from '@/components/ui/use-toast'
+import { useAuth } from '@/lib/auth-context'
 import {
   exportJournalEntriesCSV,
   exportInvoicesCSV,
@@ -31,12 +32,15 @@ function downloadCSV(csvData: string, filename: string) {
 /**
  * Export Journal Entries / General Ledger
  */
-export function useExportJournalEntries() {
+export function useExportAuditJournalEntries() {
   const { toast } = useToast()
+  const { user } = useAuth()
+  const companyId = user?.companyId || ''
 
   return useMutation({
     mutationFn: async ({ dateFrom, dateTo }: { dateFrom?: string; dateTo?: string }) => {
-      const result = await exportJournalEntriesCSV(dateFrom, dateTo)
+      if (!companyId) throw new Error('Company ID is required')
+      const result = await exportJournalEntriesCSV(companyId, dateFrom, dateTo)
       if (!result.success) throw new Error(result.error)
       return result.data
     },
@@ -57,12 +61,15 @@ export function useExportJournalEntries() {
 /**
  * Export Invoices with VAT
  */
-export function useExportInvoices() {
+export function useExportAuditInvoices() {
   const { toast } = useToast()
+  const { user } = useAuth()
+  const companyId = user?.companyId || ''
 
   return useMutation({
     mutationFn: async ({ dateFrom, dateTo }: { dateFrom?: string; dateTo?: string }) => {
-      const result = await exportInvoicesCSV(dateFrom, dateTo)
+      if (!companyId) throw new Error('Company ID is required')
+      const result = await exportInvoicesCSV(companyId, dateFrom, dateTo)
       if (!result.success) throw new Error(result.error)
       return result.data
     },
@@ -83,12 +90,15 @@ export function useExportInvoices() {
 /**
  * Export Trial Balance
  */
-export function useExportTrialBalance() {
+export function useExportAuditTrialBalance() {
   const { toast } = useToast()
+  const { user } = useAuth()
+  const companyId = user?.companyId || ''
 
   return useMutation({
     mutationFn: async () => {
-      const result = await exportTrialBalanceCSV()
+      if (!companyId) throw new Error('Company ID is required')
+      const result = await exportTrialBalanceCSV(companyId)
       if (!result.success) throw new Error(result.error)
       return result.data
     },
@@ -109,12 +119,15 @@ export function useExportTrialBalance() {
 /**
  * Export Bank Transactions
  */
-export function useExportBankTransactions() {
+export function useExportAuditBankTransactions() {
   const { toast } = useToast()
+  const { user } = useAuth()
+  const companyId = user?.companyId || ''
 
   return useMutation({
     mutationFn: async ({ dateFrom, dateTo }: { dateFrom?: string; dateTo?: string }) => {
-      const result = await exportBankTransactionsCSV(dateFrom, dateTo)
+      if (!companyId) throw new Error('Company ID is required')
+      const result = await exportBankTransactionsCSV(companyId, dateFrom, dateTo)
       if (!result.success) throw new Error(result.error)
       return result.data
     },
@@ -135,12 +148,15 @@ export function useExportBankTransactions() {
 /**
  * Export Customers with TIN
  */
-export function useExportCustomersWithTin() {
+export function useExportAuditCustomersWithTin() {
   const { toast } = useToast()
+  const { user } = useAuth()
+  const companyId = user?.companyId || ''
 
   return useMutation({
     mutationFn: async () => {
-      const result = await exportCustomersWithTinCSV()
+      if (!companyId) throw new Error('Company ID is required')
+      const result = await exportCustomersWithTinCSV(companyId)
       if (!result.success) throw new Error(result.error)
       return result.data
     },
@@ -161,12 +177,15 @@ export function useExportCustomersWithTin() {
 /**
  * Export Vendors with TIN
  */
-export function useExportVendorsWithTin() {
+export function useExportAuditVendorsWithTin() {
   const { toast } = useToast()
+  const { user } = useAuth()
+  const companyId = user?.companyId || ''
 
   return useMutation({
     mutationFn: async () => {
-      const result = await exportVendorsWithTinCSV()
+      if (!companyId) throw new Error('Company ID is required')
+      const result = await exportVendorsWithTinCSV(companyId)
       if (!result.success) throw new Error(result.error)
       return result.data
     },
@@ -189,10 +208,13 @@ export function useExportVendorsWithTin() {
  */
 export function useGenerateAuditPackage() {
   const { toast } = useToast()
+  const { user } = useAuth()
+  const companyId = user?.companyId || ''
 
   return useMutation({
     mutationFn: async ({ dateFrom, dateTo }: { dateFrom?: string; dateTo?: string }) => {
-      const result = await generateFullAuditPackage(dateFrom, dateTo)
+      if (!companyId) throw new Error('Company ID is required')
+      const result = await generateFullAuditPackage(companyId, dateFrom, dateTo)
       if (!result.success) throw new Error(result.error)
       return result.data
     },
