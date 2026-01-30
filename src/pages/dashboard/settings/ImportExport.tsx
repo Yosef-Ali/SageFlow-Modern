@@ -1,11 +1,12 @@
 import { useState } from 'react'
-import { Download, Loader2, AlertCircle, FileSpreadsheet, Database, Shield, Calendar, Building2, Users, BookOpen, Landmark } from 'lucide-react'
+import { Download, Loader2, AlertCircle, FileSpreadsheet, Database, Shield, Calendar, Building2, Users, BookOpen, Landmark, HardHat } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { useToast } from '@/components/ui/use-toast'
 import {
   useExportCustomers,
   useExportVendors,
@@ -16,10 +17,13 @@ import {
 } from '@/hooks/use-import-export'
 import { PtbImportDialogSimple } from '@/components/peachtree/ptb-import-dialog-simple'
 import { CsvImportDialog } from '@/components/peachtree/csv-import-dialog'
+import { seedDemoConstructionCompany } from '@/lib/seed-demo-company'
 
 export default function ImportExportPage() {
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
+  const [isSeeding, setIsSeeding] = useState(false)
+  const { toast } = useToast()
 
   // Basic exports
   const exportCustomers = useExportCustomers()
@@ -30,6 +34,34 @@ export default function ImportExportPage() {
 
   // Audit exports
   const exportJournalEntries = useExportJournalEntries()
+
+  // Seed demo data
+  const handleSeedDemo = async () => {
+    if (!confirm('This will create a demo construction company with full data. Continue?')) return
+
+    setIsSeeding(true)
+    try {
+      const result = await seedDemoConstructionCompany()
+      if (result.success) {
+        toast({
+          title: 'Demo Data Created! / ዲሞ መረጃ ተፈጥሯል!',
+          description: 'Abyssinia Heavy Equipment Rental company has been created with customers, vendors, inventory, and employees.',
+        })
+        // Reload page to reflect new data
+        setTimeout(() => window.location.reload(), 1500)
+      } else {
+        throw new Error(result.error)
+      }
+    } catch (error: any) {
+      toast({
+        title: 'Seed Failed',
+        description: error.message,
+        variant: 'destructive'
+      })
+    } finally {
+      setIsSeeding(false)
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -110,6 +142,45 @@ export default function ImportExportPage() {
               <p><strong>For PTB:</strong> In Peachtree, go to File → Backup → Create backup file</p>
             </AlertDescription>
           </Alert>
+
+          {/* Demo Data Seed */}
+          <Card className="border-amber-200 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-950/20">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <HardHat className="h-5 w-5 text-amber-600" />
+                Demo: Construction Equipment Rental / ዲሞ: የግንባታ መሳሪያ ኪራይ
+              </CardTitle>
+              <CardDescription>
+                Create a complete demo company with Ethiopian context data
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="text-xs text-muted-foreground space-y-1">
+                <p>• <strong>Company:</strong> Abyssinia Heavy Equipment Rental / አቢሲኒያ ከባድ መሳሪያ ኪራይ</p>
+                <p>• <strong>Customers:</strong> MIDROC, Sur, ERA, CGC, METEC and more</p>
+                <p>• <strong>Inventory:</strong> Excavators, Loaders, Bulldozers, Cranes, Dump Trucks</p>
+                <p>• <strong>Employees:</strong> 15 staff (Operators, Mechanics, Admin)</p>
+                <p>• <strong>Full Chart of Accounts</strong> with Ethiopian tax structure</p>
+              </div>
+              <Button
+                onClick={handleSeedDemo}
+                disabled={isSeeding}
+                className="w-full bg-amber-600 hover:bg-amber-700"
+              >
+                {isSeeding ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Creating Demo Data...
+                  </>
+                ) : (
+                  <>
+                    <HardHat className="w-4 h-4 mr-2" />
+                    Create Demo Company / ዲሞ ኩባንያ ፍጠር
+                  </>
+                )}
+              </Button>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         {/* Export Tab */}
