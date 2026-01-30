@@ -46,16 +46,9 @@ export function useInvoices(filters?: Partial<InvoiceFiltersValues>) {
       }
       const result = await getInvoices(companyId, filters)
 
-      // STATIC DATA FALLBACK
-      if (!result.success || !result.data || result.data.invoices.length === 0) {
-        return {
-          invoices: [
-            { id: '1', invoiceNumber: 'INV-00125', customerName: 'Zemen Bank', total: '45000', status: 'PAID', date: new Date().toISOString() },
-            { id: '2', invoiceNumber: 'INV-00126', customerName: 'Abyssinia Corp', total: '12500', status: 'SENT', date: new Date().toISOString() },
-            { id: '3', invoiceNumber: 'INV-00127', customerName: 'Ethio Telecom', total: '8500', status: 'OVERDUE', date: new Date().toISOString() },
-          ],
-          total: 3
-        }
+      // Return actual data or empty if none
+      if (!result.success || !result.data) {
+        return { invoices: [], total: 0 }
       }
       return result.data
     },
