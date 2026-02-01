@@ -19,6 +19,33 @@
   <meta name="theme-color" content="#059669" />
   <link rel="manifest" href="/manifest.json" />
   <title>SageFlow - Modern Accounting</title>
+  <script>
+    (function () {
+      try {
+        var theme = 'light';
+        try {
+          theme = localStorage.getItem('theme');
+        } catch (e) {}
+        if (!theme) {
+          try {
+            theme = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+          } catch (e) {
+            theme = 'light';
+          }
+        }
+        if (theme === 'dark') {
+          document.documentElement.classList.add('dark');
+          document.documentElement.style.backgroundColor = '#0c1220';
+          document.documentElement.style.colorScheme = 'dark';
+        } else {
+          document.documentElement.classList.remove('dark');
+          document.documentElement.style.backgroundColor = '#fbfbf9';
+        }
+      } catch (e) {
+        console.error('Theme initialization failed:', e);
+      }
+    })();
+  </script>
 </head>
 
 <body>

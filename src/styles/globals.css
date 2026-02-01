@@ -27,7 +27,7 @@
   --radius-xl: 1rem;
   --radius: 0.5rem;
 
-  --background: #fcfcfa;
+  --background: #fbfbf9;
   --foreground: #0c1220;
   --card: #ffffff;
   --card-foreground: #0c1220;
@@ -35,11 +35,11 @@
   --popover-foreground: #0c1220;
   --primary: #059669;
   --primary-foreground: #ffffff;
-  --secondary: #f8f8f5;
+  --secondary: #f4f7f5;
   --secondary-foreground: #2d3748;
-  --muted: #f3f3ef;
+  --muted: #eff3f1;
   --muted-foreground: #5a6578;
-  --accent: #f8f8f5;
+  --accent: #f4f7f5;
   --accent-foreground: #2d3748;
   --destructive: #dc2626;
   --destructive-foreground: #ffffff;
@@ -47,11 +47,11 @@
   --input: #e2e8f0;
   --ring: #059669;
 
-  --sidebar: #fcfcfa;
+  --sidebar: #fbfbf9;
   --sidebar-foreground: #2d3748;
   --sidebar-primary: #059669;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #f8f8f5;
+  --sidebar-accent: #f4f7f5;
   --sidebar-accent-foreground: #2d3748;
   --sidebar-border: #e2e8f0;
   --sidebar-ring: #059669;
@@ -78,39 +78,44 @@
   --chart-3: #34d399;
   --chart-4: #6ee7b7;
   --chart-5: #a7f3d0;
+
+  /* Compatibility Variables - Light */
+  --header-bg: rgba(251, 251, 249, 0.95);
+  --primary-translucent: rgba(5, 150, 105, 0.1);
+  --primary-translucent-hover: rgba(5, 150, 105, 0.2);
 }
 
 .dark {
-  --background: #030709;
-  --foreground: #f7f9fb;
-  --card: #0a1014;
-  --card-foreground: #f7f9fb;
-  --popover: #0a1014;
-  --popover-foreground: #f7f9fb;
+  --background: #0c1220;
+  --foreground: #f8fafc;
+  --card: #0c1220;
+  --card-foreground: #f8fafc;
+  --popover: #0c1220;
+  --popover-foreground: #f8fafc;
   --primary: #10b981;
   --primary-foreground: #ffffff;
-  --secondary: #0f161c;
-  --secondary-foreground: #f7f9fb;
-  --muted: #1a252e;
+  --secondary: #1e293b;
+  --secondary-foreground: #f8fafc;
+  --muted: #1e293b;
   --muted-foreground: #94a3b8;
-  --accent: #10b98120;
-  --accent-foreground: #34d399;
-  --destructive: #f87171;
-  --destructive-foreground: #ffffff;
-  --border: #1a252e;
-  --input: #1a252e;
-  --ring: #34d399;
+  --accent: #1e293b;
+  --accent-foreground: #f8fafc;
+  --destructive: #ef4444;
+  --destructive-foreground: #f8fafc;
+  --border: #1e293b;
+  --input: #1e293b;
+  --ring: #10b981;
 
-  --sidebar: #070c10;
-  --sidebar-foreground: #f7f9fb;
+  --sidebar: #0f172a;
+  --sidebar-foreground: #f8fafc;
   --sidebar-primary: #10b981;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #0f161c;
-  --sidebar-accent-foreground: #f7f9fb;
-  --sidebar-border: #1a252e;
-  --sidebar-ring: #34d399;
+  --sidebar-accent: #1e293b;
+  --sidebar-accent-foreground: #f8fafc;
+  --sidebar-border: #1e293b;
+  --sidebar-ring: #10b981;
 
-  /* Refined Alert Colors - Dark Mode */
+  /* Refined Alert Colors - Dark Mode Original */
   --alert-info-bg: rgba(30, 58, 138, 0.2);
   --alert-info-text: #60a5fa;
   --alert-info-border: rgba(59, 130, 246, 0.3);
@@ -132,6 +137,11 @@
   --chart-3: #fbbf24;
   --chart-4: #a7f3d0;
   --chart-5: #6ee7b7;
+
+  /* Compatibility Variables - Dark */
+  --header-bg: rgba(12, 18, 32, 0.95);
+  --primary-translucent: rgba(16, 185, 129, 0.1);
+  --primary-translucent-hover: rgba(16, 185, 129, 0.2);
 }
 
 @layer base {
@@ -144,6 +154,10 @@
   }
 
   body {
+    /* Fallback for older browsers that don't support CSS variables */
+    background-color: #fbfbf9;
+    color: #0c1220;
+    /* Modern browsers will use these */
     background-color: var(--background);
     color: var(--foreground);
     margin: 0;
@@ -151,6 +165,38 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     transition: background-color 0.5s cubic-bezier(0.4, 0, 0.2, 1), color 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Dark mode fallback for older browsers */
+  .dark body,
+  html.dark body {
+    background-color: #0c1220;
+    color: #f8fafc;
+    background-color: var(--background);
+    color: var(--foreground);
+  }
+
+  /* Additional dark mode root fallback */
+  html.dark {
+    background-color: #0c1220;
+    color-scheme: dark;
+  }
+
+  /* Dark mode fallback for main content areas */
+  .dark main,
+  html.dark main {
+    background-color: #0c1220;
+  }
+
+  /* Dark mode fallback for cards and containers */
+  .dark .bg-card,
+  html.dark .bg-card {
+    background-color: #0c1220;
+  }
+
+  .dark .bg-background,
+  html.dark .bg-background {
+    background-color: #0c1220;
   }
 }
 
