@@ -31,12 +31,16 @@ export function useImportPtb() {
       }
       return result.data
     },
-    onSuccess: (data) => {
+    onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ['customers'] })
       queryClient.invalidateQueries({ queryKey: ['vendors'] })
+      queryClient.invalidateQueries({ queryKey: ['chart-of-accounts'] })
+      queryClient.invalidateQueries({ queryKey: ['items'] })
+      queryClient.invalidateQueries({ queryKey: ['employees'] })
+
       toast({
         title: 'Import Successful',
-        description: `Imported ${data?.customers} customers and ${data?.vendors} vendors from Peachtree`,
+        description: `Imported ${data?.customers} customers, ${data?.vendors} vendors, ${data?.accounts} accounts, ${data?.items} items, and ${data?.employees} employees.`,
       })
     },
     onError: (error: Error) => {

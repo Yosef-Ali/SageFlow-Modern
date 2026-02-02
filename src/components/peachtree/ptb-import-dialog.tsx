@@ -127,8 +127,14 @@ export function PtbImportDialog() {
               <span className="flex items-center gap-1">
                 <CheckCircle className="h-3 w-3 text-green-500" /> Chart of Accounts
               </span>
-              <span className="flex items-center gap-1 text-muted-foreground/50">
-                ⌛ Operations (Soon)
+              <span className="flex items-center gap-1">
+                <CheckCircle className="h-3 w-3 text-green-500" /> Inventory Items
+              </span>
+              <span className="flex items-center gap-1">
+                <CheckCircle className="h-3 w-3 text-green-500" /> Employees
+              </span>
+              <span className="flex items-center gap-1">
+                <CheckCircle className="h-3 w-3 text-green-500" /> Journal Entries
               </span>
             </div>
           </div>
@@ -149,15 +155,27 @@ export function PtbImportDialog() {
             <div className="bg-secondary/30 rounded-lg p-4 space-y-3">
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Customers:</span>
-                <span className="font-medium">{data?.customers || 0}</span>
+                <span className="font-medium">{(data as any)?.customers || 0}</span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Vendors:</span>
-                <span className="font-medium">{data?.vendors || 0}</span>
+                <span className="font-medium">{(data as any)?.vendors || 0}</span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Accounts:</span>
-                <span className="font-medium">{data?.accounts || 0}</span>
+                <span className="font-medium">{(data as any)?.accounts || 0}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Inventory Items:</span>
+                <span className="font-medium">{(data as any)?.items || 0}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Employees:</span>
+                <span className="font-medium">{(data as any)?.employees || 0}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Journal Entries:</span>
+                <span className="font-medium">{(data as any)?.journals || 0}</span>
               </div>
             </div>
 
