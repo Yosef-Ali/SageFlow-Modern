@@ -70,10 +70,10 @@ export default function ImportExportPage() {
           <h1 className="text-3xl font-bold">Import & Export</h1>
           <p className="text-muted-foreground mt-1">Manage data migration, backups and audit reports</p>
         </div>
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800">
-          <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-          <span className="text-xs font-medium text-emerald-700 dark:text-emerald-400">
-            {import.meta.env.VITE_SUPABASE_URL ? 'Database Connected' : 'Connection Error'}
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary-subtle border border-emerald-500/20 dark:border-emerald-500/30 backdrop-blur-sm">
+          <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)] animate-pulse" />
+          <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-400">
+            {import.meta.env.VITE_SUPABASE_URL ? 'System Online / ሲስተሙ ዝግጁ ነው' : 'Connection Error'}
           </span>
         </div>
       </div>
@@ -191,71 +191,71 @@ export default function ImportExportPage() {
               <CardDescription>Download your data in CSV format for analysis or backup.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
-              <div className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50">
+              <div className="flex items-center justify-between p-3 border rounded-lg hover:bg-emerald-50/50 dark:hover:bg-emerald-950/20 transition-all group">
                 <div className="space-y-0.5">
                   <div className="font-medium flex items-center text-sm">
-                    <Users className="w-4 h-4 mr-2 text-blue-500" />
+                    <Users className="w-4 h-4 mr-2 text-emerald-600 group-hover:scale-110 transition-transform" />
                     Customers (ደንበኞች)
                   </div>
                   <p className="text-xs text-muted-foreground">Export all customer profiles</p>
                 </div>
-                <Button variant="outline" size="sm" onClick={() => exportCustomers.mutate()} disabled={exportCustomers.isPending}>
+                <Button variant="outline" size="sm" onClick={() => exportCustomers.mutate()} disabled={exportCustomers.isPending} className="hover:bg-emerald-600 hover:text-white">
                   {exportCustomers.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4 mr-1" />}
                   CSV
                 </Button>
               </div>
 
-              <div className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50">
+              <div className="flex items-center justify-between p-3 border rounded-lg hover:bg-emerald-50/50 dark:hover:bg-emerald-950/20 transition-all group">
                 <div className="space-y-0.5">
                   <div className="font-medium flex items-center text-sm">
-                    <Building2 className="w-4 h-4 mr-2 text-purple-500" />
+                    <Building2 className="w-4 h-4 mr-2 text-emerald-600 group-hover:scale-110 transition-transform" />
                     Vendors (አቅራቢዎች)
                   </div>
                   <p className="text-xs text-muted-foreground">Export all vendor profiles</p>
                 </div>
-                <Button variant="outline" size="sm" onClick={() => exportVendors.mutate()} disabled={exportVendors.isPending}>
+                <Button variant="outline" size="sm" onClick={() => exportVendors.mutate()} disabled={exportVendors.isPending} className="hover:bg-emerald-600 hover:text-white">
                   {exportVendors.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4 mr-1" />}
                   CSV
                 </Button>
               </div>
 
-              <div className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50">
+              <div className="flex items-center justify-between p-3 border rounded-lg hover:bg-emerald-50/50 dark:hover:bg-emerald-950/20 transition-all group">
                 <div className="space-y-0.5">
                   <div className="font-medium flex items-center text-sm">
-                    <BookOpen className="w-4 h-4 mr-2 text-emerald-500" />
+                    <BookOpen className="w-4 h-4 mr-2 text-emerald-600 group-hover:scale-110 transition-transform" />
                     Chart of Accounts
                   </div>
                   <p className="text-xs text-muted-foreground">Export GL account structure</p>
                 </div>
-                <Button variant="outline" size="sm" onClick={() => exportChartOfAccounts.mutate()} disabled={exportChartOfAccounts.isPending}>
+                <Button variant="outline" size="sm" onClick={() => exportChartOfAccounts.mutate()} disabled={exportChartOfAccounts.isPending} className="hover:bg-emerald-600 hover:text-white">
                   {exportChartOfAccounts.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4 mr-1" />}
                   CSV
                 </Button>
               </div>
 
-              <div className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50">
+              <div className="flex items-center justify-between p-3 border rounded-lg hover:bg-emerald-50/50 dark:hover:bg-emerald-950/20 transition-all group">
                 <div className="space-y-0.5">
                   <div className="font-medium flex items-center text-sm">
-                    <Database className="w-4 h-4 mr-2 text-orange-500" />
+                    <Database className="w-4 h-4 mr-2 text-emerald-600 group-hover:scale-110 transition-transform" />
                     Inventory Items (እቃዎች)
                   </div>
                   <p className="text-xs text-muted-foreground">Export all products and services</p>
                 </div>
-                <Button variant="outline" size="sm" onClick={() => exportItems.mutate()} disabled={exportItems.isPending}>
+                <Button variant="outline" size="sm" onClick={() => exportItems.mutate()} disabled={exportItems.isPending} className="hover:bg-emerald-600 hover:text-white">
                   {exportItems.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4 mr-1" />}
                   CSV
                 </Button>
               </div>
 
-              <div className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50">
+              <div className="flex items-center justify-between p-3 border rounded-lg hover:bg-emerald-50/50 dark:hover:bg-emerald-950/20 transition-all group">
                 <div className="space-y-0.5">
                   <div className="font-medium flex items-center text-sm">
-                    <Users className="w-4 h-4 mr-2 text-cyan-500" />
+                    <Users className="w-4 h-4 mr-2 text-emerald-600 group-hover:scale-110 transition-transform" />
                     Employees (ሰራተኞች)
                   </div>
                   <p className="text-xs text-muted-foreground">Export employee records</p>
                 </div>
-                <Button variant="outline" size="sm" onClick={() => exportEmployees.mutate()} disabled={exportEmployees.isPending}>
+                <Button variant="outline" size="sm" onClick={() => exportEmployees.mutate()} disabled={exportEmployees.isPending} className="hover:bg-emerald-600 hover:text-white">
                   {exportEmployees.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4 mr-1" />}
                   CSV
                 </Button>
@@ -269,15 +269,15 @@ export default function ImportExportPage() {
               <CardDescription>Generate a complete backup file (.ptb) compatible with Sage 50 / Peachtree.</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="flex items-center justify-between p-4 border rounded-lg bg-slate-50 dark:bg-slate-900">
+              <div className="flex items-center justify-between p-4 border border-emerald-100 dark:border-emerald-800/50 rounded-lg bg-emerald-50/30 dark:bg-emerald-950/20 backdrop-blur-sm shadow-inner group">
                 <div className="space-y-1">
-                  <div className="font-medium flex items-center">
-                    <Database className="w-4 h-4 mr-2 text-emerald-600" />
+                  <div className="font-semibold flex items-center text-emerald-900 dark:text-emerald-100">
+                    <Database className="w-4 h-4 mr-2 text-emerald-600 transition-transform group-hover:scale-110" />
                     Full Backup (.ptb)
                   </div>
-                  <p className="text-sm text-muted-foreground">All data: Customers, Vendors, Inventory, GL</p>
+                  <p className="text-sm text-emerald-700/70 dark:text-emerald-300/60">All data: Customers, Vendors, Inventory, GL</p>
                 </div>
-                <Button disabled>
+                <Button disabled className="bg-emerald-600/10 text-emerald-600 border-emerald-200">
                   <Download className="w-4 h-4 mr-2" />
                   Coming Soon
                 </Button>

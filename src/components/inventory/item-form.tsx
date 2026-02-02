@@ -1,5 +1,5 @@
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -100,6 +100,33 @@ export function ItemForm({ item, onSuccess }: ItemFormProps) {
       weightUnit: item?.weightUnit || 'Kg',
     },
   })
+
+  // Update form when item data is loaded
+  useEffect(() => {
+    if (item) {
+      form.reset({
+        sku: item.sku || '',
+        name: item.name || '',
+        description: item.description || '',
+        categoryId: item.categoryId || '',
+        unitOfMeasure: item.unitOfMeasure || 'Each',
+        type: item.type || 'PRODUCT',
+        costPrice: item.costPrice ? Number(item.costPrice) : 0,
+        sellingPrice: item.sellingPrice ? Number(item.sellingPrice) : 0,
+        reorderPoint: item.reorderPoint ? Number(item.reorderPoint) : 0,
+        reorderQuantity: item.reorderQuantity ? Number(item.reorderQuantity) : 0,
+        quantityOnHand: item.quantityOnHand ? Number(item.quantityOnHand) : 0,
+        isActive: item.isActive ?? true,
+        sellingPrice2: item.sellingPrice2 ? Number(item.sellingPrice2) : undefined,
+        sellingPrice3: item.sellingPrice3 ? Number(item.sellingPrice3) : undefined,
+        taxable: item.taxable ?? true,
+        barcode: item.barcode || '',
+        location: item.location || '',
+        weight: item.weight ? Number(item.weight) : undefined,
+        weightUnit: item.weightUnit || 'Kg',
+      })
+    }
+  }, [item, form])
 
   const onSubmit = async (data: ItemFormValues) => {
     setFormError(null)

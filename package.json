@@ -20,10 +20,15 @@
     "db:seed": "tsx src/db/seed.ts",
     "migrate:peachtree": "tsx src/scripts/migrate-peachtree.ts",
     "electron:dev": "concurrently \"pnpm dev\" \"wait-on http://localhost:3000 && electron .\"",
-    "electron:build": "pnpm build && pnpm electron:assemble && electron-builder --win --x64",
-    "electron:build:mac": "pnpm build && pnpm electron:assemble && electron-builder --mac",
     "electron:assemble": "node scripts/assemble.js",
-    "portable:build": "pnpm build && node scripts/build-portable.js"
+    "electron:build": "pnpm build && pnpm electron:assemble && electron-builder --win --x64",
+    "electron:build:win": "pnpm build && pnpm electron:assemble && electron-builder --win",
+    "electron:build:win:installer": "pnpm build && pnpm electron:assemble && electron-builder --win nsis",
+    "electron:build:win:portable": "pnpm build && pnpm electron:assemble && electron-builder --win portable",
+    "electron:build:win:all": "pnpm build && pnpm electron:assemble && electron-builder --win nsis portable zip",
+    "electron:build:mac": "pnpm build && pnpm electron:assemble && electron-builder --mac",
+    "electron:build:linux": "pnpm build && pnpm electron:assemble && electron-builder --linux",
+    "electron:build:all": "pnpm build && pnpm electron:assemble && electron-builder --mac --win --linux"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
@@ -102,24 +107,97 @@
   "build": {
     "appId": "com.sageflow.modern",
     "productName": "SageFlow Modern",
+    "artifactName": "${productName}-${version}-${os}-${arch}.${ext}",
     "directories": {
-      "output": "release"
+      "output": "release",
+      "buildResources": "build"
     },
     "files": [
-      "dist/**/*",
       "electron/**/*",
-      "package.json"
+      "package.json",
+      "!node_modules/**/*",
+      "!src/**/*",
+      "!public/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": ".env.local",
+        "to": ".env.local",
+        "filter": ["**/*"]
+      }
     ],
     "mac": {
       "category": "public.app-category.finance",
       "target": [
-        "dmg",
-        "zip"
+        {
+          "target": "dmg",
+          "arch": ["arm64", "x64"]
+        },
+        {
+          "target": "zip",
+          "arch": ["arm64", "x64"]
+        }
       ],
-      "icon": "portable/icon.png"
+      "icon": "portable/icon.png",
+      "hardenedRuntime": false,
+      "gatekeeperAssess": false,
+      "darkModeSupport": true,
+      "type": "distribution"
+    },
+    "dmg": {
+      "contents": [
+        {
+          "x": 130,
+          "y": 220
+        },
+        {
+          "x": 410,
+          "y": 220,
+          "type": "link",
+          "path": "/Applications"
+        }
+      ],
+      "window": {
+        "width": 540,
+        "height": 380
+      }
     },
     "win": {
-      "target": "nsis",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        },
+        {
+          "target": "portable",
+          "arch": ["x64"]
+        },
+        {
+          "target": "zip",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "portable/icon.png",
+      "legalTrademarks": "SageFlow Modern Accounting",
+      "requestedExecutionLevel": "asInvoker"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "allowElevation": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "SageFlow Modern",
+      "menuCategory": "SageFlow",
+      "license": "LICENSE"
+    },
+    "portable": {
+      "artifactName": "${productName}-${version}-Portable.${ext}"
+    },
+    "linux": {
+      "target": ["AppImage", "deb"],
+      "category": "Finance",
       "icon": "portable/icon.png"
     }
   }

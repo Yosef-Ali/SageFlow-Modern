@@ -4,6 +4,35 @@ import { logAuditAction } from "./audit-actions"
 import { verifyRole } from "./auth-helpers"
 export type { ItemFormValues, ItemFiltersValues, AssemblyFormValues }
 
+function mapItemFromDb(dbItem: any) {
+  if (!dbItem) return null
+  return {
+    id: dbItem.id,
+    sku: dbItem.sku,
+    name: dbItem.name,
+    description: dbItem.description || '',
+    categoryId: dbItem.category_id,
+    unitOfMeasure: dbItem.unit_of_measure || 'Each',
+    type: dbItem.type || 'PRODUCT',
+    costPrice: dbItem.cost_price,
+    sellingPrice: dbItem.selling_price,
+    reorderPoint: dbItem.reorder_point,
+    reorderQuantity: dbItem.reorder_quantity,
+    quantityOnHand: dbItem.quantity_on_hand,
+    isActive: dbItem.is_active,
+    sellingPrice2: dbItem.selling_price_2,
+    sellingPrice3: dbItem.selling_price_3,
+    taxable: dbItem.taxable,
+    barcode: dbItem.barcode || '',
+    location: dbItem.location || '',
+    weight: dbItem.weight,
+    weightUnit: dbItem.weight_unit || 'Kg',
+    category: dbItem.category, // Assuming it's already joined or handled
+    createdAt: dbItem.created_at,
+    updatedAt: dbItem.updated_at,
+  }
+}
+
 // ============ Peachtree-style Adjustment Number Generation ============
 
 /**
@@ -76,11 +105,11 @@ export async function getItems(companyId: string, filters?: Partial<ItemFiltersV
       }
     }
 
-    // Map categories to Items
-    const data = items.map(item => ({
+    // Map categories to Items and use mapper, filter out nulls
+    const data = items.map(item => mapItemFromDb({
       ...item,
       category: categoriesMap[item.category_id] || null
-    }))
+    })).filter((item): item is NonNullable<typeof item> => item !== null)
 
     return { success: true, data }
   } catch (error: any) {
@@ -114,10 +143,10 @@ export async function getItem(id: string) {
 
     return {
       success: true,
-      data: {
+      data: mapItemFromDb({
         ...item,
         category
-      }
+      })
     }
   } catch (error) {
     console.error("Error fetching item:", error)
@@ -142,9 +171,18 @@ export async function createItem(data: ItemFormValues & { companyId: string }) {
       selling_price: data.sellingPrice,
       reorder_point: data.reorderPoint,
       reorder_quantity: data.reorderQuantity,
+      quantity_on_hand: data.quantityOnHand,
       category_id: data.categoryId,
-      unit_of_measure: 'Each',
-      // Add other mapped fields
+      unit_of_measure: data.unitOfMeasure,
+      type: data.type,
+      is_active: data.isActive,
+      selling_price_2: data.sellingPrice2,
+      selling_price_3: data.sellingPrice3,
+      taxable: data.taxable,
+      barcode: data.barcode,
+      location: data.location,
+      weight: data.weight,
+      weight_unit: data.weightUnit,
     }).select().single()
 
     if (error) throw error
@@ -177,6 +215,20 @@ export async function updateItem(id: string, data: ItemFormValues) {
       description: data.description,
       cost_price: data.costPrice,
       selling_price: data.sellingPrice,
+      reorder_point: data.reorderPoint,
+      reorder_quantity: data.reorderQuantity,
+      quantity_on_hand: data.quantityOnHand,
+      category_id: data.categoryId,
+      unit_of_measure: data.unitOfMeasure,
+      type: data.type,
+      is_active: data.isActive,
+      selling_price_2: data.sellingPrice2,
+      selling_price_3: data.sellingPrice3,
+      taxable: data.taxable,
+      barcode: data.barcode,
+      location: data.location,
+      weight: data.weight,
+      weight_unit: data.weightUnit,
       updated_at: new Date()
     }).eq('id', id)
 

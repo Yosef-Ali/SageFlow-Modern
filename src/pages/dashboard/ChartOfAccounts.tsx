@@ -4,7 +4,7 @@ import { Plus, Search, Layers, MoreVertical, FileDown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { DashboardHeader } from '@/components/dashboard/header'
-import { useAccounts } from '@/hooks/use-accounts'
+import { useAccounts, useDeleteAccount } from '@/hooks/use-accounts'
 import {
   Table,
   TableBody,
@@ -23,10 +23,22 @@ import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { formatCurrency } from '@/lib/utils'
 import { useToast } from '@/components/ui/use-toast'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 export default function ChartOfAccountsPage() {
   const [search, setSearch] = useState('')
+  const [accountToDelete, setAccountToDelete] = useState<{ id: string, name: string } | null>(null)
   const { data: accounts, isLoading, error } = useAccounts({ search })
+  const deleteAccount = useDeleteAccount()
   const { toast } = useToast()
 
   if (error) {
@@ -50,6 +62,17 @@ export default function ChartOfAccountsPage() {
        title: "Export Available",
        description: "Go to Settings > Import & Export to download these accounts."
      })
+  }
+
+  const handleDelete = async () => {
+    if (!accountToDelete) return
+    
+    try {
+      await deleteAccount.mutateAsync(accountToDelete.id)
+      setAccountToDelete(null)
+    } catch (err) {
+      // Error handling is handled in the hook's onError
+    }
   }
 
   return (
@@ -123,6 +146,12 @@ export default function ChartOfAccountsPage() {
                         <Link to={`/dashboard/chart-of-accounts/${account.id}/edit`}>
                           <DropdownMenuItem>Edit</DropdownMenuItem>
                         </Link>
+                        <DropdownMenuItem 
+                          className="text-red-600 focus:text-red-600 focus:bg-red-50"
+                          onClick={() => setAccountToDelete({ id: account.id, name: account.account_name })}
+                        >
+                          Delete
+                        </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
@@ -145,6 +174,27 @@ export default function ChartOfAccountsPage() {
           </Link>
         </div>
       )}
+
+      <AlertDialog open={!!accountToDelete} onOpenChange={(open) => !open && setAccountToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will deactivate the account <strong>{accountToDelete?.name}</strong>. 
+              It will no longer appear in your active Chart of Accounts.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDelete}
+              className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
+            >
+              {deleteAccount.isPending ? "Deleting..." : "Delete Account"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

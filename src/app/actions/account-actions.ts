@@ -15,7 +15,12 @@ export async function getChartOfAccounts(companyId: string, filters?: { type?: s
     if (!companyId) {
       return { success: false, error: "Company ID is required" }
     }
-    let query = supabase.from('chart_of_accounts').select('*').eq('company_id', companyId).order('account_number', { ascending: true })
+    let query = supabase
+      .from('chart_of_accounts')
+      .select('*')
+      .eq('company_id', companyId)
+      .eq('is_active', true)
+      .order('account_number', { ascending: true })
 
     if (filters?.type && filters.type !== 'all') {
       query = query.eq('type', filters.type)

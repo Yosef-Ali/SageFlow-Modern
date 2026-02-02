@@ -34,6 +34,16 @@ export interface ParsedCSVAccount {
   balance?: number;
 }
 
+export interface ParsedCSVItem {
+  itemId: string;
+  description: string;
+  cost: number;
+  price: number;
+  quantity: number;
+  unit?: string;
+  category?: string;
+}
+
 export interface CSVParseResult<T> {
   success: boolean;
   data: T[];
@@ -262,15 +272,59 @@ function guessAccountType(name: string, typeHint: string): 'ASSET' | 'LIABILITY'
 }
 
 /**
+ * Parse Inventory Items CSV
+ */
+export function parseItemsCSV(text: string): CSVParseResult<ParsedCSVItem> {
+  try {
+    const { headers, rows } = parseCSVText(text);
+
+    if (rows.length === 0) {
+      return { success: false, data: [], headers, totalRows: 0, error: 'No data rows found' };
+    }
+
+    const idCol = findColumn(headers, 'id', 'item_id', 'itemid', 'sku', 'part', 'part_number', 'code', 'item_number');
+    const descCol = findColumn(headers, 'description', 'desc', 'name', 'item_name', 'product', 'title');
+    const costCol = findColumn(headers, 'cost', 'unit_cost', 'cost_price', 'purchase_price');
+    const priceCol = findColumn(headers, 'price', 'unit_price', 'sales_price', 'sell_price', 'selling_price');
+    const qtyCol = findColumn(headers, 'quantity', 'qty', 'stock', 'on_hand', 'quantity_on_hand', 'inventory');
+    const unitCol = findColumn(headers, 'unit', 'uom', 'unit_of_measure');
+    const categoryCol = findColumn(headers, 'category', 'type', 'item_type', 'class');
+
+    const effectiveIdCol = idCol !== -1 ? idCol : 0;
+    const effectiveDescCol = descCol !== -1 ? descCol : (idCol === 0 ? 1 : 0);
+
+    const items: ParsedCSVItem[] = rows.map((row, idx) => ({
+      itemId: row[effectiveIdCol] || `ITEM-${idx + 1000}`,
+      description: row[effectiveDescCol] || row[0] || `Item ${idx + 1}`,
+      cost: costCol !== -1 ? parseFloat(row[costCol]?.replace(/[,$]/g, '')) || 0 : 0,
+      price: priceCol !== -1 ? parseFloat(row[priceCol]?.replace(/[,$]/g, '')) || 0 : 0,
+      quantity: qtyCol !== -1 ? parseInt(row[qtyCol]?.replace(/[,]/g, '')) || 0 : 0,
+      unit: unitCol !== -1 ? row[unitCol] : undefined,
+      category: categoryCol !== -1 ? row[categoryCol] : undefined,
+    })).filter(i => i.description && i.description.trim().length > 0);
+
+    return {
+      success: true,
+      data: items,
+      headers,
+      totalRows: rows.length,
+    };
+  } catch (error: any) {
+    return { success: false, data: [], headers: [], totalRows: 0, error: error.message };
+  }
+}
+
+/**
  * Auto-detect CSV type from content
  */
-export function detectCSVType(text: string): 'customers' | 'vendors' | 'accounts' | 'unknown' {
+export function detectCSVType(text: string): 'customers' | 'vendors' | 'accounts' | 'inventory' | 'unknown' {
   const lowerText = text.toLowerCase();
   const firstLines = lowerText.split('\n').slice(0, 3).join(' ');
-  
+
   if (/customer|client|buyer/i.test(firstLines)) return 'customers';
   if (/vendor|supplier|payable/i.test(firstLines)) return 'vendors';
   if (/account|chart|gl|ledger|debit|credit/i.test(firstLines)) return 'accounts';
-  
+  if (/item|inventory|sku|product|part|stock|quantity/i.test(firstLines)) return 'inventory';
+
   return 'unknown';
 }

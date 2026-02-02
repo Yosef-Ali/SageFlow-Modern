@@ -27,30 +27,6 @@ export default function EditItemPage() {
     )
   }
 
-  // Map DB fields to form fields
-  const formItem = {
-    id: item.id,
-    sku: item.sku,
-    name: item.name,
-    description: item.description,
-    categoryId: item.category_id,
-    unitOfMeasure: item.unit_of_measure || 'Each',
-    type: item.type || 'PRODUCT',
-    costPrice: item.cost_price,
-    sellingPrice: item.selling_price,
-    reorderPoint: item.reorder_point,
-    reorderQuantity: item.reorder_quantity,
-    quantityOnHand: item.quantity_on_hand,
-    isActive: item.is_active,
-    sellingPrice2: item.selling_price_2,
-    sellingPrice3: item.selling_price_3,
-    taxable: item.taxable,
-    barcode: item.barcode,
-    location: item.location,
-    weight: item.weight,
-    weightUnit: item.weight_unit,
-  }
-
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4">
@@ -64,7 +40,7 @@ export default function EditItemPage() {
       </div>
 
       <ItemForm
-        item={formItem}
+        item={item}
         onSuccess={() => navigate(`/dashboard/inventory/${id}`)}
       />
     </div>

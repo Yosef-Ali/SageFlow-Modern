@@ -3,18 +3,16 @@
  * Imports CSV files to Supabase
  */
 
-import { 
-  parseCustomersCSV, 
-  parseVendorsCSV, 
+import {
+  parseCustomersCSV,
+  parseVendorsCSV,
   parseAccountsCSV,
+  parseItemsCSV,
   detectCSVType,
-  type ParsedCSVCustomer,
-  type ParsedCSVVendor,
-  type ParsedCSVAccount,
 } from './csv-parser';
 import { supabase } from '@/lib/supabase';
 
-export type CSVImportType = 'customers' | 'vendors' | 'accounts' | 'auto';
+export type CSVImportType = 'customers' | 'vendors' | 'accounts' | 'inventory' | 'auto';
 
 export interface CSVImportResult {
   success: boolean;
@@ -244,6 +242,73 @@ export async function importAccountsCSV(file: File): Promise<CSVImportResult> {
 }
 
 /**
+ * Import Inventory Items from CSV
+ */
+export async function importItemsCSV(file: File): Promise<CSVImportResult> {
+  try {
+    const text = await readFileAsText(file);
+    const parseResult = parseItemsCSV(text);
+
+    if (!parseResult.success || parseResult.data.length === 0) {
+      return {
+        success: false,
+        type: 'inventory',
+        imported: 0,
+        total: 0,
+        samples: [],
+        error: parseResult.error || 'No inventory items found in CSV',
+      };
+    }
+
+    const companyId = await getCompanyId();
+
+    const records = parseResult.data.map(item => ({
+      company_id: companyId,
+      item_number: item.itemId,
+      name: item.description,
+      description: item.description,
+      cost_price: item.cost.toString(),
+      sales_price: item.price.toString(),
+      quantity_on_hand: item.quantity,
+      unit_of_measure: item.unit || 'Each',
+      item_type: 'inventory_part',
+      is_active: true,
+    }));
+
+    const { error } = await supabase.from('items').insert(records);
+
+    if (error) {
+      console.error('[CSV Import] Items insert error:', error);
+      return {
+        success: false,
+        type: 'inventory',
+        imported: 0,
+        total: parseResult.data.length,
+        samples: [],
+        error: error.message,
+      };
+    }
+
+    return {
+      success: true,
+      type: 'inventory',
+      imported: records.length,
+      total: parseResult.totalRows,
+      samples: parseResult.data.slice(0, 5).map(i => i.description),
+    };
+  } catch (error: any) {
+    return {
+      success: false,
+      type: 'inventory',
+      imported: 0,
+      total: 0,
+      samples: [],
+      error: error.message,
+    };
+  }
+}
+
+/**
  * Auto-detect and import CSV
  */
 export async function importCSVAuto(file: File): Promise<CSVImportResult> {
@@ -257,6 +322,8 @@ export async function importCSVAuto(file: File): Promise<CSVImportResult> {
       return importVendorsCSV(file);
     case 'accounts':
       return importAccountsCSV(file);
+    case 'inventory':
+      return importItemsCSV(file);
     default:
       return {
         success: false,

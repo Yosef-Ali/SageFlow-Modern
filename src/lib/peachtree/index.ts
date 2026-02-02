@@ -25,10 +25,12 @@ export {
   parseCustomersCSV,
   parseVendorsCSV,
   parseAccountsCSV,
+  parseItemsCSV,
   detectCSVType,
   type ParsedCSVCustomer,
   type ParsedCSVVendor,
   type ParsedCSVAccount,
+  type ParsedCSVItem,
   type CSVParseResult,
 } from './csv-parser';
 
@@ -37,6 +39,7 @@ export {
   importCustomersCSV,
   importVendorsCSV,
   importAccountsCSV,
+  importItemsCSV,
   importCSVAuto,
   type CSVImportResult,
   type CSVImportType,

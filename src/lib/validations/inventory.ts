@@ -6,18 +6,26 @@ export const itemFiltersSchema = z.object({
 })
 
 export const itemSchema = z.object({
-  name: z.string().min(1, 'Item name is required'),
   sku: z.string().min(1, 'SKU is required'),
+  name: z.string().min(1, 'Name is required'),
   description: z.string().optional(),
   categoryId: z.string().optional(),
-  unitOfMeasure: z.string().default('PCS'),
+  unitOfMeasure: z.string().min(1, 'Unit of measure is required'),
   type: z.enum(['PRODUCT', 'SERVICE', 'BUNDLE']).default('PRODUCT'),
-  costPrice: z.number().min(0).default(0),
-  sellingPrice: z.number().min(0).default(0),
+  costPrice: z.number().min(0, 'Cost price must be positive'),
+  sellingPrice: z.number().min(0, 'Selling price must be positive'),
   reorderPoint: z.number().min(0).default(0),
   reorderQuantity: z.number().min(0).default(0),
   quantityOnHand: z.number().min(0).default(0),
-  isActive: z.boolean().default(true)
+  isActive: z.boolean().default(true),
+  // Peachtree-standard fields
+  sellingPrice2: z.number().min(0).optional(),
+  sellingPrice3: z.number().min(0).optional(),
+  taxable: z.boolean().default(true),
+  barcode: z.string().optional(),
+  location: z.string().optional(),
+  weight: z.number().min(0).optional(),
+  weightUnit: z.string().default('Kg'),
 })
 
 export const assemblySchema = z.object({

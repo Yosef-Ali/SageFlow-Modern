@@ -54,10 +54,10 @@ export default function ItemDetailPage() {
     )
   }
 
-  const quantityOnHand = Number(item.quantity_on_hand) || 0
-  const reorderPoint = Number(item.reorder_point) || 0
-  const costPrice = Number(item.cost_price) || 0
-  const sellingPrice = Number(item.selling_price) || 0
+  const quantityOnHand = Number(item.quantityOnHand) || 0
+  const reorderPoint = Number(item.reorderPoint) || 0
+  const costPrice = Number(item.costPrice) || 0
+  const sellingPrice = Number(item.sellingPrice) || 0
   const isLowStock = quantityOnHand <= reorderPoint && reorderPoint > 0
 
   return (
@@ -71,12 +71,12 @@ export default function ItemDetailPage() {
           <div>
             <div className="flex items-center gap-3">
               <h1 className="text-3xl font-bold">{item.name}</h1>
-              <Badge variant={item.is_active ? 'default' : 'secondary'}>
-                {item.is_active ? 'Active' : 'Inactive'}
+              <Badge variant={item.isActive ? 'default' : 'secondary'}>
+                {item.isActive ? 'Active' : 'Inactive'}
               </Badge>
-              {isLowStock && (
+              {isLowStock ? (
                 <Badge variant="destructive">Low Stock</Badge>
-              )}
+              ) : null}
             </div>
             <p className="text-muted-foreground mt-1">
               SKU: {item.sku}
@@ -146,7 +146,7 @@ export default function ItemDetailPage() {
                   <BarChart3 className="h-5 w-5 text-muted-foreground mt-0.5" />
                   <div>
                     <p className="text-sm text-muted-foreground">Unit of Measure</p>
-                    <p className="font-medium">{item.unit_of_measure || 'Each'}</p>
+                    <p className="font-medium">{item.unitOfMeasure || 'Each'}</p>
                   </div>
                 </div>
                 {item.barcode && (
@@ -172,7 +172,7 @@ export default function ItemDetailPage() {
                     <Scale className="h-5 w-5 text-muted-foreground mt-0.5" />
                     <div>
                       <p className="text-sm text-muted-foreground">Weight</p>
-                      <p className="font-medium">{item.weight} {item.weight_unit || 'Kg'}</p>
+                      <p className="font-medium">{item.weight} {item.weightUnit || 'Kg'}</p>
                     </div>
                   </div>
                 )}
@@ -205,16 +205,16 @@ export default function ItemDetailPage() {
                   <p className="text-sm text-muted-foreground">Retail Price</p>
                   <p className="text-xl font-bold text-emerald-600">{formatCurrency(sellingPrice)}</p>
                 </div>
-                {item.selling_price_2 && (
+                {item.sellingPrice2 && (
                   <div>
                     <p className="text-sm text-muted-foreground">Wholesale (Lvl 2)</p>
-                    <p className="text-xl font-bold">{formatCurrency(Number(item.selling_price_2))}</p>
+                    <p className="text-xl font-bold">{formatCurrency(Number(item.sellingPrice2))}</p>
                   </div>
                 )}
-                {item.selling_price_3 && (
+                {item.sellingPrice3 && (
                   <div>
                     <p className="text-sm text-muted-foreground">Distributor (Lvl 3)</p>
-                    <p className="text-xl font-bold">{formatCurrency(Number(item.selling_price_3))}</p>
+                    <p className="text-xl font-bold">{formatCurrency(Number(item.sellingPrice3))}</p>
                   </div>
                 )}
               </div>
@@ -256,7 +256,7 @@ export default function ItemDetailPage() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Reorder Qty:</span>
-                  <span className="font-medium">{item.reorder_quantity || 0}</span>
+                  <span className="font-medium">{item.reorderQuantity || 0}</span>
                 </div>
               </div>
               <Separator />

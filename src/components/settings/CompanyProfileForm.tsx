@@ -22,6 +22,7 @@ const companyFormSchema = z.object({
   address: z.string().optional(),
   tax_id: z.string().optional(),
   currency: z.string().min(3, 'Currency is required'),
+  logo_url: z.string().url('Invalid URL format').optional().or(z.literal('')),
 })
 
 type CompanyFormValues = z.infer<typeof companyFormSchema>
@@ -41,6 +42,7 @@ export function CompanyProfileForm() {
       address: '',
       tax_id: '',
       currency: 'ETB',
+      logo_url: '',
     },
   })
 
@@ -53,6 +55,7 @@ export function CompanyProfileForm() {
         address: company.address || '',
         tax_id: company.tax_id || '',
         currency: company.currency || 'ETB',
+        logo_url: company.logo_url || '',
       })
     }
   }, [company, form])
@@ -95,6 +98,21 @@ export function CompanyProfileForm() {
     setIsUploading(false)
   }
 
+  const handleRemoveLogo = async () => {
+    if (!company) return
+    
+    setIsUploading(true)
+    const result = await updateProfile({ logo_url: null })
+    if (result?.success) {
+      form.setValue('logo_url', '')
+      toast({
+        title: "Logo removed",
+        description: "Your company logo has been removed."
+      })
+    }
+    setIsUploading(false)
+  }
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center p-12">
@@ -131,9 +149,22 @@ export function CompanyProfileForm() {
             >
                 <label htmlFor="logo-upload" className="cursor-pointer flex items-center justify-center">
                     {isUploading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Upload className="w-4 h-4 mr-2" />}
-                    {isUploading ? 'Uploading...' : 'Upload Logo'}
+                    {isUploading ? 'Uploading...' : 'Upload'}
                 </label>
             </Button>
+            {company?.logo_url && (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="w-full text-destructive hover:text-destructive"
+                onClick={handleRemoveLogo}
+                disabled={isUploading}
+                type="button"
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                Remove
+              </Button>
+            )}
           </div>
           <p className="text-[10px] text-muted-foreground text-center">
             Square PNG or JPG.<br />Max 2MB.
@@ -156,6 +187,31 @@ export function CompanyProfileForm() {
                 <Input id="name" {...form.register('name')} placeholder="Acme Corp" />
                 {form.formState.errors.name && (
                   <p className="text-xs text-destructive">{form.formState.errors.name.message}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="logo_url">Logo URL (Manual Override)</Label>
+                <div className="flex gap-2">
+                  <Input 
+                    id="logo_url" 
+                    {...form.register('logo_url')} 
+                    placeholder="https://example.com/logo.png" 
+                  />
+                  {form.watch('logo_url') && (
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      onClick={() => form.setValue('logo_url', '')}
+                      title="Clear URL"
+                      type="button"
+                    >
+                      <Trash2 className="h-4 w-4 text-muted-foreground" />
+                    </Button>
+                  )}
+                </div>
+                {form.formState.errors.logo_url && (
+                  <p className="text-xs text-destructive">{form.formState.errors.logo_url.message}</p>
                 )}
               </div>
 

@@ -1,22 +1,32 @@
-'use client'
+/**
+ * CSV Export Hooks
+ *
+ * React Query hooks for exporting data to CSV.
+ * Uses the consolidated csv module.
+ */
 
 import { useMutation } from '@tanstack/react-query'
 import {
-  exportCustomersToCSV,
-  exportVendorsToCSV,
-  exportChartOfAccountsToCSV,
-  exportJournalEntriesToCSV,
-  exportItemsToCSV,
-  exportEmployeesToCSV,
-} from '@/app/actions/peachtree-import-export'
+  exportCustomers,
+  exportVendors,
+  exportAccounts,
+  exportItems,
+  exportEmployees,
+  exportJournalEntries,
+  downloadCSV,
+  type ExportResult
+} from '@/lib/csv'
 import { useToast } from '@/components/ui/use-toast'
-import { analyzeImportedData } from '@/lib/gemini-service'
 import { useAuth } from '@/lib/auth-context'
+import { analyzeImportedData } from '@/lib/gemini-service'
 
 /**
- * Hook to export customers to CSV
+ * Generic export handler
  */
-export function useExportCustomers() {
+function useExportMutation(
+  exportFn: (companyId: string) => Promise<ExportResult>,
+  label: string
+) {
   const { toast } = useToast()
   const { user } = useAuth()
   const companyId = user?.companyId || ''
@@ -24,27 +34,17 @@ export function useExportCustomers() {
   return useMutation({
     mutationFn: async () => {
       if (!companyId) throw new Error('Company ID is required')
-      const result = await exportCustomersToCSV(companyId)
+      const result = await exportFn(companyId)
       if (!result.success) {
-        throw new Error(result.error)
+        throw new Error(result.error || `No ${label} found`)
       }
-      return result.data
+      return result
     },
-    onSuccess: (csvData) => {
-      // Download the CSV file
-      const blob = new Blob([csvData!], { type: 'text/csv;charset=utf-8;' })
-      const url = URL.createObjectURL(blob)
-      const link = document.createElement('a')
-      link.href = url
-      link.download = `customers_${new Date().toISOString().split('T')[0]}.csv`
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
-      URL.revokeObjectURL(url)
-
+    onSuccess: (result) => {
+      downloadCSV(result.data, result.filename)
       toast({
         title: 'Export Successful',
-        description: 'Customers exported to CSV',
+        description: `${result.count} ${label} exported to CSV`,
       })
     },
     onError: (error: Error) => {
@@ -55,221 +55,48 @@ export function useExportCustomers() {
       })
     },
   })
+}
+
+/**
+ * Hook to export customers to CSV
+ */
+export function useExportCustomers() {
+  return useExportMutation(exportCustomers, 'customers')
 }
 
 /**
  * Hook to export vendors to CSV
  */
 export function useExportVendors() {
-  const { toast } = useToast()
-  const { user } = useAuth()
-  const companyId = user?.companyId || ''
-
-  return useMutation({
-    mutationFn: async () => {
-      if (!companyId) throw new Error('Company ID is required')
-      const result = await exportVendorsToCSV(companyId)
-      if (!result.success) {
-        throw new Error(result.error)
-      }
-      return result.data
-    },
-    onSuccess: (csvData) => {
-      const blob = new Blob([csvData!], { type: 'text/csv;charset=utf-8;' })
-      const url = URL.createObjectURL(blob)
-      const link = document.createElement('a')
-      link.href = url
-      link.download = `vendors_${new Date().toISOString().split('T')[0]}.csv`
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
-      URL.revokeObjectURL(url)
-
-      toast({
-        title: 'Export Successful',
-        description: 'Vendors exported to CSV',
-      })
-    },
-    onError: (error: Error) => {
-      toast({
-        title: 'Export Failed',
-        description: error.message,
-        variant: 'destructive',
-      })
-    },
-  })
-}
-
-/**
- * Hook to export Journal Entries to CSV
- */
-export function useExportJournalEntries() {
-  const { toast } = useToast()
-  const { user } = useAuth()
-  const companyId = user?.companyId || ''
-
-  return useMutation({
-    mutationFn: async () => {
-      if (!companyId) throw new Error('Company ID is required')
-      const result = await exportJournalEntriesToCSV(companyId)
-      if (!result.success) {
-        throw new Error(result.error)
-      }
-      return result.data
-    },
-    onSuccess: (csvData) => {
-      const blob = new Blob([csvData!], { type: 'text/csv;charset=utf-8;' })
-      const url = URL.createObjectURL(blob)
-      const link = document.createElement('a')
-      link.href = url
-      link.download = `journal_entries_${new Date().toISOString().split('T')[0]}.csv`
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
-      URL.revokeObjectURL(url)
-
-      toast({
-        title: 'Export Successful',
-        description: 'Journal Entries exported to CSV',
-      })
-    },
-    onError: (error: Error) => {
-      toast({
-        title: 'Export Failed',
-        description: error.message,
-        variant: 'destructive',
-      })
-    },
-  })
+  return useExportMutation(exportVendors, 'vendors')
 }
 
 /**
  * Hook to export chart of accounts to CSV
  */
 export function useExportChartOfAccounts() {
-  const { toast } = useToast()
-  const { user } = useAuth()
-  const companyId = user?.companyId || ''
-
-  return useMutation({
-    mutationFn: async () => {
-      if (!companyId) throw new Error('Company ID is required')
-      const result = await exportChartOfAccountsToCSV(companyId)
-      if (!result.success) {
-        throw new Error(result.error)
-      }
-      return result.data
-    },
-    onSuccess: (csvData) => {
-      const blob = new Blob([csvData!], { type: 'text/csv;charset=utf-8;' })
-      const url = URL.createObjectURL(blob)
-      const link = document.createElement('a')
-      link.href = url
-      link.download = `chart_of_accounts_${new Date().toISOString().split('T')[0]}.csv`
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
-      URL.revokeObjectURL(url)
-
-      toast({
-        title: 'Export Successful',
-        description: 'Chart of Accounts exported to CSV',
-      })
-    },
-    onError: (error: Error) => {
-      toast({
-        title: 'Export Failed',
-        description: error.message,
-        variant: 'destructive',
-      })
-    },
-  })
+  return useExportMutation(exportAccounts, 'accounts')
 }
 
 /**
  * Hook to export inventory items to CSV
  */
 export function useExportItems() {
-  const { toast } = useToast()
-  const { user } = useAuth()
-  const companyId = user?.companyId || ''
-
-  return useMutation({
-    mutationFn: async () => {
-      if (!companyId) throw new Error('Company ID is required')
-      const result = await exportItemsToCSV(companyId)
-      if (!result.success) {
-        throw new Error(result.error)
-      }
-      return result.data
-    },
-    onSuccess: (csvData) => {
-      const blob = new Blob([csvData!], { type: 'text/csv;charset=utf-8;' })
-      const url = URL.createObjectURL(blob)
-      const link = document.createElement('a')
-      link.href = url
-      link.download = `inventory_items_${new Date().toISOString().split('T')[0]}.csv`
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
-      URL.revokeObjectURL(url)
-
-      toast({
-        title: 'Export Successful',
-        description: 'Inventory items exported to CSV (Peachtree format)',
-      })
-    },
-    onError: (error: Error) => {
-      toast({
-        title: 'Export Failed',
-        description: error.message,
-        variant: 'destructive',
-      })
-    },
-  })
+  return useExportMutation(exportItems, 'items')
 }
 
 /**
  * Hook to export employees to CSV
  */
 export function useExportEmployees() {
-  const { toast } = useToast()
-  const { user } = useAuth()
-  const companyId = user?.companyId || ''
+  return useExportMutation(exportEmployees, 'employees')
+}
 
-  return useMutation({
-    mutationFn: async () => {
-      if (!companyId) throw new Error('Company ID is required')
-      const result = await exportEmployeesToCSV(companyId)
-      if (!result.success) {
-        throw new Error(result.error)
-      }
-      return result.data
-    },
-    onSuccess: (csvData) => {
-      const blob = new Blob([csvData!], { type: 'text/csv;charset=utf-8;' })
-      const url = URL.createObjectURL(blob)
-      const link = document.createElement('a')
-      link.href = url
-      link.download = `employees_${new Date().toISOString().split('T')[0]}.csv`
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
-      URL.revokeObjectURL(url)
-
-      toast({
-        title: 'Export Successful',
-        description: 'Employees exported to CSV (Peachtree format)',
-      })
-    },
-    onError: (error: Error) => {
-      toast({
-        title: 'Export Failed',
-        description: error.message,
-        variant: 'destructive',
-      })
-    },
-  })
+/**
+ * Hook to export journal entries to CSV
+ */
+export function useExportJournalEntries() {
+  return useExportMutation(exportJournalEntries, 'journal entries')
 }
 
 /**

@@ -1,5 +1,5 @@
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -66,6 +66,42 @@ export function EmployeeForm({ employee, onSuccess }: EmployeeFormProps) {
       terminationDate: employee?.terminationDate ? new Date(employee.terminationDate).toISOString().split('T')[0] : '',
     },
   })
+
+  // Update form when employee data is loaded
+  useEffect(() => {
+    if (employee) {
+      form.reset({
+        employeeCode: employee.employeeCode || '',
+        firstName: employee.firstName || '',
+        lastName: employee.lastName || '',
+        jobTitle: employee.jobTitle || '',
+        department: employee.department || '',
+        email: employee.email || '',
+        phone: employee.phone || '',
+        ssn: employee.ssn || '',
+        payMethod: employee.payMethod || '',
+        payFrequency: employee.payFrequency || '',
+        address: employee.address || {
+          street: '',
+          city: '',
+          state: '',
+          zipCode: '',
+          country: '',
+        },
+        hireDate: employee.hireDate ? new Date(employee.hireDate).toISOString().split('T')[0] : '',
+        isActive: employee.isActive ?? true,
+        employeeType: employee.employeeType || 'REGULAR',
+        payRate: employee.payRate ? Number(employee.payRate) : undefined,
+        overtimeRate: employee.overtimeRate ? Number(employee.overtimeRate) : 1.5,
+        bankAccountNo: employee.bankAccountNo || '',
+        bankName: employee.bankName || '',
+        taxId: employee.taxId || '',
+        emergencyContactName: employee.emergencyContactName || '',
+        emergencyContactPhone: employee.emergencyContactPhone || '',
+        terminationDate: employee.terminationDate ? new Date(employee.terminationDate).toISOString().split('T')[0] : '',
+      })
+    }
+  }, [employee, form])
 
   const onSubmit = async (data: EmployeeFormValues) => {
     setFormError(null)

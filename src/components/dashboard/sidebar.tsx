@@ -149,7 +149,7 @@ function NavSection({ item, expanded, onToggle, pathname }: {
         className={cn(
           "flex items-center justify-between w-full px-3 py-2 rounded-lg transition-all text-left group",
           isChildActive
-            ? "bg-sidebar-accent text-sidebar-accent-foreground shadow-sm"
+            ? "bg-primary-subtle text-sidebar-primary shadow-sm"
             : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
         )}
       >
@@ -263,7 +263,7 @@ export function DashboardSidebar() {
                 className={cn(
                   "flex items-center gap-2.5 px-3 py-2 rounded-lg transition-all",
                   pathname === item.href
-                    ? "bg-sidebar-accent text-sidebar-accent-foreground shadow-sm"
+                    ? "bg-primary-subtle text-sidebar-primary shadow-sm"
                     : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
                 )}
               >

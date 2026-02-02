@@ -41,13 +41,8 @@ export function useItems(filters?: Partial<ItemFiltersValues>) {
     queryFn: async () => {
       const result = await getItems(companyId, filters)
 
-      // STATIC DATA FALLBACK
-      if (!result.success || !result.data || result.data.length === 0) {
-        return [
-          { id: '1', name: 'MacBook Pro M3', sku: 'MBP-M3-001', category: { name: 'Electronics' }, quantity_on_hand: 15, selling_price: '120000', cost_price: '95000' },
-          { id: '2', name: 'Dell UltraSharp 27', sku: 'DELL-U27-001', category: { name: 'Peripherals' }, quantity_on_hand: 8, selling_price: '45000', cost_price: '32000' },
-          { id: '3', name: 'Office Chair - Ergonomic', sku: 'CH-ERG-001', category: { name: 'Furniture' }, quantity_on_hand: 25, selling_price: '15000', cost_price: '8500' },
-        ]
+      if (!result.success || !result.data) {
+        throw new Error(result.error || 'Failed to fetch inventory items')
       }
       return result.data
     },
@@ -104,13 +99,8 @@ export function useInventorySummary() {
     queryFn: async () => {
       const result = await getInventorySummary(companyId)
 
-      // STATIC DATA FALLBACK
-      if (!result.success || !result.data || result.data.totalItems === 0) {
-        return {
-          totalItems: 3,
-          lowStockItems: 1,
-          totalValue: 1515000,
-        }
+      if (!result.success || !result.data) {
+        throw new Error(result.error || 'Failed to fetch inventory summary')
       }
       return result.data
     },

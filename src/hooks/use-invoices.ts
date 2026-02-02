@@ -97,18 +97,8 @@ export function useInvoicesSummary() {
       }
       const result = await getInvoicesSummary(companyId)
 
-      // STATIC DATA FALLBACK
-      if (!result.success || !result.data || result.data.total === 0) {
-        return {
-          total: 3,
-          draft: 0,
-          sent: 1,
-          paid: 1,
-          overdue: 1,
-          totalAmount: 66000,
-          paidAmount: 45000,
-          outstandingAmount: 21000,
-        }
+      if (!result.success || !result.data) {
+        throw new Error(result.error || 'Failed to fetch invoices summary')
       }
       return result.data
     },

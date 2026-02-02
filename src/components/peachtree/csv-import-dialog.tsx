@@ -7,16 +7,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { 
-  Upload, 
-  FileSpreadsheet, 
-  CheckCircle, 
-  Loader2, 
+import {
+  FileSpreadsheet,
+  CheckCircle,
+  Loader2,
   AlertTriangle,
   Users,
   Building2,
   Calculator,
-  Sparkles
+  Sparkles,
+  Package
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { CSVImportType } from '@/lib/peachtree/csv-import-service';
@@ -24,33 +24,41 @@ import type { CSVImportType } from '@/lib/peachtree/csv-import-service';
 type ImportState = 'select-type' | 'select-file' | 'uploading' | 'success' | 'error';
 
 const DATA_TYPES = [
-  { 
-    id: 'customers' as CSVImportType, 
-    label: 'Customers', 
+  {
+    id: 'customers' as CSVImportType,
+    label: 'Customers',
     labelAm: 'ደንበኞች',
     icon: Users,
     color: 'text-blue-600',
     bg: 'bg-blue-50 dark:bg-blue-950/30',
   },
-  { 
-    id: 'vendors' as CSVImportType, 
-    label: 'Vendors', 
+  {
+    id: 'vendors' as CSVImportType,
+    label: 'Vendors',
     labelAm: 'አቅራቢዎች',
     icon: Building2,
     color: 'text-purple-600',
     bg: 'bg-purple-50 dark:bg-purple-950/30',
   },
-  { 
-    id: 'accounts' as CSVImportType, 
-    label: 'Chart of Accounts', 
+  {
+    id: 'inventory' as CSVImportType,
+    label: 'Inventory',
+    labelAm: 'እቃዎች',
+    icon: Package,
+    color: 'text-orange-600',
+    bg: 'bg-orange-50 dark:bg-orange-950/30',
+  },
+  {
+    id: 'accounts' as CSVImportType,
+    label: 'Chart of Accounts',
     labelAm: 'የሂሳብ ዝርዝር',
     icon: Calculator,
     color: 'text-emerald-600',
     bg: 'bg-emerald-50 dark:bg-emerald-950/30',
   },
-  { 
-    id: 'auto' as CSVImportType, 
-    label: 'Auto Detect', 
+  {
+    id: 'auto' as CSVImportType,
+    label: 'Auto Detect',
     labelAm: 'በራስ ሰር',
     icon: Sparkles,
     color: 'text-amber-600',
@@ -256,7 +264,7 @@ export function CsvImportDialog() {
                 </div>
                 <h3 className="text-lg font-semibold">Import Failed</h3>
                 <p className="text-sm text-muted-foreground mt-1">
-                  {data?.error || error?.message || 'Unknown error'}
+                  {data?.errors?.[0] || error?.message || 'Unknown error'}
                 </p>
               </div>
 
@@ -289,7 +297,8 @@ export function CsvImportDialog() {
                   {data.type === 'customers' && 'customers imported'}
                   {data.type === 'vendors' && 'vendors imported'}
                   {data.type === 'accounts' && 'accounts imported'}
-                  {data.type === 'auto' && 'records imported'}
+                  {data.type === 'items' && 'items imported'}
+                  {data.type === 'employees' && 'employees imported'}
                 </p>
               </div>
 

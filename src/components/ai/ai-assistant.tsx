@@ -1584,10 +1584,10 @@ export function AIAssistant() {
       <Button
         onClick={() => setIsOpen(true)}
         size="icon"
-        className="fixed bottom-6 right-6 z-50 h-14 w-14 rounded-full shadow-lg"
+        className="fixed bottom-6 right-6 z-50 h-14 w-14 rounded-full shadow-[0_8px_30px_rgb(5,150,105,0.3)] hover:shadow-[0_8px_30px_rgb(5,150,105,0.5)] bg-primary hover:bg-emerald-700 transition-all duration-300 group"
         aria-label="Open AI Assistant"
       >
-        <Sparkles className="h-6 w-6" />
+        <Sparkles className="h-6 w-6 group-hover:scale-110 transition-transform" />
       </Button>
     )
   }
@@ -1602,7 +1602,7 @@ export function AIAssistant() {
       )}
     >
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b bg-muted/30">
+      <div className="flex items-center justify-between px-4 py-3 border-b bg-emerald-500/5 dark:bg-emerald-500/10">
         <div className="flex items-center gap-3">
           <Avatar className="h-9 w-9">
             <AvatarFallback className="bg-primary text-primary-foreground">
@@ -1688,7 +1688,7 @@ export function AIAssistant() {
                 ) : (
                   <div className="space-y-2 w-full">
                     {parsed?.text && parsed.text.trim() && (
-                      <div className="px-4 py-2.5 rounded-2xl rounded-tl-sm text-sm leading-relaxed bg-muted">
+                      <div className="px-4 py-2.5 rounded-2xl rounded-tl-sm text-sm leading-relaxed bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-500/10">
                         {parsed.text.split('\n').filter(line => line.trim()).map((line, i) => (
                           <p key={i} className={i > 0 ? 'mt-2' : ''}>{line}</p>
                         ))}
@@ -1698,7 +1698,7 @@ export function AIAssistant() {
                       <RenderWidget key={i} widget={widget} onFormSubmit={handleFormSubmit} />
                     ))}
                     {!parsed?.text?.trim() && !parsed?.widgets.length && (
-                      <div className="px-4 py-2.5 rounded-2xl rounded-tl-sm text-sm leading-relaxed bg-muted">
+                      <div className="px-4 py-2.5 rounded-2xl rounded-tl-sm text-sm leading-relaxed bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-500/10">
                         <p>{message.content}</p>
                       </div>
                     )}
