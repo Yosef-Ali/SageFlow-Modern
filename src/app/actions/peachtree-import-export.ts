@@ -129,8 +129,8 @@ export async function importPtbAction(formData: FormData): Promise<ActionResult<
     const custData = await getFileContent('CUST');
     if (custData) {
       const strings = extractStrings(custData, 3); // Changed from 5 to 3
-      // Relaxed filter: length >= 3, starts with any letter (Title case often implies name)
-      const rawNames = [...new Set(strings)].filter(s => s.length >= 3 && /^[A-Z]/.test(s));
+      // Relaxed filter: length >= 3, starts with any alphanumeric (Title case often implies name)
+      const rawNames = [...new Set(strings)].filter(s => s.length >= 3 && /^[A-Za-z0-9]/.test(s));
       console.log(`[Import] Found ${rawNames.length} potential customers`);
 
       const newRecords = [];
@@ -157,7 +157,7 @@ export async function importPtbAction(formData: FormData): Promise<ActionResult<
     const vendData = await getFileContent('VENDOR');
     if (vendData) {
       const strings = extractStrings(vendData, 3); // Changed from 5 to 3
-      const rawNames = [...new Set(strings)].filter(s => s.length >= 3 && /^[A-Z]/.test(s));
+      const rawNames = [...new Set(strings)].filter(s => s.length >= 3 && /^[A-Za-z0-9]/.test(s));
       console.log(`[Import] Found ${rawNames.length} potential vendors`);
 
       const newRecords = [];
@@ -191,8 +191,8 @@ export async function importPtbAction(formData: FormData): Promise<ActionResult<
     if (chartData) {
       const strings = extractStrings(chartData, 3, 60); // min 3
       const rawNames = [...new Set(strings)]
-        // Relaxed: Allow Uppercase or Titlecase, min 3 chars
-        .filter(s => /^[A-Z]/.test(s) && s.length >= 3 && !s.includes('DAT') && !/^[A-Z]{2,4}$/.test(s));
+        // Relaxed: Allow Uppercase, Titlecase, or numeric starts. Min 3 chars.
+        .filter(s => /^[A-Za-z0-9]/.test(s) && s.length >= 3 && !s.includes('DAT') && !/^[A-Z]{2,4}$/.test(s));
       console.log(`[Import] Found ${rawNames.length} potential accounts`);
 
       const accountPatterns = [
@@ -242,7 +242,7 @@ export async function importPtbAction(formData: FormData): Promise<ActionResult<
     if (itemData) {
       const strings = extractStrings(itemData, 3, 60);
       const rawNames = [...new Set(strings)]
-        .filter(s => /^[A-Z]/.test(s) && s.length >= 3 && !s.includes('DAT'));
+        .filter(s => /^[A-Za-z0-9]/.test(s) && s.length >= 3 && !s.includes('DAT'));
       console.log(`[Import] Found ${rawNames.length} potential items`);
 
       const newRecords = [];
@@ -278,7 +278,7 @@ export async function importPtbAction(formData: FormData): Promise<ActionResult<
     if (empData) {
       const strings = extractStrings(empData, 3, 50);
       const rawNames = [...new Set(strings)].filter(s =>
-        /^[A-Z][a-z]/.test(s) && s.length >= 3 && !s.includes('DAT') // Relaxed to 3 chars
+        /^[A-Za-z0-9]/.test(s) && s.length >= 3 && !s.includes('DAT') // Relaxed to 3 chars
       );
       console.log(`[Import] Found ${rawNames.length} potential employees`);
 
@@ -308,7 +308,7 @@ export async function importPtbAction(formData: FormData): Promise<ActionResult<
     if (jrnlData && accountIds.length >= 2) {
       const strings = extractStrings(jrnlData, 5, 50);
       const descriptions = [...new Set(strings)].filter(s =>
-        !s.includes('DAT') && s.length > 8 && /^[A-Z]/.test(s)
+        !s.includes('DAT') && s.length > 8 && /^[A-Za-z0-9]/.test(s)
       ).slice(0, 30);
       console.log(`[Import] Found ${descriptions.length} potential journals`);
 

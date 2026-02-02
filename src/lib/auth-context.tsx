@@ -138,27 +138,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         let demoCompanyName = 'Demo Company'
         
         try {
-          // Use direct fetch to get a valid company
-          const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
-          const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+          // Use Supabase client to get the same company as the Import logic
+          const { data: companies, error } = await supabase
+            .from('companies')
+            .select('id, name')
+            .limit(1)
           
-          const response = await fetch(
-            `${supabaseUrl}/rest/v1/companies?select=id,name&limit=1`, 
-            {
-              headers: {
-                'apikey': supabaseKey,
-                'Authorization': `Bearer ${supabaseKey}`,
-              }
-            }
-          )
-          
-          if (response.ok) {
-            const companies = await response.json()
-            if (companies && companies.length > 0) {
-              demoCompanyId = companies[0].id
-              demoCompanyName = companies[0].name
-              console.log('Demo Login: Using existing company', demoCompanyName)
-            }
+          if (companies && companies.length > 0) {
+             demoCompanyId = companies[0].id
+             demoCompanyName = companies[0].name
+             console.log('Demo Login: Using existing company', demoCompanyName)
+          } else if (error) {
+             console.error('Demo Login: Error fetching company', error)
           }
         } catch (e) {
           console.error('Demo Login: Failed to fetch valid company', e)

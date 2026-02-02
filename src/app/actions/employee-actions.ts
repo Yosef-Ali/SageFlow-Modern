@@ -3,6 +3,21 @@ import { EmployeeFormValues } from "@/lib/validations/employee"
 import { ActionResult } from "@/types/api"
 export type { EmployeeFormValues }
 
+function mapEmployeeResponse(data: any) {
+  return {
+    id: data.id,
+    employeeCode: data.employee_code,
+    firstName: data.first_name,
+    lastName: data.last_name,
+    email: data.email,
+    jobTitle: data.job_title,
+    department: data.department,
+    phone: data.phone,
+    isActive: data.is_active,
+    createdAt: data.created_at
+  }
+}
+
 export async function getEmployees(filters?: { search?: string }): Promise<ActionResult<any[]>> {
   try {
     // Fetch employees without nested company relation (FK not configured in Supabase)
@@ -17,7 +32,11 @@ export async function getEmployees(filters?: { search?: string }): Promise<Actio
       console.error('Employees query error:', error)
       return { success: false, error: error.message }
     }
-    return { success: true, data: data || [] }
+
+    // Map to camelCase
+    const mapped = (data || []).map(mapEmployeeResponse)
+
+    return { success: true, data: mapped }
   } catch (error) {
     console.error("Error fetching employees:", error)
     return { success: false, error: "Failed to fetch employees" }
