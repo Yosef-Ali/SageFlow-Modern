@@ -83,6 +83,7 @@
   --header-bg: rgba(251, 251, 249, 0.95);
   --primary-translucent: rgba(5, 150, 105, 0.1);
   --primary-translucent-hover: rgba(5, 150, 105, 0.2);
+  --main-content-bg: #f5f5f3;
 }
 
 .dark {
@@ -142,6 +143,7 @@
   --header-bg: rgba(12, 18, 32, 0.95);
   --primary-translucent: rgba(16, 185, 129, 0.1);
   --primary-translucent-hover: rgba(16, 185, 129, 0.2);
+  --main-content-bg: #0c1220;
 }
 
 @layer base {
@@ -185,7 +187,7 @@
   /* Dark mode fallback for main content areas */
   .dark main,
   html.dark main {
-    background-color: #0c1220;
+    background-color: #0c1220 !important;
   }
 
   /* Dark mode fallback for cards and containers */

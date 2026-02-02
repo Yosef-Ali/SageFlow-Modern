@@ -102,7 +102,10 @@ export default function DashboardLayout() {
         </header>
 
         {/* Dynamic Page Content - Independent Scroll */}
-        <main className="flex-1 overflow-auto bg-muted/30 dark:bg-[#0c1220] custom-scrollbar">
+        <main
+          className="flex-1 overflow-auto custom-scrollbar"
+          style={{ backgroundColor: 'var(--main-content-bg, #f5f5f3)' }}
+        >
           <div className="p-6 lg:p-10 xl:p-12 w-full animate-in fade-in slide-in-from-bottom-2 duration-700 max-w-7xl mx-auto">
             <Outlet />
           </div>
