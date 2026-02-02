@@ -141,15 +141,31 @@ export function PtbImportDialog() {
         ) : (
           <div className="space-y-6 pt-6 animate-in fade-in zoom-in duration-300">
             <div className="flex flex-col items-center text-center space-y-2">
-              <div className="h-12 w-12 rounded-full bg-green-100 flex items-center justify-center">
-                <CheckCircle className="h-8 w-8 text-green-600" />
-              </div>
-              <h3 className="text-lg font-semibold text-foreground">
-                Import Successful!
-              </h3>
-              <p className="text-sm text-muted-foreground">
-                Your Peachtree data has been successfully imported.
-              </p>
+              {((data as any)?.customers + (data as any)?.vendors + (data as any)?.accounts + (data as any)?.items + (data as any)?.employees + (data as any)?.journals) === 0 ? (
+                <>
+                  <div className="h-12 w-12 rounded-full bg-yellow-100 flex items-center justify-center">
+                    <AlertCircle className="h-8 w-8 text-yellow-600" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-foreground">
+                    Import Completed - No New Data
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    No new records were added. It looks like your data is already up to date!
+                  </p>
+                </>
+              ) : (
+                <>
+                  <div className="h-12 w-12 rounded-full bg-green-100 flex items-center justify-center">
+                    <CheckCircle className="h-8 w-8 text-green-600" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-foreground">
+                    Import Successful!
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    Your Peachtree data has been successfully imported.
+                  </p>
+                </>
+              )}
             </div>
 
             <div className="bg-secondary/30 rounded-lg p-4 space-y-3">
