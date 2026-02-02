@@ -131,13 +131,46 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       // Fallback to demo mode for development
       if (email === 'demo@sageflow.app' && password === 'demo123') {
+        console.log('Using demo login...')
+        
+        // Fetch a REAL company ID to ensure we don't get 400 errors (invalid UUID)
+        let demoCompanyId = '00000000-0000-0000-0000-000000000000' // Fallback valid UUID
+        let demoCompanyName = 'Demo Company'
+        
+        try {
+          // Use direct fetch to get a valid company
+          const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+          const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+          
+          const response = await fetch(
+            `${supabaseUrl}/rest/v1/companies?select=id,name&limit=1`, 
+            {
+              headers: {
+                'apikey': supabaseKey,
+                'Authorization': `Bearer ${supabaseKey}`,
+              }
+            }
+          )
+          
+          if (response.ok) {
+            const companies = await response.json()
+            if (companies && companies.length > 0) {
+              demoCompanyId = companies[0].id
+              demoCompanyName = companies[0].name
+              console.log('Demo Login: Using existing company', demoCompanyName)
+            }
+          }
+        } catch (e) {
+          console.error('Demo Login: Failed to fetch valid company', e)
+        }
+
         const mockUser: User = {
-          id: 'demo-user-id',
+          id: '11111111-1111-1111-1111-111111111111', // Valid UUID format
           email: 'demo@sageflow.app',
           name: 'Demo User',
           role: 'ADMIN',
-          companyId: 'demo-company-id',
-          companyName: 'Demo Company',
+          companyId: demoCompanyId,
+          companyName: demoCompanyName,
         }
         setUser(mockUser)
         localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify({ user: mockUser, timestamp: Date.now() }))

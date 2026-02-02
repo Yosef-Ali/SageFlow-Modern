@@ -50,6 +50,59 @@ export async function importPtbAction(formData: FormData): Promise<ActionResult<
     }
     const companyId = companies[0].id;
 
+    // --- PRE-FETCH EXISTING DATA FOR DEDUPLICATION AND ID GENERATION ---
+    const [
+      { data: existingCustomers },
+      { data: existingVendors },
+      { data: existingAccounts },
+      { data: existingItems },
+      { data: existingEmployees }
+    ] = await Promise.all([
+      supabase.from('customers').select('id, name, customer_number').eq('company_id', companyId),
+      supabase.from('vendors').select('id, name, vendor_number').eq('company_id', companyId),
+      supabase.from('chart_of_accounts').select('id, account_name, account_number').eq('company_id', companyId),
+      supabase.from('items').select('id, name, sku').eq('company_id', companyId),
+      supabase.from('employees').select('id, first_name, last_name, employee_code').eq('company_id', companyId)
+    ]);
+
+    // Helper maps for O(1) lookups
+    const existingCustomerMap = new Set(existingCustomers?.map(c => c.name.toLowerCase()));
+    const existingVendorMap = new Set(existingVendors?.map(v => v.name.toLowerCase()));
+    const existingAccountMap = new Set(existingAccounts?.map(a => a.account_name.toLowerCase()));
+    const existingItemMap = new Set(existingItems?.map(i => i.name.toLowerCase()));
+    const existingEmployeeMap = new Set(existingEmployees?.map(e => `${e.first_name} ${e.last_name}`.toLowerCase()));
+
+    // ID Sequence Helpers
+    const getNextId = (currentList: any[], field: string, prefix: string, start = 1000): number => {
+      if (!currentList || currentList.length === 0) return start;
+      let maxId = start;
+      const regex = new RegExp(`${prefix}-(\\d+)`);
+      for (const item of currentList) {
+        const match = (item[field] || '').match(regex);
+        if (match) {
+          const num = parseInt(match[1]);
+          if (!isNaN(num) && num >= maxId) maxId = num + 1;
+        }
+      }
+      return maxId;
+    };
+
+    const getNextAccountNum = (currentList: any[], start = 1000): number => {
+      if (!currentList || currentList.length === 0) return start;
+      let maxId = start;
+      for (const item of currentList) {
+        const num = parseInt(item.account_number);
+        if (!isNaN(num) && num >= maxId) maxId = num + 1;
+      }
+      return maxId;
+    };
+
+    let nextCustId = getNextId(existingCustomers || [], 'customer_number', 'CUST');
+    let nextVendId = getNextId(existingVendors || [], 'vendor_number', 'VEND');
+    let nextItemId = getNextId(existingItems || [], 'sku', 'SKU-[A-Z]+', 1000); // Only tracking numeric part robustly might be hard with SKU-CAT-NUM, simplified
+    let nextEmpId = getNextId(existingEmployees || [], 'employee_code', 'EMP');
+    let nextAccountNum = getNextAccountNum(existingAccounts || []);
+
     let importedCustomers = 0;
     let importedVendors = 0;
     let importedChart = 0;
@@ -63,62 +116,84 @@ export async function importPtbAction(formData: FormData): Promise<ActionResult<
       const filename = Object.keys(loadedZip.files).find(name =>
         name.toUpperCase().includes(namePart.toUpperCase())
       );
-      if (!filename) return null;
-      return await loadedZip.files[filename].async('uint8array');
+      if (filename) {
+        console.log(`[Import] Found file: ${filename} for pattern ${namePart}`);
+        return await loadedZip.files[filename].async('uint8array');
+      } else {
+        console.warn(`[Import] Missing file for pattern ${namePart}. Available: ${Object.keys(loadedZip.files).join(', ')}`);
+        return null;
+      }
     };
 
     // 1. Parse Customers (CUST.DAT)
     const custData = await getFileContent('CUST');
     if (custData) {
-      const strings = extractStrings(custData, 5);
-      const customerNames = [...new Set(strings)]
-        .filter(s => s.length > 5 && /^[A-Z]/.test(s))
-        .slice(0, 100);
+      const strings = extractStrings(custData, 3); // Changed from 5 to 3
+      // Relaxed filter: length >= 3, starts with any letter (Title case often implies name)
+      const rawNames = [...new Set(strings)].filter(s => s.length >= 3 && /^[A-Z]/.test(s));
+      console.log(`[Import] Found ${rawNames.length} potential customers`);
 
-      const records = customerNames.map((name, idx) => ({
-        company_id: companyId,
-        customer_number: `CUST-${idx + 1000}`,
-        name,
-        email: `${name.toLowerCase().replace(/\s/g, '.')}@example.com`,
-        is_active: true,
-      }));
+      const newRecords = [];
+      for (const name of rawNames) {
+        if (!existingCustomerMap.has(name.toLowerCase())) {
+          newRecords.push({
+            company_id: companyId,
+            customer_number: `CUST-${nextCustId++}`,
+            name,
+            email: `${name.toLowerCase().replace(/\s/g, '.')}@example.com`,
+            is_active: true,
+          });
+          existingCustomerMap.add(name.toLowerCase()); // Prevent dupes within same import
+        }
+      }
 
-      if (records.length > 0) {
-        const { error } = await supabase.from('customers').insert(records);
-        if (!error) importedCustomers = records.length;
+      if (newRecords.length > 0) {
+        const { error } = await supabase.from('customers').insert(newRecords);
+        if (!error) importedCustomers = newRecords.length;
       }
     }
 
     // 2. Parse Vendors (VENDOR.DAT)
     const vendData = await getFileContent('VENDOR');
     if (vendData) {
-      const strings = extractStrings(vendData, 5);
-      const vendorNames = [...new Set(strings)]
-        .filter(s => s.length > 5 && /^[A-Z]/.test(s))
-        .slice(0, 50);
+      const strings = extractStrings(vendData, 3); // Changed from 5 to 3
+      const rawNames = [...new Set(strings)].filter(s => s.length >= 3 && /^[A-Z]/.test(s));
+      console.log(`[Import] Found ${rawNames.length} potential vendors`);
 
-      const records = vendorNames.map((name, idx) => ({
-        company_id: companyId,
-        vendor_number: `VEND-${idx + 1000}`,
-        name,
-        email: `${name.toLowerCase().replace(/\s/g, '.')}@supplier.com`,
-        is_active: true,
-      }));
+      const newRecords = [];
+      for (const name of rawNames) {
+        if (!existingVendorMap.has(name.toLowerCase())) {
+          newRecords.push({
+            company_id: companyId,
+            vendor_number: `VEND-${nextVendId++}`,
+            name,
+            email: `${name.toLowerCase().replace(/\s/g, '.')}@supplier.com`,
+            is_active: true,
+          });
+          existingVendorMap.add(name.toLowerCase());
+        }
+      }
 
-      if (records.length > 0) {
-        const { error } = await supabase.from('vendors').insert(records);
-        if (!error) importedVendors = records.length;
+      if (newRecords.length > 0) {
+        const { error } = await supabase.from('vendors').insert(newRecords);
+        if (!error) importedVendors = newRecords.length;
       }
     }
 
     // 3. Parse Chart of Accounts (CHART.DAT)
     const chartData = await getFileContent('CHART');
     let accountIds: string[] = [];
+
+    // Refresh account IDs from DB incase we need them for Journals, 
+    // but typically we just need valid IDs. We'll use existing + newly created.
+    let allAccounts = existingAccounts ? [...existingAccounts] : [];
+
     if (chartData) {
-      const strings = extractStrings(chartData, 4, 60);
-      const accountNames = [...new Set(strings)]
-        .filter(s => /^[A-Z]/.test(s) && s.length >= 4 && !s.includes('DAT') && !/^[A-Z]{2,4}$/.test(s))
-        .slice(0, 100);
+      const strings = extractStrings(chartData, 3, 60); // min 3
+      const rawNames = [...new Set(strings)]
+        // Relaxed: Allow Uppercase or Titlecase, min 3 chars
+        .filter(s => /^[A-Z]/.test(s) && s.length >= 3 && !s.includes('DAT') && !/^[A-Z]{2,4}$/.test(s));
+      console.log(`[Import] Found ${rawNames.length} potential accounts`);
 
       const accountPatterns = [
         { pattern: /cash|bank/i, type: 'ASSET' },
@@ -129,57 +204,72 @@ export async function importPtbAction(formData: FormData): Promise<ActionResult<
         { pattern: /cost|salary|wage|rent|utility|office|expense/i, type: 'EXPENSE' },
       ];
 
-      const records = accountNames.map((name, idx) => {
-        let accountType: any = 'ASSET';
-        for (const p of accountPatterns) {
-          if (p.pattern.test(name)) {
-            accountType = p.type;
-            break;
+      const newRecords = [];
+      for (const name of rawNames) {
+        if (!existingAccountMap.has(name.toLowerCase())) {
+          let accountType: any = 'ASSET';
+          for (const p of accountPatterns) {
+            if (p.pattern.test(name)) {
+              accountType = p.type;
+              break;
+            }
           }
+          newRecords.push({
+            company_id: companyId,
+            account_number: `${nextAccountNum++}`,
+            account_name: name,
+            type: accountType,
+            balance: '0',
+            is_active: true,
+          });
+          existingAccountMap.add(name.toLowerCase());
         }
-        return {
-          company_id: companyId,
-          account_number: `${1000 + idx}`,
-          account_name: name,
-          type: accountType,
-          balance: '0',
-          is_active: true,
-        };
-      });
+      }
 
-      if (records.length > 0) {
-        const { data: inserted, error } = await supabase.from('chart_of_accounts').insert(records).select('id');
+      if (newRecords.length > 0) {
+        const { data: inserted, error } = await supabase.from('chart_of_accounts').insert(newRecords).select('id, account_name, account_number');
         if (!error && inserted) {
-          importedChart = records.length;
-          accountIds = inserted.map(a => a.id);
+          importedChart = newRecords.length;
+          allAccounts = [...allAccounts, ...inserted];
         }
       }
     }
 
+    accountIds = allAccounts.map(a => a.id);
+
     // 4. Parse Inventory Items (ITEM.DAT or INV.DAT)
     const itemData = (await getFileContent('ITEM.DAT')) || (await getFileContent('INV.DAT'));
     if (itemData) {
-      const strings = extractStrings(itemData, 4, 60);
-      const itemNames = [...new Set(strings)]
-        .filter(s => /^[A-Z]/.test(s) && s.length >= 4 && !s.includes('DAT'))
-        .slice(0, 100);
+      const strings = extractStrings(itemData, 3, 60);
+      const rawNames = [...new Set(strings)]
+        .filter(s => /^[A-Z]/.test(s) && s.length >= 3 && !s.includes('DAT'));
+      console.log(`[Import] Found ${rawNames.length} potential items`);
 
-      const records = itemNames.map((name, idx) => ({
-        company_id: companyId,
-        sku: `SKU-${name.substring(0, 3).toUpperCase()}-${idx + 1000}`,
-        name,
-        description: `Imported from Peachtree: ${name}`,
-        unit_of_measure: 'PCS',
-        type: 'PRODUCT',
-        cost_price: '0',
-        selling_price: '0',
-        quantity_on_hand: '0',
-        is_active: true,
-      }));
+      const newRecords = [];
+      for (const name of rawNames) {
+        if (!existingItemMap.has(name.toLowerCase())) {
+          const skuSuffix = nextItemId++;
+          newRecords.push({
+            company_id: companyId,
+            sku: `SKU-${name.substring(0, 3).toUpperCase()}-${skuSuffix}`,
+            name,
+            description: `Imported from Peachtree: ${name}`,
+            unit_of_measure: 'PCS',
+            type: 'PRODUCT',
+            cost_price: '0',
+            selling_price: '0',
+            quantity_on_hand: '0',
+            is_active: true,
+          });
+          existingItemMap.add(name.toLowerCase());
+        }
+      }
 
-      if (records.length > 0) {
-        const { error } = await supabase.from('items').insert(records);
-        if (!error) importedItems = records.length;
+      if (newRecords.length > 0) {
+        console.log(`[Import] Inserting ${newRecords.length} items`);
+        const { error } = await supabase.from('items').insert(newRecords);
+        if (error) console.error('[Import] Item insert error:', error);
+        if (!error) importedItems = newRecords.length;
       }
     }
 
@@ -187,22 +277,29 @@ export async function importPtbAction(formData: FormData): Promise<ActionResult<
     const empData = await getFileContent('EMPLOYEE.DAT');
     if (empData) {
       const strings = extractStrings(empData, 3, 50);
-      const empNames = [...new Set(strings)].filter(s =>
-        /^[A-Z][a-z]/.test(s) && s.length > 5 && !s.includes('DAT')
+      const rawNames = [...new Set(strings)].filter(s =>
+        /^[A-Z][a-z]/.test(s) && s.length >= 3 && !s.includes('DAT') // Relaxed to 3 chars
       );
+      console.log(`[Import] Found ${rawNames.length} potential employees`);
 
-      const records = empNames.map((name, idx) => ({
-        company_id: companyId,
-        employee_code: `EMP-${idx + 1000}`,
-        first_name: name.split(' ')[0] || name,
-        last_name: name.split(' ').slice(1).join(' ') || 'Imported',
-        email: `${name.toLowerCase().replace(/\s/g, '.')}@example.com`,
-        is_active: true,
-      }));
+      const newRecords = [];
+      for (const name of rawNames) {
+        if (!existingEmployeeMap.has(name.toLowerCase())) {
+          newRecords.push({
+            company_id: companyId,
+            employee_code: `EMP-${nextEmpId++}`,
+            first_name: name.split(' ')[0] || name,
+            last_name: name.split(' ').slice(1).join(' ') || 'Imported',
+            email: `${name.toLowerCase().replace(/\s/g, '.')}@example.com`,
+            is_active: true,
+          });
+          existingEmployeeMap.add(name.toLowerCase());
+        }
+      }
 
-      if (records.length > 0) {
-        const { error } = await supabase.from('employees').insert(records);
-        if (!error) importedEmployees = records.length;
+      if (newRecords.length > 0) {
+        const { error } = await supabase.from('employees').insert(newRecords);
+        if (!error) importedEmployees = newRecords.length;
       }
     }
 
@@ -213,6 +310,7 @@ export async function importPtbAction(formData: FormData): Promise<ActionResult<
       const descriptions = [...new Set(strings)].filter(s =>
         !s.includes('DAT') && s.length > 8 && /^[A-Z]/.test(s)
       ).slice(0, 30);
+      console.log(`[Import] Found ${descriptions.length} potential journals`);
 
       for (const desc of descriptions) {
         const { data: entry, error: entryError } = await supabase.from('journal_entries').insert({
@@ -226,17 +324,21 @@ export async function importPtbAction(formData: FormData): Promise<ActionResult<
 
         if (!entryError && entry) {
           const amount = (Math.random() * 5000 + 500).toFixed(2);
+          // Pick two random accounts from ALL valid accounts (existing + new)
+          const acct1 = accountIds[Math.floor(Math.random() * accountIds.length)];
+          const acct2 = accountIds[Math.floor(Math.random() * accountIds.length)] || acct1;
+
           await supabase.from('journal_lines').insert([
             {
               journal_entry_id: entry.id,
-              account_id: accountIds[0],
+              account_id: acct1,
               description: 'Debit',
               debit: amount,
               credit: '0',
             },
             {
               journal_entry_id: entry.id,
-              account_id: accountIds[1],
+              account_id: acct2,
               description: 'Credit',
               debit: '0',
               credit: amount,
