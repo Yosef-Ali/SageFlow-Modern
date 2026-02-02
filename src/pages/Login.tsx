@@ -6,7 +6,17 @@ import { loginSchema, type LoginFormValues } from '@/lib/validations/auth'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Loader2, Eye, EyeOff, TrendingUp } from 'lucide-react'
+import { Checkbox } from '@/components/ui/checkbox'
+import {
+  Loader2,
+  Eye,
+  EyeOff,
+  TrendingUp,
+  Play,
+  Shield,
+  Building2,
+  User
+} from 'lucide-react'
 import { useToast } from '@/components/ui/use-toast'
 import { useAuth } from '@/lib/auth-context'
 
@@ -17,7 +27,9 @@ function LoginForm() {
   const { login } = useAuth()
 
   const [isLoading, setIsLoading] = useState(false)
+  const [isDemoLoading, setIsDemoLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
+  const [rememberMe, setRememberMe] = useState(true)
 
   // Get return url from location state or default to dashboard
   const from = (location.state as any)?.from?.pathname || '/dashboard'
@@ -25,6 +37,7 @@ function LoginForm() {
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors },
   } = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -64,16 +77,52 @@ function LoginForm() {
     }
   }
 
+  // Quick demo login
+  async function handleDemoLogin() {
+    setIsDemoLoading(true)
+    try {
+      const result = await login('demo@sageflow.app', 'demo123')
+      if (result.success) {
+        navigate(from, { replace: true })
+        toast({
+          title: "Welcome to SageFlow Demo!",
+          description: "Explore the full features with sample data.",
+        })
+      } else {
+        toast({
+          title: "Demo Unavailable",
+          description: "Please try again or contact support.",
+          variant: "destructive"
+        })
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Could not start demo. Please try again.",
+        variant: "destructive"
+      })
+    } finally {
+      setIsDemoLoading(false)
+    }
+  }
+
+  // Fill demo credentials
+  function fillDemoCredentials() {
+    setValue('email', 'demo@sageflow.app')
+    setValue('password', 'demo123')
+  }
+
   return (
-    <div className="w-full max-w-md space-y-8">
+    <div className="w-full max-w-md space-y-6">
       {/* Mobile Logo */}
-      <div className="lg:hidden flex items-center justify-center gap-3 mb-8">
+      <div className="lg:hidden flex items-center justify-center gap-3 mb-6">
         <div className="w-10 h-10 bg-emerald-500 rounded-lg flex items-center justify-center">
           <TrendingUp className="w-6 h-6 text-white" />
         </div>
         <span className="text-2xl font-bold text-foreground">SageFlow</span>
       </div>
 
+      {/* Header */}
       <div className="text-center">
         <h2 className="text-3xl font-bold text-foreground">Welcome back</h2>
         <p className="mt-2 text-muted-foreground">
@@ -81,18 +130,73 @@ function LoginForm() {
         </p>
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+      {/* Quick Demo Access */}
+      <div className="relative overflow-hidden rounded-xl border-2 border-emerald-500/30 bg-gradient-to-br from-emerald-500/10 via-emerald-500/5 to-transparent p-5">
+        <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full -translate-y-1/2 translate-x-1/2" />
+        <div className="relative flex items-center gap-4">
+          <div className="w-12 h-12 bg-emerald-500 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg shadow-emerald-500/25">
+            <Play className="w-6 h-6 text-white" />
+          </div>
+          <div className="flex-1">
+            <h3 className="font-bold text-foreground text-base">
+              Try SageFlow Demo
+            </h3>
+            <p className="text-sm text-muted-foreground mt-0.5">
+              Explore with sample Ethiopian business data
+            </p>
+          </div>
+        </div>
+        <Button
+          type="button"
+          size="sm"
+          className="mt-4 w-full h-10 bg-emerald-600 hover:bg-emerald-700 text-white font-medium"
+          onClick={handleDemoLogin}
+          disabled={isDemoLoading || isLoading}
+        >
+          {isDemoLoading ? (
+            <>
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              Starting Demo...
+            </>
+          ) : (
+            <>
+              <Play className="w-4 h-4 mr-2" />
+              Start Demo Instantly
+            </>
+          )}
+        </Button>
+      </div>
+
+      {/* Divider */}
+      <div className="relative">
+        <div className="absolute inset-0 flex items-center">
+          <span className="w-full border-t border-slate-200 dark:border-slate-700" />
+        </div>
+        <div className="relative flex justify-center text-xs uppercase">
+          <span className="bg-background px-2 text-muted-foreground">
+            Or sign in with email
+          </span>
+        </div>
+      </div>
+
+      {/* Login Form */}
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
         <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
-          <Input
-            id="email"
-            type="email"
-            placeholder="name@company.com"
-            autoComplete="email"
-            disabled={isLoading}
-            {...register('email')}
-            className={errors.email ? 'border-red-500' : ''}
-          />
+          <Label htmlFor="email" className="text-sm font-medium text-foreground">
+            Email address
+          </Label>
+          <div className="relative">
+            <Input
+              id="email"
+              type="email"
+              placeholder="name@company.com"
+              autoComplete="email"
+              disabled={isLoading}
+              {...register('email')}
+              className="h-11 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-foreground focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:border-emerald-500 pl-10"
+            />
+            <User className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+          </div>
           {errors.email && (
             <p className="text-sm text-red-500">{errors.email.message}</p>
           )}
@@ -100,10 +204,12 @@ function LoginForm() {
 
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <Label htmlFor="password">Password</Label>
+            <Label htmlFor="password" className="text-sm font-medium text-foreground">
+              Password
+            </Label>
             <Link
               to="/forgot-password"
-              className="text-sm text-emerald-600 hover:text-emerald-700"
+              className="text-xs font-medium text-emerald-600 hover:text-emerald-700 dark:text-emerald-400"
             >
               Forgot password?
             </Link>
@@ -112,16 +218,17 @@ function LoginForm() {
             <Input
               id="password"
               type={showPassword ? 'text' : 'password'}
-              placeholder="••••••••"
+              placeholder="Enter your password"
               autoComplete="current-password"
               disabled={isLoading}
               {...register('password')}
-              className={errors.password ? 'border-red-500 pr-10' : 'pr-10'}
+              className="h-11 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-foreground focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:border-emerald-500 pr-10 pl-10"
             />
+            <Shield className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-foreground transition-colors"
             >
               {showPassword ? (
                 <EyeOff className="w-4 h-4" />
@@ -135,10 +242,35 @@ function LoginForm() {
           )}
         </div>
 
+        {/* Remember Me & Demo Credentials */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="remember"
+              checked={rememberMe}
+              onCheckedChange={(checked) => setRememberMe(checked as boolean)}
+              className="border-slate-300 dark:border-slate-600 data-[state=checked]:bg-emerald-600 data-[state=checked]:border-emerald-600"
+            />
+            <label
+              htmlFor="remember"
+              className="text-sm text-muted-foreground cursor-pointer select-none"
+            >
+              Remember me
+            </label>
+          </div>
+          <button
+            type="button"
+            onClick={fillDemoCredentials}
+            className="text-xs font-medium text-emerald-600 hover:text-emerald-700 dark:text-emerald-400"
+          >
+            Use demo credentials
+          </button>
+        </div>
+
         <Button
           type="submit"
-          className="w-full bg-emerald-600 hover:bg-emerald-700"
-          disabled={isLoading}
+          className="w-full h-11 bg-emerald-600 hover:bg-emerald-700 text-white font-medium shadow-lg shadow-emerald-600/25 hover:shadow-emerald-600/40 transition-all"
+          disabled={isLoading || isDemoLoading}
         >
           {isLoading ? (
             <>
@@ -151,15 +283,30 @@ function LoginForm() {
         </Button>
       </form>
 
+      {/* Sign Up Link */}
       <p className="text-center text-sm text-muted-foreground">
         Don't have an account?{' '}
         <Link
           to="/register"
-          className="font-medium text-emerald-600 hover:text-emerald-500"
+          className="font-semibold text-emerald-600 hover:text-emerald-700 dark:text-emerald-400"
         >
           Create an account
         </Link>
       </p>
+
+      {/* Trust Indicators */}
+      <div className="pt-6 border-t border-slate-200 dark:border-slate-800">
+        <div className="flex items-center justify-center gap-8 text-xs text-muted-foreground">
+          <div className="flex items-center gap-2">
+            <Shield className="w-4 h-4 text-emerald-600" />
+            <span className="font-medium">256-bit SSL</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Building2 className="w-4 h-4 text-emerald-600" />
+            <span className="font-medium">SOC 2 Compliant</span>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }
@@ -186,21 +333,66 @@ export default function LoginPage() {
             Streamline your invoicing, payments, and financial reporting with
             software built specifically for the Ethiopian market.
           </p>
-          <div className="flex items-center gap-6 text-slate-400">
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 bg-emerald-500 rounded-full" />
-              <span>ETB Currency Support</span>
+
+          {/* Feature List */}
+          <div className="space-y-3">
+            <div className="flex items-center gap-3 text-slate-300">
+              <div className="w-6 h-6 bg-emerald-500/20 rounded flex items-center justify-center">
+                <svg className="w-3.5 h-3.5 text-emerald-400" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <span>ETB Currency & Multi-currency Support</span>
             </div>
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 bg-emerald-500 rounded-full" />
-              <span>15% VAT Compliant</span>
+            <div className="flex items-center gap-3 text-slate-300">
+              <div className="w-6 h-6 bg-emerald-500/20 rounded flex items-center justify-center">
+                <svg className="w-3.5 h-3.5 text-emerald-400" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <span>15% VAT Compliant Invoicing</span>
+            </div>
+            <div className="flex items-center gap-3 text-slate-300">
+              <div className="w-6 h-6 bg-emerald-500/20 rounded flex items-center justify-center">
+                <svg className="w-3.5 h-3.5 text-emerald-400" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <span>Peachtree/Sage 50 CSV Import</span>
+            </div>
+            <div className="flex items-center gap-3 text-slate-300">
+              <div className="w-6 h-6 bg-emerald-500/20 rounded flex items-center justify-center">
+                <svg className="w-3.5 h-3.5 text-emerald-400" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <span>Bank Reconciliation & Reporting</span>
             </div>
           </div>
         </div>
 
-        <p className="text-slate-500 text-sm">
-          © 2026 SageFlow. All rights reserved.
-        </p>
+        <div className="space-y-4">
+          {/* Testimonial */}
+          <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700">
+            <p className="text-slate-300 text-sm italic">
+              "SageFlow transformed how we manage our construction equipment rentals.
+              The Ethiopian-specific features save us hours every week."
+            </p>
+            <div className="flex items-center gap-3 mt-3">
+              <div className="w-8 h-8 bg-emerald-500 rounded-full flex items-center justify-center text-white text-sm font-medium">
+                DB
+              </div>
+              <div>
+                <p className="text-white text-sm font-medium">Dawit Bekele</p>
+                <p className="text-slate-500 text-xs">Abyssinia Heavy Equipment</p>
+              </div>
+            </div>
+          </div>
+
+          <p className="text-slate-500 text-sm">
+            © 2026 SageFlow. All rights reserved.
+          </p>
+        </div>
       </div>
 
       {/* Right Side - Login Form */}
