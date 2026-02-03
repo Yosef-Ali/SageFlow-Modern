@@ -94,7 +94,7 @@ function LoginForm() {
       {/* Login Form */}
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
         <div className="space-y-2">
-          <Label htmlFor="email" className="text-sm font-medium text-foreground">
+          <Label htmlFor="email" className="text-sm font-medium text-slate-700 dark:text-slate-200">
             Email
           </Label>
           <div className="relative">
@@ -115,7 +115,7 @@ function LoginForm() {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="password" className="text-sm font-medium text-foreground">
+          <Label htmlFor="password" className="text-sm font-medium text-slate-700 dark:text-slate-200">
             Password
           </Label>
           <div className="relative">
