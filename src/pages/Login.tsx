@@ -5,7 +5,6 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { loginSchema, type LoginFormValues } from '@/lib/validations/auth'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
 import {
   Loader2,
@@ -92,11 +91,15 @@ function LoginForm() {
       </div>
 
       {/* Login Form */}
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="email" className="text-sm font-medium text-gray-900 dark:text-white">
+          <label
+            htmlFor="email"
+            className="text-sm font-bold block mb-1"
+            style={{ color: '#0f172a' }}
+          >
             Email
-          </Label>
+          </label>
           <div className="relative">
             <Input
               id="email"
@@ -105,7 +108,8 @@ function LoginForm() {
               autoComplete="email"
               disabled={isLoading}
               {...register('email')}
-              className="h-11 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-foreground focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:border-emerald-500 pl-10"
+              className="h-11 bg-white border-slate-300 text-slate-900 pl-10 focus-visible:ring-emerald-500"
+              style={{ backgroundColor: 'white', color: '#0f172a', borderColor: '#cbd5e1' }}
             />
             <Mail className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
           </div>
@@ -115,9 +119,13 @@ function LoginForm() {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="password" className="text-sm font-medium text-gray-900 dark:text-white">
+          <label
+            htmlFor="password"
+            className="text-sm font-bold block mb-1"
+            style={{ color: '#0f172a' }}
+          >
             Password
-          </Label>
+          </label>
           <div className="relative">
             <Input
               id="password"
@@ -126,7 +134,8 @@ function LoginForm() {
               autoComplete="current-password"
               disabled={isLoading}
               {...register('password')}
-              className="h-11 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-foreground focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:border-emerald-500 pr-10 pl-10"
+              className="h-11 bg-white border-slate-300 text-slate-900 pr-10 pl-10 focus-visible:ring-emerald-500"
+              style={{ backgroundColor: 'white', color: '#0f172a', borderColor: '#cbd5e1' }}
             />
             <Lock className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <button
@@ -266,7 +275,7 @@ export default function LoginPage() {
       </div>
 
       {/* Right Side - Login Form */}
-      <div className="flex-1 flex items-center justify-center p-8 bg-background">
+      <div className="flex-1 flex items-center justify-center p-8 bg-white">
         <LoginForm />
       </div>
     </div>
