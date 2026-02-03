@@ -277,6 +277,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   ): Promise<{ success: boolean; error?: string }> => {
     setIsLoading(true)
     try {
+      // First check if user already exists in our users table
+      const { data: existingUsers } = await supabase
+        .from('users')
+        .select('id, company_id')
+        .eq('email', email)
+        .limit(1)
+
+      if (existingUsers && existingUsers.length > 0) {
+        console.log('User already exists in DB, trying to login instead...')
+        setIsLoading(false)
+        // User exists, try logging them in
+        return { success: false, error: 'Account already exists. Please sign in instead.' }
+      }
+
       // Sign up with Supabase Auth
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
@@ -287,6 +301,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       })
 
       if (authError) {
+        // If user already exists in auth, suggest login
+        if (authError.message.includes('already registered')) {
+          return { success: false, error: 'Account already exists. Please sign in instead.' }
+        }
         return { success: false, error: authError.message }
       }
 
@@ -313,22 +331,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return { success: false, error: 'Failed to create company profile' }
       }
 
-      // Create user profile linked to the auth user
+      // Create user profile linked to the auth user (use upsert to handle duplicates)
       const { error: userError } = await supabase
         .from('users')
-        .insert({
+        .upsert({
           id: authData.user.id,
           email: email,
           name: name,
           password_hash: 'supabase-managed',
           role: 'ADMIN',
           company_id: company.id,
-        })
+        }, { onConflict: 'id' })
 
       if (userError) {
         console.error('Error creating user profile:', userError)
         return { success: false, error: 'Failed to create user profile' }
       }
+
+      // Auto-login after successful registration
+      const profile: User = {
+        id: authData.user.id,
+        email: email,
+        name: name,
+        role: 'ADMIN',
+        companyId: company.id,
+        companyName: company.name,
+      }
+      setUser(profile)
+      localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify({ user: profile, timestamp: Date.now() }))
 
       return { success: true }
     } catch (error) {
