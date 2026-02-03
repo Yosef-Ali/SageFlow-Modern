@@ -95,7 +95,7 @@ function LoginForm() {
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
         <div className="space-y-2">
           <Label htmlFor="email" className="text-sm font-medium text-foreground">
-            Email address
+            Email
           </Label>
           <div className="relative">
             <Input
@@ -115,17 +115,9 @@ function LoginForm() {
         </div>
 
         <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <Label htmlFor="password" className="text-sm font-medium text-foreground">
-              Password
-            </Label>
-            <Link
-              to="/forgot-password"
-              className="text-xs font-medium text-emerald-600 hover:text-emerald-700 dark:text-emerald-400"
-            >
-              Forgot password?
-            </Link>
-          </div>
+          <Label htmlFor="password" className="text-sm font-medium text-foreground">
+            Password
+          </Label>
           <div className="relative">
             <Input
               id="password"
@@ -154,20 +146,28 @@ function LoginForm() {
           )}
         </div>
 
-        {/* Remember Me */}
-        <div className="flex items-center space-x-2">
-          <Checkbox
-            id="remember"
-            checked={rememberMe}
-            onCheckedChange={(checked) => setRememberMe(checked as boolean)}
-            className="border-slate-300 dark:border-slate-600 data-[state=checked]:bg-emerald-600 data-[state=checked]:border-emerald-600"
-          />
-          <label
-            htmlFor="remember"
-            className="text-sm text-muted-foreground cursor-pointer select-none"
+        {/* Remember Me & Forgot Password */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="remember"
+              checked={rememberMe}
+              onCheckedChange={(checked) => setRememberMe(checked as boolean)}
+              className="border-slate-300 dark:border-slate-600 data-[state=checked]:bg-emerald-600 data-[state=checked]:border-emerald-600"
+            />
+            <label
+              htmlFor="remember"
+              className="text-sm text-muted-foreground cursor-pointer select-none"
+            >
+              Remember me
+            </label>
+          </div>
+          <Link
+            to="/forgot-password"
+            className="text-sm font-medium text-emerald-600 hover:text-emerald-700 dark:text-emerald-400"
           >
-            Remember me
-          </label>
+            Forgot password?
+          </Link>
         </div>
 
         <Button
