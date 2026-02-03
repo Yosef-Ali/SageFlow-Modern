@@ -39,11 +39,16 @@ async function generateAdjustmentNumber(companyId?: string): Promise<string> {
   }
 }
 
-export async function getItems(filters?: Partial<ItemFiltersValues>) {
+export async function getItems(companyId: string, filters?: Partial<ItemFiltersValues>) {
   try {
+    if (!companyId) {
+      return { success: true, data: [] }
+    }
+
     let query = supabase
       .from('items')
       .select('*')
+      .eq('company_id', companyId)
       .order('created_at', { ascending: false })
 
     const { data: items, error } = await query
@@ -83,14 +88,19 @@ export async function getItems(filters?: Partial<ItemFiltersValues>) {
   }
 }
 
-export async function getItem(id: string) {
+export async function getItem(id: string, companyId?: string) {
   try {
     // 1. Fetch Item
-    const { data: item, error } = await supabase
+    let query = supabase
       .from('items')
       .select('*')
       .eq('id', id)
-      .single()
+
+    if (companyId) {
+      query = query.eq('company_id', companyId)
+    }
+
+    const { data: item, error } = await query.single()
 
     if (error) throw error
     if (!item) throw new Error('Item not found')
@@ -119,8 +129,12 @@ export async function getItem(id: string) {
   }
 }
 
-export async function createItem(data: ItemFormValues) {
+export async function createItem(data: ItemFormValues, companyId: string) {
   try {
+    if (!companyId) {
+      return { success: false, error: "Company ID is required" }
+    }
+
     const { data: newItem, error } = await supabase.from('items').insert({
       sku: data.sku,
       name: data.name,
@@ -130,7 +144,7 @@ export async function createItem(data: ItemFormValues) {
       reorder_point: data.reorderPoint,
       reorder_quantity: data.reorderQuantity,
       category_id: data.categoryId,
-      // Add other mapped fields
+      company_id: companyId,
     }).select().single()
 
     if (error) throw error
@@ -179,10 +193,22 @@ export async function getItemCategories() {
   }
 }
 
-export async function getInventorySummary() {
+export async function getInventorySummary(companyId: string) {
   try {
-    const { count: totalItems } = await supabase.from('items').select('*', { count: 'exact', head: true })
-    const { count: lowStock } = await supabase.from('items').select('*', { count: 'exact', head: true }).lt('quantity_on_hand', 10) // Simplified rule
+    if (!companyId) {
+      return { success: true, data: { totalItems: 0, lowStockItems: 0, totalValue: 0 } }
+    }
+
+    const { count: totalItems } = await supabase
+      .from('items')
+      .select('*', { count: 'exact', head: true })
+      .eq('company_id', companyId)
+
+    const { count: lowStock } = await supabase
+      .from('items')
+      .select('*', { count: 'exact', head: true })
+      .eq('company_id', companyId)
+      .lt('quantity_on_hand', 10)
 
     return {
       success: true,

@@ -18,10 +18,18 @@ function mapEmployeeResponse(data: any) {
   }
 }
 
-export async function getEmployees(filters?: { search?: string }): Promise<ActionResult<any[]>> {
+export async function getEmployees(companyId: string, filters?: { search?: string }): Promise<ActionResult<any[]>> {
   try {
-    // Fetch employees without nested company relation (FK not configured in Supabase)
-    let query = supabase.from('employees').select('*').order('created_at', { ascending: false })
+    if (!companyId) {
+      return { success: true, data: [] }
+    }
+
+    // Fetch employees for this company only
+    let query = supabase
+      .from('employees')
+      .select('*')
+      .eq('company_id', companyId)
+      .order('created_at', { ascending: false })
 
     if (filters?.search) {
       query = query.or(`first_name.ilike.%${filters.search}%,last_name.ilike.%${filters.search}%,employee_code.ilike.%${filters.search}%`)
@@ -43,9 +51,15 @@ export async function getEmployees(filters?: { search?: string }): Promise<Actio
   }
 }
 
-export async function getEmployee(id: string) {
+export async function getEmployee(id: string, companyId?: string) {
   try {
-    const { data, error } = await supabase.from('employees').select('*').eq('id', id).single()
+    let query = supabase.from('employees').select('*').eq('id', id)
+
+    if (companyId) {
+      query = query.eq('company_id', companyId)
+    }
+
+    const { data, error } = await query.single()
     if (error) throw error
     return { success: true, data }
   } catch (error) {
@@ -53,15 +67,19 @@ export async function getEmployee(id: string) {
   }
 }
 
-export async function createEmployee(data: EmployeeFormValues) {
+export async function createEmployee(data: EmployeeFormValues, companyId: string) {
   try {
+    if (!companyId) {
+      return { success: false, error: "Company ID is required" }
+    }
+
     const { data: newEmployee, error } = await supabase.from('employees').insert({
+      company_id: companyId,
       employee_code: data.employeeCode,
       first_name: data.firstName,
       last_name: data.lastName,
-      email: data.email || null, // Handle optional empty string
+      email: data.email || null,
       job_title: data.jobTitle,
-      // Add other mapped fields as needed
     }).select().single()
 
     if (error) throw error

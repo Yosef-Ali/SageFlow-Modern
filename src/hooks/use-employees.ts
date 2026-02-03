@@ -10,27 +10,35 @@ import {
   EmployeeFormValues,
 } from '@/app/actions/employee-actions'
 import { useToast } from '@/components/ui/use-toast'
+import { useAuth } from '@/lib/auth-context'
 
 // Query keys
 export const employeeKeys = {
   all: ['employees'] as const,
-  list: (filters?: { search?: string }) => [...employeeKeys.all, 'list', filters] as const,
-  detail: (id: string) => [...employeeKeys.all, 'detail', id] as const,
+  lists: (companyId: string) => [...employeeKeys.all, 'list', companyId] as const,
+  list: (companyId: string, filters?: { search?: string }) => [...employeeKeys.lists(companyId), filters] as const,
+  details: () => [...employeeKeys.all, 'detail'] as const,
+  detail: (id: string) => [...employeeKeys.details(), id] as const,
 }
 
 /**
  * Hook to fetch all employees
  */
 export function useEmployees(filters?: { search?: string }) {
+  const { user } = useAuth()
+  const companyId = user?.companyId || ''
+
   return useQuery({
-    queryKey: employeeKeys.list(filters),
+    queryKey: employeeKeys.list(companyId, filters),
     queryFn: async () => {
-      const result = await getEmployees(filters)
+      if (!companyId) return []
+      const result = await getEmployees(companyId, filters)
       if (!result.success) {
         throw new Error(result.error)
       }
       return result.data
     },
+    enabled: !!companyId,
   })
 }
 
@@ -38,16 +46,19 @@ export function useEmployees(filters?: { search?: string }) {
  * Hook to fetch single employee
  */
 export function useEmployee(id: string) {
+  const { user } = useAuth()
+  const companyId = user?.companyId || ''
+
   return useQuery({
     queryKey: employeeKeys.detail(id),
     queryFn: async () => {
-      const result = await getEmployee(id)
+      const result = await getEmployee(id, companyId)
       if (!result.success) {
         throw new Error(result.error)
       }
       return result.data
     },
-    enabled: !!id,
+    enabled: !!id && !!companyId,
   })
 }
 
@@ -57,17 +68,20 @@ export function useEmployee(id: string) {
 export function useCreateEmployee() {
   const queryClient = useQueryClient()
   const { toast } = useToast()
+  const { user } = useAuth()
+  const companyId = user?.companyId || ''
 
   return useMutation({
     mutationFn: async (data: EmployeeFormValues) => {
-      const result = await createEmployee(data)
+      if (!companyId) throw new Error('Company ID required')
+      const result = await createEmployee(data, companyId)
       if (!result.success) {
         throw new Error(result.error)
       }
       return result.data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: employeeKeys.all })
+      queryClient.invalidateQueries({ queryKey: employeeKeys.lists(companyId) })
       toast({
         title: 'Success',
         description: 'Employee created successfully',
@@ -89,6 +103,8 @@ export function useCreateEmployee() {
 export function useUpdateEmployee() {
   const queryClient = useQueryClient()
   const { toast } = useToast()
+  const { user } = useAuth()
+  const companyId = user?.companyId || ''
 
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: EmployeeFormValues }) => {
@@ -98,8 +114,9 @@ export function useUpdateEmployee() {
       }
       return result.data
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: employeeKeys.all })
+    onSuccess: (_: unknown, variables: { id: string; data: EmployeeFormValues }) => {
+      queryClient.invalidateQueries({ queryKey: employeeKeys.lists(companyId) })
+      queryClient.invalidateQueries({ queryKey: employeeKeys.detail(variables.id) })
       toast({
         title: 'Success',
         description: 'Employee updated successfully',
@@ -121,6 +138,8 @@ export function useUpdateEmployee() {
 export function useDeleteEmployee() {
   const queryClient = useQueryClient()
   const { toast } = useToast()
+  const { user } = useAuth()
+  const companyId = user?.companyId || ''
 
   return useMutation({
     mutationFn: async (id: string) => {
@@ -131,7 +150,7 @@ export function useDeleteEmployee() {
       return result
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: employeeKeys.all })
+      queryClient.invalidateQueries({ queryKey: employeeKeys.lists(companyId) })
       toast({
         title: 'Success',
         description: 'Employee deleted successfully',

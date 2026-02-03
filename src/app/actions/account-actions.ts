@@ -10,9 +10,17 @@ export interface AccountFormValues {
   isActive?: boolean
 }
 
-export async function getChartOfAccounts(filters?: { type?: string; search?: string }) {
+export async function getChartOfAccounts(companyId: string, filters?: { type?: string; search?: string }) {
   try {
-    let query = supabase.from('chart_of_accounts').select('*').order('account_number', { ascending: true })
+    if (!companyId) {
+      return { success: true, data: [] }
+    }
+
+    let query = supabase
+      .from('chart_of_accounts')
+      .select('*')
+      .eq('company_id', companyId)
+      .order('account_number', { ascending: true })
 
     if (filters?.type && filters.type !== 'all') {
       query = query.eq('type', filters.type)
@@ -30,9 +38,15 @@ export async function getChartOfAccounts(filters?: { type?: string; search?: str
   }
 }
 
-export async function getAccount(id: string) {
+export async function getAccount(id: string, companyId?: string) {
   try {
-    const { data, error } = await supabase.from('chart_of_accounts').select('*').eq('id', id).single()
+    let query = supabase.from('chart_of_accounts').select('*').eq('id', id)
+
+    if (companyId) {
+      query = query.eq('company_id', companyId)
+    }
+
+    const { data, error } = await query.single()
     if (error) throw error
     return { success: true, data }
   } catch (error) {
@@ -40,10 +54,11 @@ export async function getAccount(id: string) {
   }
 }
 
-export async function createAccount(data: AccountFormValues & { companyId?: string }) {
+export async function createAccount(data: AccountFormValues, companyId: string) {
   try {
-    // Default company_id if not provided - in production this should come from auth
-    const companyId = data.companyId || 'default-company-id'
+    if (!companyId) {
+      return { success: false, error: "Company ID is required" }
+    }
 
     const { data: newAccount, error } = await supabase.from('chart_of_accounts').insert({
       company_id: companyId,
@@ -90,9 +105,17 @@ export async function deleteAccount(id: string) {
   }
 }
 
-export async function getAccountsSummary() {
+export async function getAccountsSummary(companyId: string) {
   try {
-    const { count } = await supabase.from('chart_of_accounts').select('*', { count: 'exact', head: true })
+    if (!companyId) {
+      return { success: true, data: { totalAccounts: 0 } }
+    }
+
+    const { count } = await supabase
+      .from('chart_of_accounts')
+      .select('*', { count: 'exact', head: true })
+      .eq('company_id', companyId)
+
     return {
       success: true,
       data: {

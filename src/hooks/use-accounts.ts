@@ -11,28 +11,36 @@ import {
   AccountFormValues,
 } from '@/app/actions/account-actions'
 import { useToast } from '@/components/ui/use-toast'
+import { useAuth } from '@/lib/auth-context'
 
 // Query keys
 export const accountKeys = {
   all: ['accounts'] as const,
-  list: (filters?: { type?: string; search?: string }) => [...accountKeys.all, 'list', filters] as const,
-  detail: (id: string) => [...accountKeys.all, 'detail', id] as const,
-  summary: () => [...accountKeys.all, 'summary'] as const,
+  lists: (companyId: string) => [...accountKeys.all, 'list', companyId] as const,
+  list: (companyId: string, filters?: { type?: string; search?: string }) => [...accountKeys.lists(companyId), filters] as const,
+  details: () => [...accountKeys.all, 'detail'] as const,
+  detail: (id: string) => [...accountKeys.details(), id] as const,
+  summary: (companyId: string) => [...accountKeys.all, 'summary', companyId] as const,
 }
 
 /**
  * Hook to fetch all accounts
  */
 export function useAccounts(filters?: { type?: string; search?: string }) {
+  const { user } = useAuth()
+  const companyId = user?.companyId || ''
+
   return useQuery({
-    queryKey: accountKeys.list(filters),
+    queryKey: accountKeys.list(companyId, filters),
     queryFn: async () => {
-      const result = await getChartOfAccounts(filters)
+      if (!companyId) return []
+      const result = await getChartOfAccounts(companyId, filters)
       if (!result.success) {
         throw new Error(result.error)
       }
       return result.data
     },
+    enabled: !!companyId,
   })
 }
 
@@ -40,16 +48,19 @@ export function useAccounts(filters?: { type?: string; search?: string }) {
  * Hook to fetch single account
  */
 export function useAccount(id: string) {
+  const { user } = useAuth()
+  const companyId = user?.companyId || ''
+
   return useQuery({
     queryKey: accountKeys.detail(id),
     queryFn: async () => {
-      const result = await getAccount(id)
+      const result = await getAccount(id, companyId)
       if (!result.success) {
         throw new Error(result.error)
       }
       return result.data
     },
-    enabled: !!id,
+    enabled: !!id && !!companyId,
   })
 }
 
@@ -57,15 +68,20 @@ export function useAccount(id: string) {
  * Hook to get accounts summary
  */
 export function useAccountsSummary() {
+  const { user } = useAuth()
+  const companyId = user?.companyId || ''
+
   return useQuery({
-    queryKey: accountKeys.summary(),
+    queryKey: accountKeys.summary(companyId),
     queryFn: async () => {
-      const result = await getAccountsSummary()
+      if (!companyId) return { totalAccounts: 0 }
+      const result = await getAccountsSummary(companyId)
       if (!result.success) {
         throw new Error(result.error)
       }
       return result.data
     },
+    enabled: !!companyId,
   })
 }
 
@@ -75,17 +91,21 @@ export function useAccountsSummary() {
 export function useCreateAccount() {
   const queryClient = useQueryClient()
   const { toast } = useToast()
+  const { user } = useAuth()
+  const companyId = user?.companyId || ''
 
   return useMutation({
     mutationFn: async (data: AccountFormValues) => {
-      const result = await createAccount(data)
+      if (!companyId) throw new Error('Company ID required')
+      const result = await createAccount(data, companyId)
       if (!result.success) {
         throw new Error(result.error)
       }
       return result.data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: accountKeys.all })
+      queryClient.invalidateQueries({ queryKey: accountKeys.lists(companyId) })
+      queryClient.invalidateQueries({ queryKey: accountKeys.summary(companyId) })
       toast({
         title: 'Success',
         description: 'Account created successfully',
@@ -107,6 +127,8 @@ export function useCreateAccount() {
 export function useUpdateAccount() {
   const queryClient = useQueryClient()
   const { toast } = useToast()
+  const { user } = useAuth()
+  const companyId = user?.companyId || ''
 
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: AccountFormValues }) => {
@@ -116,8 +138,10 @@ export function useUpdateAccount() {
       }
       return result.data
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: accountKeys.all })
+    onSuccess: (_: unknown, variables: { id: string; data: AccountFormValues }) => {
+      queryClient.invalidateQueries({ queryKey: accountKeys.lists(companyId) })
+      queryClient.invalidateQueries({ queryKey: accountKeys.detail(variables.id) })
+      queryClient.invalidateQueries({ queryKey: accountKeys.summary(companyId) })
       toast({
         title: 'Success',
         description: 'Account updated successfully',
@@ -139,6 +163,8 @@ export function useUpdateAccount() {
 export function useDeleteAccount() {
   const queryClient = useQueryClient()
   const { toast } = useToast()
+  const { user } = useAuth()
+  const companyId = user?.companyId || ''
 
   return useMutation({
     mutationFn: async (id: string) => {
@@ -149,7 +175,8 @@ export function useDeleteAccount() {
       return result
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: accountKeys.all })
+      queryClient.invalidateQueries({ queryKey: accountKeys.lists(companyId) })
+      queryClient.invalidateQueries({ queryKey: accountKeys.summary(companyId) })
       toast({
         title: 'Success',
         description: 'Account deleted successfully',
