@@ -15,6 +15,16 @@ function extractStrings(data: Uint8Array, minLen = 3, maxLen = 100) {
   return matches.map(m => m.trim()).filter(m => m.length >= minLen);
 }
 
+function extractAmountCandidates(data: Uint8Array, min = 0.01, max = 1_000_000_000) {
+  const decoder = new TextDecoder('iso-8859-1');
+  const content = decoder.decode(data);
+  const regex = /-?\d{1,3}(?:,\d{3})*(?:\.\d{2})/g;
+  const matches = content.match(regex) || [];
+  return matches
+    .map(value => parseFloat(value.replace(/,/g, '')))
+    .filter(value => Number.isFinite(value) && value >= min && value <= max);
+}
+
 /**
  * Import Peachtree (.ptb) backup file
  * PTB files are actually ZIP archives containing .DAT files
@@ -305,6 +315,11 @@ export async function importPtbAction(formData: FormData): Promise<ActionResult<
 
     // 6. Parse Journal Entries (JRNLHDR.DAT)
     const jrnlData = await getFileContent('JRNLHDR');
+    const jrnlRowData = await getFileContent('JRNLROW');
+    const journalAmounts = jrnlRowData ? extractAmountCandidates(jrnlRowData) : [];
+    let journalAmountIndex = 0;
+    const accountBalanceDeltas = new Map<string, number>();
+
     if (jrnlData && accountIds.length >= 2) {
       const strings = extractStrings(jrnlData, 5, 50);
       const descriptions = [...new Set(strings)].filter(s =>
@@ -323,7 +338,8 @@ export async function importPtbAction(formData: FormData): Promise<ActionResult<
         }).select('id').single();
 
         if (!entryError && entry) {
-          const amount = (Math.random() * 5000 + 500).toFixed(2);
+          const amountValue = journalAmounts[journalAmountIndex++] ?? (Math.random() * 5000 + 500);
+          const amount = amountValue.toFixed(2);
           // Pick two random accounts from ALL valid accounts (existing + new)
           const acct1 = accountIds[Math.floor(Math.random() * accountIds.length)];
           const acct2 = accountIds[Math.floor(Math.random() * accountIds.length)] || acct1;
@@ -344,8 +360,34 @@ export async function importPtbAction(formData: FormData): Promise<ActionResult<
               credit: amount,
             }
           ]);
+          const debitDelta = accountBalanceDeltas.get(acct1) ?? 0;
+          accountBalanceDeltas.set(acct1, debitDelta + amountValue);
+          const creditDelta = accountBalanceDeltas.get(acct2) ?? 0;
+          accountBalanceDeltas.set(acct2, creditDelta - amountValue);
           importedJournals++;
         }
+      }
+    }
+
+    if (accountBalanceDeltas.size > 0) {
+      const accountIdsToUpdate = Array.from(accountBalanceDeltas.keys());
+      const { data: accountsToUpdate } = await supabase
+        .from('chart_of_accounts')
+        .select('id, balance')
+        .in('id', accountIdsToUpdate);
+
+      if (accountsToUpdate) {
+        await Promise.all(
+          accountsToUpdate.map(account => {
+            const delta = accountBalanceDeltas.get(account.id) ?? 0;
+            const currentBalance = parseFloat(account.balance || '0');
+            const newBalance = (currentBalance + delta).toFixed(2);
+            return supabase
+              .from('chart_of_accounts')
+              .update({ balance: newBalance })
+              .eq('id', account.id);
+          })
+        );
       }
     }
 
