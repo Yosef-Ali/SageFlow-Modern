@@ -1,0 +1,210 @@
+account_number,account_name,type
+1017,Cash on hand,ASSET
+5000,Cost of material for se,EXPENSE
+1016,Awash Bank 4401,ASSET
+4001,AC Instalation & Main,REVENUE
+1014,Zemen Bank Saving 9025,ASSET
+1015,Dashen Bank 8011,ASSET
+2330,Federal Payr,LIABILITY
+1013,CBE 1125,ASSET
+6350,Office Maintenance & Rep,EXPENSE
+1000,Owner,ASSET
+1010,Cash on Hand,ASSET
+1011,Abyssinya 5544149,ASSET
+1019,Tele Birr,ASSET
+1012,Hibret Bank 3039,ASSET
+1018,Oromiya Int. Bank,ASSET
+1020,Petty cash,ASSET
+0182,Bank 0497,ASSET
+2501,Bank,LIABILITY
+0181,Bank,ASSET
+7818,Bank,EXPENSE
+0402,Bank 0497,ASSET
+0497,Bank 1007,ASSET
+1007,Bank 2031,ASSET
+2031,Bank 2051,LIABILITY
+2051,Bank 8011,LIABILITY
+8011,Bank 3016,EXPENSE
+3016,Bank 3024 OD,EQUITY
+3024,Bank 3039,EQUITY
+3039,Bank,EQUITY
+9014,Bank Saving 9025,EXPENSE
+2500,Bank,LIABILITY
+6850,Bank Service Charge,EXPENSE
+4401,Bank Service Charge,REVENUE
+2502,Bank 3024 OD,LIABILITY
+4301,Sales Of material,REVENUE
+1152,Sales,ASSET
+4050,Sales of Materials,REVENUE
+6405,Office rent,EXPENSE
+1510,Office improvemen,ASSET
+6450,Office Supplies,EXPENSE
+1501,Office furniture,ASSET
+1500,Equipment,ASSET
+2018,Inventory,LIABILITY
+1200,Inventory,ASSET
+6300,Rent,EXPENSE
+4900,Cold room Maintenance,REVENUE
+49001,Refund,REVENUE
+49002,Accrued Income prior period,REVENUE
+7104,GIT 8-2017,EXPENSE
+7105,GIT 8-2017,EXPENSE
+7106,GIT 8-2017,EXPENSE
+1209,GIT 8-2017,ASSET
+1208,GIT 7-2017,ASSET
+1207,GIT 6-2017,ASSET
+1015.3,Dashen Bank 2051,ASSET
+5008,d/\CCJ,EXPENSE
+5010,Instalation,EXPENSE
+5002,Glass,EXPENSE
+1156,Accrued Income current period,ASSET
+49003,Accrued Income current period,REVENUE
+1158,Wihholding old period,ASSET
+1157,KASME trading plc,ASSET
+5400.1,Technicians Pension,EXPENSE
+10182,Cooperative Bank 0497,ASSET
+6251,Property tax,EXPENSE
+1021,Stuff receivable,ASSET
+6650,Non allowables,EXPENSE
+6900,Transport exp.,EXPENSE
+6800,Freight Expense,EXPENSE
+5005,PPM & Sanitization,EXPENSE
+1013.3,CBE Jackross 0402,ASSET
+1100,Trade Receivable,ASSET
+1155,Suspense,ASSET
+2320,Accruals,LIABILITY
+1500.1,Acc. dep Equipment,ASSET
+4105,PPM South,REVENUE
+4106,Finance Charge Income,REVENUE
+4200,Finance Charge Income,REVENUE
+4300,Other Income,REVENUE
+2300,tYr(,LIABILITY
+6404,Penality,EXPENSE
+6452,Annual inspection,EXPENSE
+7051,Amortization,EXPENSE
+6453,Interest exp.,EXPENSE
+6500,Telephone Expense,EXPENSE
+3910,Retained earnings,EQUITY
+1511,Suzuki Cellario,ASSET
+1511.1,Suzuki Cell Acc.dep.,ASSET
+5900,Selling and distribution,EXPENSE
+5901,Cost of sales,EXPENSE
+3941,qrDN,EQUITY
+5905,Building Depreciation,EXPENSE
+5906,Building related costs,EXPENSE
+5907,Bld.Security serv,EXPENSE
+10181,Anbesa Bank,ASSET
+1507.1,Acc dep Pick up 3,ASSET
+1507,Pick up 3,ASSET
+1508.1,Accm dep Pick up 4,ASSET
+1508,Pick up 4,ASSET
+1600,Building,ASSET
+1600.1,Acc dep Building,ASSET
+1509,Toyota Prado,ASSET
+1700,Lease hold Land,ASSET
+5904,Building maintenance,EXPENSE
+1154,Dam Bond,ASSET
+1509.1,Acc.Toyota Prado,ASSET
+2700,Lease payable,LIABILITY
+4000,Maintenance service,REVENUE
+1013.1,CBE 5272,ASSET
+5400,Technicians Salary,EXPENSE
+4002,Sanitization Service,REVENUE
+1503,Toyota Pick up 1,ASSET
+1503.1,Acc. Toyota Pick up 1,ASSET
+1504,Toyota Pick up 2,ASSET
+1504.1,Acc.Toyota Pick up 2,ASSET
+3940,Abyssinya 5544149,EQUITY
+6000,Salary Expense,EXPENSE
+6600,Advertising Expense,EXPENSE
+3942,Licence & others,EQUITY
+3943,Licence & others,EQUITY
+7101,Licence & others,EXPENSE
+5401,Machine works,EXPENSE
+1159,Account receivable,ASSET
+1015.1,Dashen Bank 1007,ASSET
+1160,New Vehicle,ASSET
+5902,PPM & sanition service cost,EXPENSE
+2303,Profit tax,LIABILITY
+2304,Trade,LIABILITY
+2321,Differed Income,LIABILITY
+6950,Insurance Expense,EXPENSE
+6952,Bid doc,EXPENSE
+1011.3,Abyssinya 7818,ASSET
+6001,Pension exp.,EXPENSE
+6050,Employee BONUS,EXPENSE
+5908,Depreciation of blding,EXPENSE
+1153,Withholding of Building rent,ASSET
+1512.1,Suzuki EEco Acc. depr,ASSET
+1512,Suzuki EEco,ASSET
+6402,Web hosting,EXPENSE
+6403,Generator oil,EXPENSE
+6451,Advocacy service,EXPENSE
+6550,Travel & perdime,EXPENSE
+5003,Labourers,EXPENSE
+5004,Workshop Items,EXPENSE
+5006,Freight,EXPENSE
+5007,Maintenance,EXPENSE
+6150,Fuel & lubricant,EXPENSE
+49004,Interest income,REVENUE
+6955,Donation,EXPENSE
+6454,Training fee,EXPENSE
+2340,Heiniken,LIABILITY
+2350,State Payroll Taxes Payable,LIABILITY
+4005,Corrective Maintenance,REVENUE
+4060,Building rent & utility,REVENUE
+4100,PPM West,REVENUE
+4101,PPM Central,REVENUE
+6200,Postal service,EXPENSE
+6250,Other Taxes Expense,EXPENSE
+6954,Cash register maintenance,EXPENSE
+7050,Depreciation Expense,EXPENSE
+7100,Printings,EXPENSE
+1202,GIT 1-2017,ASSET
+1700.1,Lease hold Amortization,ASSET
+6953,Unclaimed VAT,EXPENSE
+2301,Income tax,LIABILITY
+1210,GIT-2018,ASSET
+5001,Uniform,EXPENSE
+6401,Audit fee,EXPENSE
+6400,Utilities Expense,EXPENSE
+2305,Withholdig,LIABILITY
+6100,Vehicle repair & maint.,EXPENSE
+5009,Cast of Good sold,EXPENSE
+1201,Hibret Bank 3024 OD,ASSET
+1012.2,Hibret Bank 3024 OD,ASSET
+1204,GIT 3-2017,ASSET
+1206,GIT 5-2017,ASSET
+1203,GIT 2-2017,ASSET
+1205,GIT 4-2017,ASSET
+1400,Prepaid Expenses,ASSET
+1505.1,Acc. depre Hiondai,ASSET
+1502,IT and compurers,ASSET
+1502.1,Acc. dep. IT and compurers,ASSET
+1501.1,Acc. dep Office furniture,ASSET
+1505,Hiondai,ASSET
+1506.1,Acc. dep. Workshop Proper,ASSET
+1506,Workshop Properties,ASSET
+1011.1,Abyssinya 5615507,ASSET
+4003,Instalation,REVENUE
+4004,Service and Inspection,REVENUE
+7102,Professional fee,EXPENSE
+7103,GPS Service,EXPENSE
+1014.1,Zemen Bank Current 9014,ASSET
+1510.1,Acc.Office improvemen,ASSET
+1602.1,Acc. dep.Workshop,ASSET
+1602,Workshop Jimma,ASSET
+1151,Unclaimed VAT,ASSET
+1150,Pre payments,ASSET
+2360,SUTA Payable,LIABILITY
+2370,Local Taxes Payable,LIABILITY
+2380,Income Taxes Payable,LIABILITY
+2400,Customer Deposits,LIABILITY
+1015.2,Dashen Bank 2031,ASSET
+1513.1,Acc.dep Pick up 5,ASSET
+1513,Pick up 5,ASSET
+2302,Penssion,LIABILITY
+1012.1,Hibret Bank 3016,ASSET
+4102,PPM Addis,REVENUE
+4103,PPM North,REVENUE
+4104,PPM East,REVENUE

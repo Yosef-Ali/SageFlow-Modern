@@ -288,3 +288,30 @@ ipcMain.handle('license:getMachineId', async () => {
 
   return fingerprint;
 });
+
+// ============ PTB IMPORT/EXPORT SERVICE ============
+// Use the enhanced v3 service with better balance extraction
+const { PTBServiceV3 } = require('./ptb-service-v3');
+const ptbService = new PTBServiceV3();
+
+// Import PTB file - show dialog and parse
+ipcMain.handle('ptb:import', async () => {
+  return await ptbService.showImportDialog(mainWindow);
+});
+
+// Import PTB from path (for drag & drop)
+ipcMain.handle('ptb:importFromPath', async (_, filePath) => {
+  return await ptbService.importPTB(filePath);
+});
+
+// Export to PTB file
+ipcMain.handle('ptb:export', async (_, data) => {
+  return await ptbService.showExportDialog(mainWindow, data);
+});
+
+// Export to PTB at specific path
+ipcMain.handle('ptb:exportToPath', async (_, { data, outputPath }) => {
+  return await ptbService.exportPTB(data, outputPath);
+});
+
+console.log('✅ PTB Service initialized');

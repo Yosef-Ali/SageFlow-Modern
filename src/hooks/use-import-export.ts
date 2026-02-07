@@ -100,7 +100,7 @@ export function useExportJournalEntries() {
 }
 
 /**
- * Hook to export full PTB backup file
+ * Hook to export full PTB backup file (browser-compatible)
  */
 export function useExportToPtb() {
   const { toast } = useToast()
@@ -110,36 +110,18 @@ export function useExportToPtb() {
   return useMutation({
     mutationFn: async () => {
       if (!companyId) throw new Error('Company ID is required')
-      // Dynamic import to avoid circular dependencies if any, or just direct import
-      const { generatePtbBackup } = await import('@/app/actions/backup-actions')
+      const { generatePtbBackup } = await import('@/lib/peachtree/ptb-export-service')
       const result = await generatePtbBackup(companyId)
-      if (!result.success) {
-        throw new Error(result.error)
-      }
-      return result.data
+      if (!result.success) throw new Error(result.error)
+      return result
     },
-    onSuccess: (zipBase64) => {
-      // Decode base64 to blob
-      const binaryString = window.atob(zipBase64 as string)
-      const len = binaryString.length
-      const bytes = new Uint8Array(len)
-      for (let i = 0; i < len; i++) {
-        bytes[i] = binaryString.charCodeAt(i)
-      }
-      const blob = new Blob([bytes], { type: 'application/zip' })
-
-      const url = URL.createObjectURL(blob)
-      const link = document.createElement('a')
-      link.href = url
-      link.download = `SageFlow_Backup_${new Date().toISOString().split('T')[0]}.ptb`
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
-      URL.revokeObjectURL(url)
+    onSuccess: async (result) => {
+      const { downloadPtbBackup } = await import('@/lib/peachtree/ptb-export-service')
+      downloadPtbBackup(result)
 
       toast({
-        title: 'Export Successful',
-        description: 'Peachtree backup file (.ptb) downloaded',
+        title: 'Export Successful / ስኬታማ!',
+        description: `Backup downloaded: ${result.counts?.customers || 0} customers, ${result.counts?.vendors || 0} vendors, ${result.counts?.accounts || 0} accounts`,
       })
     },
     onError: (error: Error) => {

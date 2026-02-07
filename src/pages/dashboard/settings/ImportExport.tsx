@@ -14,6 +14,7 @@ import {
   useExportJournalEntries,
   useExportItems,
   useExportEmployees,
+  useExportToPtb,
 } from '@/hooks/use-import-export'
 import { PtbImportDialogSimple } from '@/components/peachtree/ptb-import-dialog-simple'
 import { CsvImportDialog } from '@/components/peachtree/csv-import-dialog'
@@ -34,6 +35,9 @@ export default function ImportExportPage() {
 
   // Audit exports
   const exportJournalEntries = useExportJournalEntries()
+
+  // PTB full backup export
+  const exportPtb = useExportToPtb()
 
   // Seed demo data
   const handleSeedDemo = async () => {
@@ -277,9 +281,17 @@ export default function ImportExportPage() {
                   </div>
                   <p className="text-sm text-emerald-700/70 dark:text-emerald-300/60">All data: Customers, Vendors, Inventory, GL</p>
                 </div>
-                <Button disabled className="bg-emerald-600/10 text-emerald-600 border-emerald-200">
-                  <Download className="w-4 h-4 mr-2" />
-                  Coming Soon
+                <Button
+                  onClick={() => exportPtb.mutate()}
+                  disabled={exportPtb.isPending}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                >
+                  {exportPtb.isPending ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <Download className="w-4 h-4 mr-2" />
+                  )}
+                  {exportPtb.isPending ? 'Generating...' : 'Download .ptb'}
                 </Button>
               </div>
             </CardContent>

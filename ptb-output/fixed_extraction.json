@@ -1,0 +1,1567 @@
+{
+  "chart_of_accounts": [
+    {
+      "account_number": "1000",
+      "account_name": "Owner",
+      "type": "ASSET",
+      "balance": -0.05,
+      "balance_source": "CHARTAR:id@712052:bal@-48",
+      "_chartIndex": 1792
+    },
+    {
+      "account_number": "1010",
+      "account_name": "Cash on Hand",
+      "type": "ASSET",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1793
+    },
+    {
+      "account_number": "1011",
+      "account_name": "Abyssinya 5544149",
+      "type": "ASSET",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1794
+    },
+    {
+      "account_number": "1011.1",
+      "account_name": "Abyssinya 5615507",
+      "type": "ASSET",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1795
+    },
+    {
+      "account_number": "1011.3",
+      "account_name": "Abyssinya 7818",
+      "type": "ASSET",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1954
+    },
+    {
+      "account_number": "1012",
+      "account_name": "Hibret Bank 3039",
+      "type": "ASSET",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1796
+    },
+    {
+      "account_number": "1012.1",
+      "account_name": "Hibret Bank 3016",
+      "type": "ASSET",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1940
+    },
+    {
+      "account_number": "1012.2",
+      "account_name": "Hibret Bank 3024 OD",
+      "type": "ASSET",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 15626
+    },
+    {
+      "account_number": "1013",
+      "account_name": "CBE 1125",
+      "type": "ASSET",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1797
+    },
+    {
+      "account_number": "1013.1",
+      "account_name": "CBE 5272",
+      "type": "ASSET",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1930
+    },
+    {
+      "account_number": "1013.3",
+      "account_name": "CBE Jackross 0402",
+      "type": "ASSET",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 15625
+    },
+    {
+      "account_number": "1014",
+      "account_name": "Zemen Bank Saving 9025",
+      "type": "ASSET",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1798
+    },
+    {
+      "account_number": "1014.1",
+      "account_name": "Zemen Bank Current 9014",
+      "type": "ASSET",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1948
+    },
+    {
+      "account_number": "1015",
+      "account_name": "Dashen Bank 8011",
+      "type": "ASSET",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1799
+    },
+    {
+      "account_number": "1015.1",
+      "account_name": "Dashen Bank 1007",
+      "type": "ASSET",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1934
+    },
+    {
+      "account_number": "1015.2",
+      "account_name": "Dashen Bank 2031",
+      "type": "ASSET",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 15628
+    },
+    {
+      "account_number": "1015.3",
+      "account_name": "Dashen Bank 2051",
+      "type": "ASSET",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 15643
+    },
+    {
+      "account_number": "1016",
+      "account_name": "Awash Bank 4401",
+      "type": "ASSET",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1800
+    },
+    {
+      "account_number": "1017",
+      "account_name": "Cash on hand",
+      "type": "ASSET",
+      "balance": 6.63,
+      "balance_source": "CHARTAR:id@765126:bal@-40",
+      "_chartIndex": 1801
+    },
+    {
+      "account_number": "1018",
+      "account_name": "Oromiya Int. Bank",
+      "type": "ASSET",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1941
+    },
+    {
+      "account_number": "1019",
+      "account_name": "Tele Birr",
+      "type": "ASSET",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1947
+    },
+    {
+      "account_number": "1020",
+      "account_name": "Petty cash",
+      "type": "ASSET",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1802
+    },
+    {
+      "account_number": "1021",
+      "account_name": "Stuff receivable",
+      "type": "ASSET",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1803
+    },
+    {
+      "account_number": "1100",
+      "account_name": "Trade Receivable",
+      "type": "ASSET",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1804
+    },
+    {
+      "account_number": "1150",
+      "account_name": "Pre payments",
+      "type": "ASSET",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1805
+    },
+    {
+      "account_number": "1151",
+      "account_name": "Unclaimed VAT",
+      "type": "ASSET",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1806
+    },
+    {
+      "account_number": "1152",
+      "account_name": "Withholding of Sales",
+      "type": "ASSET",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1807
+    },
+    {
+      "account_number": "1153",
+      "account_name": "Withholding of Building rent",
+      "type": "ASSET",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1808
+    },
+    {
+      "account_number": "1154",
+      "account_name": "Dam Bond",
+      "type": "ASSET",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1927
+    },
+    {
+      "account_number": "1155",
+      "account_name": "Suspense",
+      "type": "ASSET",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1942
+    },
+    {
+      "account_number": "1156",
+      "account_name": "CPO",
+      "type": "ASSET",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1950
+    },
+    {
+      "account_number": "1157",
+      "account_name": "KASME trading plc",
+      "type": "ASSET",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1951
+    },
+    {
+      "account_number": "1158",
+      "account_name": "Wihholding old period",
+      "type": "ASSET",
+      "balance": 0.01,
+      "balance_source": "CHARTAR:id@646748:bal@-16",
+      "_chartIndex": 1952
+    },
+    {
+      "account_number": "1159",
+      "account_name": "aWs",
+      "type": "ASSET",
+      "balance": 216535.31,
+      "balance_source": "CHARTAR:id@508488:bal@72",
+      "_chartIndex": 1953
+    },
+    {
+      "account_number": "1160",
+      "account_name": "New Vehicle",
+      "type": "ASSET",
+      "balance": -957808775.57,
+      "balance_source": "CHARTAR:id@793160:bal@-40",
+      "_chartIndex": 15624
+    },
+    {
+      "account_number": "1200",
+      "account_name": "Inventory",
+      "type": "ASSET",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1809
+    },
+    {
+      "account_number": "1201",
+      "account_name": "GIT",
+      "type": "ASSET",
+      "balance": 77884817.77,
+      "balance_source": "CHARTAR:id@1071920:bal@-40",
+      "_chartIndex": 1810
+    },
+    {
+      "account_number": "1202",
+      "account_name": "GIT 1-2017",
+      "type": "ASSET",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 15635
+    },
+    {
+      "account_number": "1203",
+      "account_name": "GIT 2-2017",
+      "type": "ASSET",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 15637
+    },
+    {
+      "account_number": "1204",
+      "account_name": "GIT 3-2017",
+      "type": "ASSET",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 15636
+    },
+    {
+      "account_number": "1205",
+      "account_name": "GIT 4-2017",
+      "type": "ASSET",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 15638
+    },
+    {
+      "account_number": "1206",
+      "account_name": "GIT 5-2017",
+      "type": "ASSET",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 15639
+    },
+    {
+      "account_number": "1207",
+      "account_name": "GIT 6-2017",
+      "type": "ASSET",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 15640
+    },
+    {
+      "account_number": "1208",
+      "account_name": "GIT 7-2017",
+      "type": "ASSET",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 15641
+    },
+    {
+      "account_number": "1209",
+      "account_name": "GIT 8-2017",
+      "type": "ASSET",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 15642
+    },
+    {
+      "account_number": "1210",
+      "account_name": "GIT-2018",
+      "type": "ASSET",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1931
+    },
+    {
+      "account_number": "1400",
+      "account_name": "Prepaid Expenses",
+      "type": "ASSET",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1811
+    },
+    {
+      "account_number": "1500",
+      "account_name": "Equipment",
+      "type": "ASSET",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1812
+    },
+    {
+      "account_number": "1500.1",
+      "account_name": "Acc. dep Equipment",
+      "type": "ASSET",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1813
+    },
+    {
+      "account_number": "1501",
+      "account_name": "Office furniture",
+      "type": "ASSET",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1814
+    },
+    {
+      "account_number": "1501.1",
+      "account_name": "Acc. dep Office furniture",
+      "type": "ASSET",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1815
+    },
+    {
+      "account_number": "1502",
+      "account_name": "IT and compurers",
+      "type": "ASSET",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1816
+    },
+    {
+      "account_number": "1502.1",
+      "account_name": "Acc. dep. IT and compurers",
+      "type": "ASSET",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1817
+    },
+    {
+      "account_number": "1503",
+      "account_name": "Toyota Pick up 1",
+      "type": "ASSET",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1818
+    },
+    {
+      "account_number": "1503.1",
+      "account_name": "Acc. Toyota Pick up 1",
+      "type": "ASSET",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1819
+    },
+    {
+      "account_number": "1504",
+      "account_name": "Toyota Pick up 2",
+      "type": "ASSET",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1820
+    },
+    {
+      "account_number": "1504.1",
+      "account_name": "Acc.Toyota Pick up 2",
+      "type": "ASSET",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1821
+    },
+    {
+      "account_number": "1505",
+      "account_name": "Hiondai",
+      "type": "ASSET",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1822
+    },
+    {
+      "account_number": "1505.1",
+      "account_name": "Acc. depre Hiondai",
+      "type": "ASSET",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1823
+    },
+    {
+      "account_number": "1506",
+      "account_name": "Workshop Properties",
+      "type": "ASSET",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1824
+    },
+    {
+      "account_number": "1506.1",
+      "account_name": "Acc. dep. Workshop Proper",
+      "type": "ASSET",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1825
+    },
+    {
+      "account_number": "1507",
+      "account_name": "Pick up 3",
+      "type": "ASSET",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1826
+    },
+    {
+      "account_number": "1507.1",
+      "account_name": "Acc dep Pick up 3",
+      "type": "ASSET",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1827
+    },
+    {
+      "account_number": "1508",
+      "account_name": "Pick up 4",
+      "type": "ASSET",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1828
+    },
+    {
+      "account_number": "1508.1",
+      "account_name": "Accm dep Pick up 4",
+      "type": "ASSET",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1829
+    },
+    {
+      "account_number": "1509",
+      "account_name": "Toyota Prado",
+      "type": "ASSET",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1832
+    },
+    {
+      "account_number": "1509.1",
+      "account_name": "Acc.Toyota Prado",
+      "type": "ASSET",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1928
+    },
+    {
+      "account_number": "1510",
+      "account_name": "Office improvemen",
+      "type": "ASSET",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1943
+    },
+    {
+      "account_number": "1510.1",
+      "account_name": "Acc.Office improvemen",
+      "type": "ASSET",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1944
+    },
+    {
+      "account_number": "1511",
+      "account_name": "Suzuki Cellario",
+      "type": "ASSET",
+      "balance": -0.01,
+      "balance_source": "CHARTAR:id@711240:bal@16",
+      "_chartIndex": 15620
+    },
+    {
+      "account_number": "1511.1",
+      "account_name": "Suzuki Cell Acc.dep.",
+      "type": "ASSET",
+      "balance": -0.01,
+      "balance_source": "CHARTAR:id@711240:bal@16",
+      "_chartIndex": 15621
+    },
+    {
+      "account_number": "1512",
+      "account_name": "Suzuki EEco",
+      "type": "ASSET",
+      "balance": -0.05,
+      "balance_source": "CHARTAR:id@712110:bal@-48",
+      "_chartIndex": 15630
+    },
+    {
+      "account_number": "1512.1",
+      "account_name": "Suzuki EEco Acc. depr",
+      "type": "ASSET",
+      "balance": -0.05,
+      "balance_source": "CHARTAR:id@712110:bal@-48",
+      "_chartIndex": 15631
+    },
+    {
+      "account_number": "1513",
+      "account_name": "Pick up 5",
+      "type": "ASSET",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 15632
+    },
+    {
+      "account_number": "1513.1",
+      "account_name": "Acc.dep Pick up 5",
+      "type": "ASSET",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 15633
+    },
+    {
+      "account_number": "1600",
+      "account_name": "Building",
+      "type": "ASSET",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1830
+    },
+    {
+      "account_number": "1600.1",
+      "account_name": "Acc dep Building",
+      "type": "ASSET",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1831
+    },
+    {
+      "account_number": "1602",
+      "account_name": "Workshop Jimma",
+      "type": "ASSET",
+      "balance": -1.48,
+      "balance_source": "CHARTAR:id@703628:bal@40",
+      "_chartIndex": 1945
+    },
+    {
+      "account_number": "1602.1",
+      "account_name": "Acc. dep.Workshop",
+      "type": "ASSET",
+      "balance": -1.48,
+      "balance_source": "CHARTAR:id@703628:bal@40",
+      "_chartIndex": 1946
+    },
+    {
+      "account_number": "1700",
+      "account_name": "Lease hold Land",
+      "type": "ASSET",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1833
+    },
+    {
+      "account_number": "1700.1",
+      "account_name": "Lease hold Amortization",
+      "type": "ASSET",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 15644
+    },
+    {
+      "account_number": "2300",
+      "account_name": "VAT",
+      "type": "LIABILITY",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1834
+    },
+    {
+      "account_number": "2301",
+      "account_name": "Income tax",
+      "type": "LIABILITY",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1835
+    },
+    {
+      "account_number": "2302",
+      "account_name": "Penssion",
+      "type": "LIABILITY",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1836
+    },
+    {
+      "account_number": "2303",
+      "account_name": "Profit tax",
+      "type": "LIABILITY",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1837
+    },
+    {
+      "account_number": "2304",
+      "account_name": "Trade",
+      "type": "LIABILITY",
+      "balance": 2,
+      "balance_source": "CHARTAR:id@684596:bal@56",
+      "_chartIndex": 1838
+    },
+    {
+      "account_number": "2305",
+      "account_name": "Withholdig",
+      "type": "LIABILITY",
+      "balance": -46509536,
+      "balance_source": "CHARTAR:id@629030:bal@-48",
+      "_chartIndex": 1839
+    },
+    {
+      "account_number": "2320",
+      "account_name": "Accruals",
+      "type": "LIABILITY",
+      "balance": -1684.85,
+      "balance_source": "CHARTAR:id@678748:bal@-8",
+      "_chartIndex": 1936
+    },
+    {
+      "account_number": "2321",
+      "account_name": "Differed Income",
+      "type": "LIABILITY",
+      "balance": 1319619,
+      "balance_source": "CHARTAR:id@88184:bal@-48",
+      "_chartIndex": 1840
+    },
+    {
+      "account_number": "2330",
+      "account_name": "Federal Payroll Taxes Payable",
+      "type": "LIABILITY",
+      "balance": 7056100.14,
+      "balance_source": "CHARTAR:id@101646:bal@-16",
+      "_chartIndex": 1841
+    },
+    {
+      "account_number": "2340",
+      "account_name": "Heiniken",
+      "type": "LIABILITY",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1842
+    },
+    {
+      "account_number": "2350",
+      "account_name": "State Payroll Taxes Payable",
+      "type": "LIABILITY",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1843
+    },
+    {
+      "account_number": "2360",
+      "account_name": "SUTA Payable",
+      "type": "LIABILITY",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1844
+    },
+    {
+      "account_number": "2370",
+      "account_name": "Local Taxes Payable",
+      "type": "LIABILITY",
+      "balance": -1.48,
+      "balance_source": "CHARTAR:id@1139330:bal@40",
+      "_chartIndex": 1845
+    },
+    {
+      "account_number": "2380",
+      "account_name": "Abyssinya 5544149",
+      "type": "LIABILITY",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1846
+    },
+    {
+      "account_number": "2400",
+      "account_name": "Abyssinya 5544149",
+      "type": "LIABILITY",
+      "balance": -1872.05,
+      "balance_source": "CHARTAR:id@543362:bal@16",
+      "_chartIndex": 1847
+    },
+    {
+      "account_number": "2500",
+      "account_name": "Abyssinya 5544149",
+      "type": "LIABILITY",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1848
+    },
+    {
+      "account_number": "2501",
+      "account_name": "Loan from Hibret  Bank",
+      "type": "LIABILITY",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 15619
+    },
+    {
+      "account_number": "2502",
+      "account_name": "Hibret Bank 3024 OD",
+      "type": "LIABILITY",
+      "balance": 0,
+      "balance_source": null
+    },
+    {
+      "account_number": "2700",
+      "account_name": "Lease payable",
+      "type": "LIABILITY",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1849
+    },
+    {
+      "account_number": "3910",
+      "account_name": "Retained earnings",
+      "type": "EQUITY",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1924
+    },
+    {
+      "account_number": "3940",
+      "account_name": "Abyssinya 5544149",
+      "type": "EQUITY",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1925
+    },
+    {
+      "account_number": "3941",
+      "account_name": "qrDN",
+      "type": "EQUITY",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1926
+    },
+    {
+      "account_number": "3942",
+      "account_name": "Licence & others",
+      "type": "EQUITY",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1935
+    },
+    {
+      "account_number": "3943",
+      "account_name": "Licence & others",
+      "type": "EQUITY",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1937
+    },
+    {
+      "account_number": "4000",
+      "account_name": "Maintenance service",
+      "type": "REVENUE",
+      "balance": 0.01,
+      "balance_source": "CHARTAR:id@449792:bal@-48",
+      "_chartIndex": 1850
+    },
+    {
+      "account_number": "4001",
+      "account_name": "AC Instalation & Maintenance",
+      "type": "REVENUE",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1851
+    },
+    {
+      "account_number": "4002",
+      "account_name": "Sanitization Service",
+      "type": "REVENUE",
+      "balance": 40648027.16,
+      "balance_source": "CHARTAR:id@581694:bal@72",
+      "_chartIndex": 1852
+    },
+    {
+      "account_number": "4003",
+      "account_name": "Instalation",
+      "type": "REVENUE",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1853
+    },
+    {
+      "account_number": "4004",
+      "account_name": "Service and Inspection",
+      "type": "REVENUE",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1854
+    },
+    {
+      "account_number": "4005",
+      "account_name": "Corrective Maintenance",
+      "type": "REVENUE",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1855
+    },
+    {
+      "account_number": "4050",
+      "account_name": "Sales of Materials",
+      "type": "REVENUE",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1856
+    },
+    {
+      "account_number": "4060",
+      "account_name": "Building rent & utility",
+      "type": "REVENUE",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1857
+    },
+    {
+      "account_number": "4100",
+      "account_name": "PPM West",
+      "type": "REVENUE",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1858
+    },
+    {
+      "account_number": "4101",
+      "account_name": "PPM Central",
+      "type": "REVENUE",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1859
+    },
+    {
+      "account_number": "4102",
+      "account_name": "PPM Addis",
+      "type": "REVENUE",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1860
+    },
+    {
+      "account_number": "4103",
+      "account_name": "PPM North",
+      "type": "REVENUE",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1861
+    },
+    {
+      "account_number": "4104",
+      "account_name": "PPM East",
+      "type": "REVENUE",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1862
+    },
+    {
+      "account_number": "4105",
+      "account_name": "PPM South",
+      "type": "REVENUE",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1863
+    },
+    {
+      "account_number": "4106",
+      "account_name": "PPM",
+      "type": "REVENUE",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1864
+    },
+    {
+      "account_number": "4200",
+      "account_name": "Finance Charge Income",
+      "type": "REVENUE",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1865
+    },
+    {
+      "account_number": "4300",
+      "account_name": "Other Income",
+      "type": "REVENUE",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1866
+    },
+    {
+      "account_number": "4301",
+      "account_name": "Sales Of material",
+      "type": "REVENUE",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1867
+    },
+    {
+      "account_number": "4900",
+      "account_name": "Cold room Maintenance",
+      "type": "REVENUE",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1868
+    },
+    {
+      "account_number": "5000",
+      "account_name": "Cost of material for service",
+      "type": "EXPENSE",
+      "balance": -957808775.57,
+      "balance_source": "CHARTAR:id@793624:bal@-40",
+      "_chartIndex": 1871
+    },
+    {
+      "account_number": "5001",
+      "account_name": "Uniform",
+      "type": "EXPENSE",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1872
+    },
+    {
+      "account_number": "5002",
+      "account_name": "Glass",
+      "type": "EXPENSE",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1873
+    },
+    {
+      "account_number": "5003",
+      "account_name": "Labourers",
+      "type": "EXPENSE",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1874
+    },
+    {
+      "account_number": "5004",
+      "account_name": "Workshop Items",
+      "type": "EXPENSE",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1875
+    },
+    {
+      "account_number": "5005",
+      "account_name": "PPM & Sanitization",
+      "type": "EXPENSE",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1876
+    },
+    {
+      "account_number": "5006",
+      "account_name": "Freight",
+      "type": "EXPENSE",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1877
+    },
+    {
+      "account_number": "5007",
+      "account_name": "Maintenance",
+      "type": "EXPENSE",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1878
+    },
+    {
+      "account_number": "5008",
+      "account_name": "Gas",
+      "type": "EXPENSE",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1879
+    },
+    {
+      "account_number": "5009",
+      "account_name": "Cast of Good sold",
+      "type": "EXPENSE",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1880
+    },
+    {
+      "account_number": "5010",
+      "account_name": "Instalation",
+      "type": "EXPENSE",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 15616
+    },
+    {
+      "account_number": "5400",
+      "account_name": "Technicians Salary",
+      "type": "EXPENSE",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1881
+    },
+    {
+      "account_number": "5400.1",
+      "account_name": "Technicians Pension",
+      "type": "EXPENSE",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 15627
+    },
+    {
+      "account_number": "5401",
+      "account_name": "Machine works",
+      "type": "EXPENSE",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1933
+    },
+    {
+      "account_number": "5900",
+      "account_name": "Selling and distribution",
+      "type": "EXPENSE",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1882
+    },
+    {
+      "account_number": "5901",
+      "account_name": "Cost of sales",
+      "type": "EXPENSE",
+      "balance": -7240.06,
+      "balance_source": "CHARTAR:id@708902:bal@16",
+      "_chartIndex": 1883
+    },
+    {
+      "account_number": "5902",
+      "account_name": "PPM & sanition service cost",
+      "type": "EXPENSE",
+      "balance": 188373.37,
+      "balance_source": "CHARTAR:id@1141726:bal@72",
+      "_chartIndex": 1884
+    },
+    {
+      "account_number": "5904",
+      "account_name": "Building maintenance",
+      "type": "EXPENSE",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1885
+    },
+    {
+      "account_number": "5905",
+      "account_name": "Building Depreciation",
+      "type": "EXPENSE",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1886
+    },
+    {
+      "account_number": "5906",
+      "account_name": "Building related costs",
+      "type": "EXPENSE",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1887
+    },
+    {
+      "account_number": "5907",
+      "account_name": "Bld.Security serv",
+      "type": "EXPENSE",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1888
+    },
+    {
+      "account_number": "5908",
+      "account_name": "Depreciation of blding",
+      "type": "EXPENSE",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1893
+    },
+    {
+      "account_number": "6000",
+      "account_name": "Salary Expense",
+      "type": "EXPENSE",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1889
+    },
+    {
+      "account_number": "6001",
+      "account_name": "Pension exp.",
+      "type": "EXPENSE",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1890
+    },
+    {
+      "account_number": "6050",
+      "account_name": "Employee BONUS",
+      "type": "EXPENSE",
+      "balance": 40648027.16,
+      "balance_source": "CHARTAR:id@581926:bal@72",
+      "_chartIndex": 1891
+    },
+    {
+      "account_number": "6100",
+      "account_name": "Vehicle repair & maint.",
+      "type": "EXPENSE",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1892
+    },
+    {
+      "account_number": "6150",
+      "account_name": "Fuel & lubricant",
+      "type": "EXPENSE",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1894
+    },
+    {
+      "account_number": "6200",
+      "account_name": "Postal service",
+      "type": "EXPENSE",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1895
+    },
+    {
+      "account_number": "6250",
+      "account_name": "Other Taxes Expense",
+      "type": "EXPENSE",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1896
+    },
+    {
+      "account_number": "6251",
+      "account_name": "Property tax",
+      "type": "EXPENSE",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 15622
+    },
+    {
+      "account_number": "6300",
+      "account_name": "Workshop Rent",
+      "type": "EXPENSE",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1897
+    },
+    {
+      "account_number": "6350",
+      "account_name": "Office Maintenance & Repairs",
+      "type": "EXPENSE",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1898
+    },
+    {
+      "account_number": "6400",
+      "account_name": "Utilities Expense",
+      "type": "EXPENSE",
+      "balance": 215122417.25,
+      "balance_source": "CHARTAR:id@554218:bal@-16",
+      "_chartIndex": 1899
+    },
+    {
+      "account_number": "6401",
+      "account_name": "Audit fee",
+      "type": "EXPENSE",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1900
+    },
+    {
+      "account_number": "6402",
+      "account_name": "Web hosting",
+      "type": "EXPENSE",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1901
+    },
+    {
+      "account_number": "6403",
+      "account_name": "Generator oil",
+      "type": "EXPENSE",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1902
+    },
+    {
+      "account_number": "6404",
+      "account_name": "Penality",
+      "type": "EXPENSE",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1932
+    },
+    {
+      "account_number": "6405",
+      "account_name": "Office rent",
+      "type": "EXPENSE",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1938
+    },
+    {
+      "account_number": "6450",
+      "account_name": "Office Supplies",
+      "type": "EXPENSE",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1903
+    },
+    {
+      "account_number": "6451",
+      "account_name": "Advocacy service",
+      "type": "EXPENSE",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1904
+    },
+    {
+      "account_number": "6452",
+      "account_name": "Annual inspection",
+      "type": "EXPENSE",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1905
+    },
+    {
+      "account_number": "6453",
+      "account_name": "Interest exp.",
+      "type": "EXPENSE",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1906
+    },
+    {
+      "account_number": "6454",
+      "account_name": "Training fee",
+      "type": "EXPENSE",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 15634
+    },
+    {
+      "account_number": "6500",
+      "account_name": "Telephone Expense",
+      "type": "EXPENSE",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1907
+    },
+    {
+      "account_number": "6550",
+      "account_name": "Travel & perdime",
+      "type": "EXPENSE",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1908
+    },
+    {
+      "account_number": "6600",
+      "account_name": "Advertising Expense",
+      "type": "EXPENSE",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1909
+    },
+    {
+      "account_number": "6650",
+      "account_name": "Non allowables",
+      "type": "EXPENSE",
+      "balance": -14.68,
+      "balance_source": "CHARTAR:id@1054956:bal@40",
+      "_chartIndex": 1910
+    },
+    {
+      "account_number": "6800",
+      "account_name": "Freight Expense",
+      "type": "EXPENSE",
+      "balance": -51.12,
+      "balance_source": "CHARTAR:id@733478:bal@-8",
+      "_chartIndex": 1911
+    },
+    {
+      "account_number": "6850",
+      "account_name": "Bank Service Charge",
+      "type": "EXPENSE",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1912
+    },
+    {
+      "account_number": "6900",
+      "account_name": "Transport exp.",
+      "type": "EXPENSE",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1913
+    },
+    {
+      "account_number": "6950",
+      "account_name": "Insurance Expense",
+      "type": "EXPENSE",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1914
+    },
+    {
+      "account_number": "6952",
+      "account_name": "Bid doc",
+      "type": "EXPENSE",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1915
+    },
+    {
+      "account_number": "6953",
+      "account_name": "Unclaimed VAT",
+      "type": "EXPENSE",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1916
+    },
+    {
+      "account_number": "6954",
+      "account_name": "Cash register maintenance",
+      "type": "EXPENSE",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1917
+    },
+    {
+      "account_number": "6955",
+      "account_name": "Donation",
+      "type": "EXPENSE",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1929
+    },
+    {
+      "account_number": "7050",
+      "account_name": "Depreciation Expense",
+      "type": "EXPENSE",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1918
+    },
+    {
+      "account_number": "7051",
+      "account_name": "Amortization",
+      "type": "EXPENSE",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 15629
+    },
+    {
+      "account_number": "7100",
+      "account_name": "Printings",
+      "type": "EXPENSE",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1919
+    },
+    {
+      "account_number": "7101",
+      "account_name": "GIT 8-2017",
+      "type": "EXPENSE",
+      "balance": 897.88,
+      "balance_source": "CHARTAR:id@676308:bal@-16",
+      "_chartIndex": 1920
+    },
+    {
+      "account_number": "7102",
+      "account_name": "GIT 8-2017",
+      "type": "EXPENSE",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1921
+    },
+    {
+      "account_number": "7103",
+      "account_name": "GIT 8-2017",
+      "type": "EXPENSE",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1922
+    },
+    {
+      "account_number": "7104",
+      "account_name": "GIT 8-2017",
+      "type": "EXPENSE",
+      "balance": 481933.23,
+      "balance_source": "CHARTAR:id@338736:bal@72",
+      "_chartIndex": 1923
+    },
+    {
+      "account_number": "7105",
+      "account_name": "GIT 8-2017",
+      "type": "EXPENSE",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 15617
+    },
+    {
+      "account_number": "7106",
+      "account_name": "GIT 8-2017",
+      "type": "EXPENSE",
+      "balance": 0,
+      "balance_source": null
+    },
+    {
+      "account_number": "9014",
+      "account_name": "",
+      "type": "EXPENSE",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1948
+    },
+    {
+      "account_number": "10181",
+      "account_name": "Anbesa Bank",
+      "type": "ASSET",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 15618
+    },
+    {
+      "account_number": "10182",
+      "account_name": "Cooperative Bank 0497",
+      "type": "ASSET",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 15623
+    },
+    {
+      "account_number": "49001",
+      "account_name": "Refund",
+      "type": "REVENUE",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1869
+    },
+    {
+      "account_number": "49002",
+      "account_name": "Accrued Income prior period",
+      "type": "REVENUE",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1870
+    },
+    {
+      "account_number": "49003",
+      "account_name": "Accrued Income current period",
+      "type": "REVENUE",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1949
+    },
+    {
+      "account_number": "49004",
+      "account_name": "Interest income",
+      "type": "REVENUE",
+      "balance": 0,
+      "balance_source": null,
+      "_chartIndex": 1939
+    }
+  ],
+  "stats": {
+    "total": 195,
+    "withNames": 194,
+    "withBalances": 30
+  }
+}

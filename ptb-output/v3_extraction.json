@@ -1,0 +1,1322 @@
+{
+  "success": true,
+  "data": {
+    "chart_of_accounts": [
+      {
+        "account_number": "4301",
+        "account_name": "Sales Of material",
+        "type": "REVENUE",
+        "balance": 0
+      },
+      {
+        "account_number": "4900",
+        "account_name": "Cold room Maintenance",
+        "type": "REVENUE",
+        "balance": 0
+      },
+      {
+        "account_number": "49001",
+        "account_name": "Refund",
+        "type": "REVENUE",
+        "balance": 0
+      },
+      {
+        "account_number": "49002",
+        "account_name": "Accrued Income prior period",
+        "type": "REVENUE",
+        "balance": 0
+      },
+      {
+        "account_number": "7104",
+        "account_name": "GIT 8-2017",
+        "type": "EXPENSE",
+        "balance": 0
+      },
+      {
+        "account_number": "7105",
+        "account_name": "GIT 8-2017",
+        "type": "EXPENSE",
+        "balance": 0
+      },
+      {
+        "account_number": "7106",
+        "account_name": "GIT 8-2017",
+        "type": "EXPENSE",
+        "balance": 0
+      },
+      {
+        "account_number": "1209",
+        "account_name": "GIT 8-2017",
+        "type": "ASSET",
+        "balance": 0
+      },
+      {
+        "account_number": "1208",
+        "account_name": "GIT 7-2017",
+        "type": "ASSET",
+        "balance": 0
+      },
+      {
+        "account_number": "1207",
+        "account_name": "GIT 6-2017",
+        "type": "ASSET",
+        "balance": 0
+      },
+      {
+        "account_number": "1015.3",
+        "account_name": "Dashen Bank 2051",
+        "type": "ASSET",
+        "balance": 0
+      },
+      {
+        "account_number": "5008",
+        "account_name": "Gas",
+        "type": "EXPENSE",
+        "balance": 0
+      },
+      {
+        "account_number": "5010",
+        "account_name": "Instalation",
+        "type": "EXPENSE",
+        "balance": 0
+      },
+      {
+        "account_number": "5002",
+        "account_name": "Glass",
+        "type": "EXPENSE",
+        "balance": 0
+      },
+      {
+        "account_number": "1156",
+        "account_name": "CPO",
+        "type": "ASSET",
+        "balance": 0
+      },
+      {
+        "account_number": "49003",
+        "account_name": "Accrued Income current period",
+        "type": "REVENUE",
+        "balance": 0
+      },
+      {
+        "account_number": "1158",
+        "account_name": "Wihholding old period",
+        "type": "ASSET",
+        "balance": 0
+      },
+      {
+        "account_number": "1157",
+        "account_name": "KASME trading plc",
+        "type": "ASSET",
+        "balance": 0
+      },
+      {
+        "account_number": "5400.1",
+        "account_name": "Technicians Pension",
+        "type": "EXPENSE",
+        "balance": 0
+      },
+      {
+        "account_number": "10182",
+        "account_name": "Cooperative Bank 0497",
+        "type": "ASSET",
+        "balance": 0
+      },
+      {
+        "account_number": "6251",
+        "account_name": "Property tax",
+        "type": "EXPENSE",
+        "balance": 0
+      },
+      {
+        "account_number": "6405",
+        "account_name": "Office rent",
+        "type": "EXPENSE",
+        "balance": 0
+      },
+      {
+        "account_number": "1017",
+        "account_name": "Cash on hand",
+        "type": "ASSET",
+        "balance": 0
+      },
+      {
+        "account_number": "1021",
+        "account_name": "Stuff receivable",
+        "type": "ASSET",
+        "balance": 0
+      },
+      {
+        "account_number": "1020",
+        "account_name": "Petty cash",
+        "type": "ASSET",
+        "balance": 0
+      },
+      {
+        "account_number": "6650",
+        "account_name": "Non allowables",
+        "type": "EXPENSE",
+        "balance": 0
+      },
+      {
+        "account_number": "6900",
+        "account_name": "Transport exp.",
+        "type": "EXPENSE",
+        "balance": 0
+      },
+      {
+        "account_number": "6800",
+        "account_name": "Freight Expense",
+        "type": "EXPENSE",
+        "balance": 0
+      },
+      {
+        "account_number": "5005",
+        "account_name": "PPM & Sanitization",
+        "type": "EXPENSE",
+        "balance": 0
+      },
+      {
+        "account_number": "1013.3",
+        "account_name": "CBE Jackross 0402",
+        "type": "ASSET",
+        "balance": 0
+      },
+      {
+        "account_number": "1100",
+        "account_name": "Trade Receivable",
+        "type": "ASSET",
+        "balance": 0
+      },
+      {
+        "account_number": "1155",
+        "account_name": "Suspense",
+        "type": "ASSET",
+        "balance": 0
+      },
+      {
+        "account_number": "2320",
+        "account_name": "Accruals",
+        "type": "LIABILITY",
+        "balance": 0
+      },
+      {
+        "account_number": "5000",
+        "account_name": "Cost of material for service",
+        "type": "EXPENSE",
+        "balance": 0
+      },
+      {
+        "account_number": "1500.1",
+        "account_name": "Acc. dep Equipment",
+        "type": "ASSET",
+        "balance": 0
+      },
+      {
+        "account_number": "4105",
+        "account_name": "PPM South",
+        "type": "REVENUE",
+        "balance": 0
+      },
+      {
+        "account_number": "4106",
+        "account_name": "PPM",
+        "type": "REVENUE",
+        "balance": 0
+      },
+      {
+        "account_number": "4200",
+        "account_name": "Finance Charge Income",
+        "type": "REVENUE",
+        "balance": 0
+      },
+      {
+        "account_number": "4300",
+        "account_name": "Other Income",
+        "type": "REVENUE",
+        "balance": 0
+      },
+      {
+        "account_number": "2300",
+        "account_name": "VAT",
+        "type": "LIABILITY",
+        "balance": 0
+      },
+      {
+        "account_number": "6404",
+        "account_name": "Penality",
+        "type": "EXPENSE",
+        "balance": 0
+      },
+      {
+        "account_number": "6452",
+        "account_name": "Annual inspection",
+        "type": "EXPENSE",
+        "balance": 0
+      },
+      {
+        "account_number": "7051",
+        "account_name": "Amortization",
+        "type": "EXPENSE",
+        "balance": 0
+      },
+      {
+        "account_number": "6453",
+        "account_name": "Interest exp.",
+        "type": "EXPENSE",
+        "balance": 0
+      },
+      {
+        "account_number": "6500",
+        "account_name": "Telephone Expense",
+        "type": "EXPENSE",
+        "balance": 0
+      },
+      {
+        "account_number": "3910",
+        "account_name": "Retained earnings",
+        "type": "EQUITY",
+        "balance": 0
+      },
+      {
+        "account_number": "1511",
+        "account_name": "Suzuki Cellario",
+        "type": "ASSET",
+        "balance": 0
+      },
+      {
+        "account_number": "1511.1",
+        "account_name": "Suzuki Cell Acc.dep.",
+        "type": "ASSET",
+        "balance": 0
+      },
+      {
+        "account_number": "2501",
+        "account_name": "Loan from Hibret  Bank",
+        "type": "LIABILITY",
+        "balance": 0
+      },
+      {
+        "account_number": "5900",
+        "account_name": "Selling and distribution",
+        "type": "EXPENSE",
+        "balance": 0
+      },
+      {
+        "account_number": "5901",
+        "account_name": "Cost of sales",
+        "type": "EXPENSE",
+        "balance": 0
+      },
+      {
+        "account_number": "3941",
+        "account_name": "qrDN",
+        "type": "EQUITY",
+        "balance": 0
+      },
+      {
+        "account_number": "5905",
+        "account_name": "Building Depreciation",
+        "type": "EXPENSE",
+        "balance": 0
+      },
+      {
+        "account_number": "5906",
+        "account_name": "Building related costs",
+        "type": "EXPENSE",
+        "balance": 0
+      },
+      {
+        "account_number": "5907",
+        "account_name": "Bld.Security serv",
+        "type": "EXPENSE",
+        "balance": 0
+      },
+      {
+        "account_number": "10181",
+        "account_name": "Anbesa Bank",
+        "type": "ASSET",
+        "balance": 0
+      },
+      {
+        "account_number": "1507.1",
+        "account_name": "Acc dep Pick up 3",
+        "type": "ASSET",
+        "balance": 0
+      },
+      {
+        "account_number": "1507",
+        "account_name": "Pick up 3",
+        "type": "ASSET",
+        "balance": 0
+      },
+      {
+        "account_number": "1508.1",
+        "account_name": "Accm dep Pick up 4",
+        "type": "ASSET",
+        "balance": 0
+      },
+      {
+        "account_number": "1508",
+        "account_name": "Pick up 4",
+        "type": "ASSET",
+        "balance": 0
+      },
+      {
+        "account_number": "1600",
+        "account_name": "Building",
+        "type": "ASSET",
+        "balance": 0
+      },
+      {
+        "account_number": "1600.1",
+        "account_name": "Acc dep Building",
+        "type": "ASSET",
+        "balance": 0
+      },
+      {
+        "account_number": "1509",
+        "account_name": "Toyota Prado",
+        "type": "ASSET",
+        "balance": 0
+      },
+      {
+        "account_number": "1700",
+        "account_name": "Lease hold Land",
+        "type": "ASSET",
+        "balance": 0
+      },
+      {
+        "account_number": "5904",
+        "account_name": "Building maintenance",
+        "type": "EXPENSE",
+        "balance": 0
+      },
+      {
+        "account_number": "1016",
+        "account_name": "Awash Bank 4401",
+        "type": "ASSET",
+        "balance": 0
+      },
+      {
+        "account_number": "1154",
+        "account_name": "Dam Bond",
+        "type": "ASSET",
+        "balance": 0
+      },
+      {
+        "account_number": "1509.1",
+        "account_name": "Acc.Toyota Prado",
+        "type": "ASSET",
+        "balance": 0
+      },
+      {
+        "account_number": "2700",
+        "account_name": "Lease payable",
+        "type": "LIABILITY",
+        "balance": 0
+      },
+      {
+        "account_number": "4001",
+        "account_name": "AC Instalation & Maintenance",
+        "type": "REVENUE",
+        "balance": 0
+      },
+      {
+        "account_number": "4000",
+        "account_name": "Maintenance service",
+        "type": "REVENUE",
+        "balance": 0
+      },
+      {
+        "account_number": "1510",
+        "account_name": "Office improvemen",
+        "type": "ASSET",
+        "balance": 0
+      },
+      {
+        "account_number": "1013.1",
+        "account_name": "CBE 5272",
+        "type": "ASSET",
+        "balance": 0
+      },
+      {
+        "account_number": "5400",
+        "account_name": "Technicians Salary",
+        "type": "EXPENSE",
+        "balance": 0
+      },
+      {
+        "account_number": "4002",
+        "account_name": "Sanitization Service",
+        "type": "REVENUE",
+        "balance": 0
+      },
+      {
+        "account_number": "1503",
+        "account_name": "Toyota Pick up 1",
+        "type": "ASSET",
+        "balance": 0
+      },
+      {
+        "account_number": "1503.1",
+        "account_name": "Acc. Toyota Pick up 1",
+        "type": "ASSET",
+        "balance": 0
+      },
+      {
+        "account_number": "1504",
+        "account_name": "Toyota Pick up 2",
+        "type": "ASSET",
+        "balance": 0
+      },
+      {
+        "account_number": "1504.1",
+        "account_name": "Acc.Toyota Pick up 2",
+        "type": "ASSET",
+        "balance": 0
+      },
+      {
+        "account_number": "3940",
+        "account_name": "Abyssinya 5544149",
+        "type": "EQUITY",
+        "balance": 0
+      },
+      {
+        "account_number": "6000",
+        "account_name": "Salary Expense",
+        "type": "EXPENSE",
+        "balance": 0
+      },
+      {
+        "account_number": "1014",
+        "account_name": "Zemen Bank Saving 9025",
+        "type": "ASSET",
+        "balance": 0
+      },
+      {
+        "account_number": "6600",
+        "account_name": "Advertising Expense",
+        "type": "EXPENSE",
+        "balance": 0
+      },
+      {
+        "account_number": "2500",
+        "account_name": "Loan from Zemen Bank",
+        "type": "LIABILITY",
+        "balance": 0
+      },
+      {
+        "account_number": "3942",
+        "account_name": "Licence & others",
+        "type": "EQUITY",
+        "balance": 0
+      },
+      {
+        "account_number": "3943",
+        "account_name": "Licence & others",
+        "type": "EQUITY",
+        "balance": 0
+      },
+      {
+        "account_number": "7101",
+        "account_name": "Licence & others",
+        "type": "EXPENSE",
+        "balance": 0
+      },
+      {
+        "account_number": "5401",
+        "account_name": "Machine works",
+        "type": "EXPENSE",
+        "balance": 0
+      },
+      {
+        "account_number": "1159",
+        "account_name": "Account receivable",
+        "type": "ASSET",
+        "balance": 0
+      },
+      {
+        "account_number": "1015.1",
+        "account_name": "Dashen Bank 1007",
+        "type": "ASSET",
+        "balance": 0
+      },
+      {
+        "account_number": "1160",
+        "account_name": "New Vehicle",
+        "type": "ASSET",
+        "balance": 0
+      },
+      {
+        "account_number": "1500",
+        "account_name": "Equipment",
+        "type": "ASSET",
+        "balance": 0
+      },
+      {
+        "account_number": "5902",
+        "account_name": "PPM & sanition service cost",
+        "type": "EXPENSE",
+        "balance": 0
+      },
+      {
+        "account_number": "2303",
+        "account_name": "Profit tax",
+        "type": "LIABILITY",
+        "balance": 0
+      },
+      {
+        "account_number": "2304",
+        "account_name": "Trade",
+        "type": "LIABILITY",
+        "balance": 0
+      },
+      {
+        "account_number": "2321",
+        "account_name": "Differed Income",
+        "type": "LIABILITY",
+        "balance": 0
+      },
+      {
+        "account_number": "6850",
+        "account_name": "Bank Service Charge",
+        "type": "EXPENSE",
+        "balance": 0
+      },
+      {
+        "account_number": "6950",
+        "account_name": "Insurance Expense",
+        "type": "EXPENSE",
+        "balance": 0
+      },
+      {
+        "account_number": "6952",
+        "account_name": "Bid doc",
+        "type": "EXPENSE",
+        "balance": 0
+      },
+      {
+        "account_number": "1011.3",
+        "account_name": "Abyssinya 7818",
+        "type": "ASSET",
+        "balance": 0
+      },
+      {
+        "account_number": "6001",
+        "account_name": "Pension exp.",
+        "type": "EXPENSE",
+        "balance": 0
+      },
+      {
+        "account_number": "6050",
+        "account_name": "Employee BONUS",
+        "type": "EXPENSE",
+        "balance": 0
+      },
+      {
+        "account_number": "5908",
+        "account_name": "Depreciation of blding",
+        "type": "EXPENSE",
+        "balance": 0
+      },
+      {
+        "account_number": "1152",
+        "account_name": "Withholding of Sales",
+        "type": "ASSET",
+        "balance": 0
+      },
+      {
+        "account_number": "1153",
+        "account_name": "Withholding of Building rent",
+        "type": "ASSET",
+        "balance": 0
+      },
+      {
+        "account_number": "1200",
+        "account_name": "Inventory",
+        "type": "ASSET",
+        "balance": 0
+      },
+      {
+        "account_number": "1512.1",
+        "account_name": "Suzuki EEco Acc. depr",
+        "type": "ASSET",
+        "balance": 0
+      },
+      {
+        "account_number": "1512",
+        "account_name": "Suzuki EEco",
+        "type": "ASSET",
+        "balance": 0
+      },
+      {
+        "account_number": "6402",
+        "account_name": "Web hosting",
+        "type": "EXPENSE",
+        "balance": 0
+      },
+      {
+        "account_number": "6403",
+        "account_name": "Generator oil",
+        "type": "EXPENSE",
+        "balance": 0
+      },
+      {
+        "account_number": "6451",
+        "account_name": "Advocacy service",
+        "type": "EXPENSE",
+        "balance": 0
+      },
+      {
+        "account_number": "6550",
+        "account_name": "Travel & perdime",
+        "type": "EXPENSE",
+        "balance": 0
+      },
+      {
+        "account_number": "5003",
+        "account_name": "Labourers",
+        "type": "EXPENSE",
+        "balance": 0
+      },
+      {
+        "account_number": "5004",
+        "account_name": "Workshop Items",
+        "type": "EXPENSE",
+        "balance": 0
+      },
+      {
+        "account_number": "5006",
+        "account_name": "Freight",
+        "type": "EXPENSE",
+        "balance": 0
+      },
+      {
+        "account_number": "5007",
+        "account_name": "Maintenance",
+        "type": "EXPENSE",
+        "balance": 0
+      },
+      {
+        "account_number": "6150",
+        "account_name": "Fuel & lubricant",
+        "type": "EXPENSE",
+        "balance": 0
+      },
+      {
+        "account_number": "1015",
+        "account_name": "Dashen Bank 8011",
+        "type": "ASSET",
+        "balance": 0
+      },
+      {
+        "account_number": "49004",
+        "account_name": "Interest income",
+        "type": "REVENUE",
+        "balance": 0
+      },
+      {
+        "account_number": "6450",
+        "account_name": "Office Supplies",
+        "type": "EXPENSE",
+        "balance": 0
+      },
+      {
+        "account_number": "6955",
+        "account_name": "Donation",
+        "type": "EXPENSE",
+        "balance": 0
+      },
+      {
+        "account_number": "6454",
+        "account_name": "Training fee",
+        "type": "EXPENSE",
+        "balance": 0
+      },
+      {
+        "account_number": "2340",
+        "account_name": "Heiniken",
+        "type": "LIABILITY",
+        "balance": 0
+      },
+      {
+        "account_number": "2330",
+        "account_name": "Federal Payroll Taxes Payable",
+        "type": "LIABILITY",
+        "balance": 0
+      },
+      {
+        "account_number": "2350",
+        "account_name": "State Payroll Taxes Payable",
+        "type": "LIABILITY",
+        "balance": 0
+      },
+      {
+        "account_number": "4005",
+        "account_name": "Corrective Maintenance",
+        "type": "REVENUE",
+        "balance": 0
+      },
+      {
+        "account_number": "4050",
+        "account_name": "Sales of Materials",
+        "type": "REVENUE",
+        "balance": 0
+      },
+      {
+        "account_number": "4060",
+        "account_name": "Building rent & utility",
+        "type": "REVENUE",
+        "balance": 0
+      },
+      {
+        "account_number": "4100",
+        "account_name": "PPM West",
+        "type": "REVENUE",
+        "balance": 0
+      },
+      {
+        "account_number": "4101",
+        "account_name": "PPM Central",
+        "type": "REVENUE",
+        "balance": 0
+      },
+      {
+        "account_number": "6200",
+        "account_name": "Postal service",
+        "type": "EXPENSE",
+        "balance": 0
+      },
+      {
+        "account_number": "6250",
+        "account_name": "Other Taxes Expense",
+        "type": "EXPENSE",
+        "balance": 0
+      },
+      {
+        "account_number": "6954",
+        "account_name": "Cash register maintenance",
+        "type": "EXPENSE",
+        "balance": 0
+      },
+      {
+        "account_number": "7050",
+        "account_name": "Depreciation Expense",
+        "type": "EXPENSE",
+        "balance": 0
+      },
+      {
+        "account_number": "7100",
+        "account_name": "Printings",
+        "type": "EXPENSE",
+        "balance": 0
+      },
+      {
+        "account_number": "1013",
+        "account_name": "CBE 1125",
+        "type": "ASSET",
+        "balance": 0
+      },
+      {
+        "account_number": "1202",
+        "account_name": "GIT 1-2017",
+        "type": "ASSET",
+        "balance": 0
+      },
+      {
+        "account_number": "1700.1",
+        "account_name": "Lease hold Amortization",
+        "type": "ASSET",
+        "balance": 0
+      },
+      {
+        "account_number": "6953",
+        "account_name": "Unclaimed VAT",
+        "type": "EXPENSE",
+        "balance": 0
+      },
+      {
+        "account_number": "2301",
+        "account_name": "Income tax",
+        "type": "LIABILITY",
+        "balance": 0
+      },
+      {
+        "account_number": "1210",
+        "account_name": "GIT-2018",
+        "type": "ASSET",
+        "balance": 0
+      },
+      {
+        "account_number": "5001",
+        "account_name": "Uniform",
+        "type": "EXPENSE",
+        "balance": 0
+      },
+      {
+        "account_number": "6350",
+        "account_name": "Office Maintenance & Repairs",
+        "type": "EXPENSE",
+        "balance": 0
+      },
+      {
+        "account_number": "6300",
+        "account_name": "Workshop Rent",
+        "type": "EXPENSE",
+        "balance": 0
+      },
+      {
+        "account_number": "6401",
+        "account_name": "Audit fee",
+        "type": "EXPENSE",
+        "balance": 0
+      },
+      {
+        "account_number": "6400",
+        "account_name": "Utilities Expense",
+        "type": "EXPENSE",
+        "balance": 0
+      },
+      {
+        "account_number": "2305",
+        "account_name": "Withholdig",
+        "type": "LIABILITY",
+        "balance": 0
+      },
+      {
+        "account_number": "6100",
+        "account_name": "Vehicle repair & maint.",
+        "type": "EXPENSE",
+        "balance": 0
+      },
+      {
+        "account_number": "5009",
+        "account_name": "Cast of Good sold",
+        "type": "EXPENSE",
+        "balance": 0
+      },
+      {
+        "account_number": "1201",
+        "account_name": "GIT",
+        "type": "ASSET",
+        "balance": 0
+      },
+      {
+        "account_number": "1012.2",
+        "account_name": "Hibret Bank 3024 OD",
+        "type": "ASSET",
+        "balance": 0
+      },
+      {
+        "account_number": "1204",
+        "account_name": "GIT 3-2017",
+        "type": "ASSET",
+        "balance": 0
+      },
+      {
+        "account_number": "1206",
+        "account_name": "GIT 5-2017",
+        "type": "ASSET",
+        "balance": 0
+      },
+      {
+        "account_number": "1203",
+        "account_name": "GIT 2-2017",
+        "type": "ASSET",
+        "balance": 0
+      },
+      {
+        "account_number": "1205",
+        "account_name": "GIT 4-2017",
+        "type": "ASSET",
+        "balance": 0
+      },
+      {
+        "account_number": "1400",
+        "account_name": "Prepaid Expenses",
+        "type": "ASSET",
+        "balance": 0
+      },
+      {
+        "account_number": "1501",
+        "account_name": "Office furniture",
+        "type": "ASSET",
+        "balance": 0
+      },
+      {
+        "account_number": "1505.1",
+        "account_name": "Acc. depre Hiondai",
+        "type": "ASSET",
+        "balance": 0
+      },
+      {
+        "account_number": "1502",
+        "account_name": "IT and compurers",
+        "type": "ASSET",
+        "balance": 0
+      },
+      {
+        "account_number": "1502.1",
+        "account_name": "Acc. dep. IT and compurers",
+        "type": "ASSET",
+        "balance": 0
+      },
+      {
+        "account_number": "1501.1",
+        "account_name": "Acc. dep Office furniture",
+        "type": "ASSET",
+        "balance": 0
+      },
+      {
+        "account_number": "1505",
+        "account_name": "Hiondai",
+        "type": "ASSET",
+        "balance": 0
+      },
+      {
+        "account_number": "1506.1",
+        "account_name": "Acc. dep. Workshop Proper",
+        "type": "ASSET",
+        "balance": 0
+      },
+      {
+        "account_number": "1506",
+        "account_name": "Workshop Properties",
+        "type": "ASSET",
+        "balance": 0
+      },
+      {
+        "account_number": "1000",
+        "account_name": "Owner",
+        "type": "ASSET",
+        "balance": 0
+      },
+      {
+        "account_number": "1010",
+        "account_name": "Cash on Hand",
+        "type": "ASSET",
+        "balance": 0
+      },
+      {
+        "account_number": "1011",
+        "account_name": "Abyssinya 5544149",
+        "type": "ASSET",
+        "balance": 0
+      },
+      {
+        "account_number": "1011.1",
+        "account_name": "Abyssinya 5615507",
+        "type": "ASSET",
+        "balance": 0
+      },
+      {
+        "account_number": "4003",
+        "account_name": "Instalation",
+        "type": "REVENUE",
+        "balance": 0
+      },
+      {
+        "account_number": "4004",
+        "account_name": "Service and Inspection",
+        "type": "REVENUE",
+        "balance": 0
+      },
+      {
+        "account_number": "7102",
+        "account_name": "Professional fee",
+        "type": "EXPENSE",
+        "balance": 0
+      },
+      {
+        "account_number": "7103",
+        "account_name": "GPS Service",
+        "type": "EXPENSE",
+        "balance": 0
+      },
+      {
+        "account_number": "1019",
+        "account_name": "Tele Birr",
+        "type": "ASSET",
+        "balance": 0
+      },
+      {
+        "account_number": "1014.1",
+        "account_name": "Zemen Bank Current 9014",
+        "type": "ASSET",
+        "balance": 0
+      },
+      {
+        "account_number": "1510.1",
+        "account_name": "Acc.Office improvemen",
+        "type": "ASSET",
+        "balance": 0
+      },
+      {
+        "account_number": "1602.1",
+        "account_name": "Acc. dep.Workshop",
+        "type": "ASSET",
+        "balance": 0
+      },
+      {
+        "account_number": "1602",
+        "account_name": "Workshop Jimma",
+        "type": "ASSET",
+        "balance": 0
+      },
+      {
+        "account_number": "1151",
+        "account_name": "Unclaimed VAT",
+        "type": "ASSET",
+        "balance": 0
+      },
+      {
+        "account_number": "1012",
+        "account_name": "Hibret Bank 3039",
+        "type": "ASSET",
+        "balance": 0
+      },
+      {
+        "account_number": "1150",
+        "account_name": "Pre payments",
+        "type": "ASSET",
+        "balance": 0
+      },
+      {
+        "account_number": "1018",
+        "account_name": "Oromiya Int. Bank",
+        "type": "ASSET",
+        "balance": 0
+      },
+      {
+        "account_number": "2360",
+        "account_name": "SUTA Payable",
+        "type": "LIABILITY",
+        "balance": 0
+      },
+      {
+        "account_number": "2370",
+        "account_name": "Local Taxes Payable",
+        "type": "LIABILITY",
+        "balance": 0
+      },
+      {
+        "account_number": "2380",
+        "account_name": "Income Taxes Payable",
+        "type": "LIABILITY",
+        "balance": 0
+      },
+      {
+        "account_number": "2400",
+        "account_name": "Customer Deposits",
+        "type": "LIABILITY",
+        "balance": 0
+      },
+      {
+        "account_number": "1015.2",
+        "account_name": "Dashen Bank 2031",
+        "type": "ASSET",
+        "balance": 0
+      },
+      {
+        "account_number": "1513.1",
+        "account_name": "Acc.dep Pick up 5",
+        "type": "ASSET",
+        "balance": 0
+      },
+      {
+        "account_number": "1513",
+        "account_name": "Pick up 5",
+        "type": "ASSET",
+        "balance": 0
+      },
+      {
+        "account_number": "2302",
+        "account_name": "Penssion",
+        "type": "LIABILITY",
+        "balance": 0
+      },
+      {
+        "account_number": "1012.1",
+        "account_name": "Hibret Bank 3016",
+        "type": "ASSET",
+        "balance": 0
+      },
+      {
+        "account_number": "4102",
+        "account_name": "PPM Addis",
+        "type": "REVENUE",
+        "balance": 0
+      },
+      {
+        "account_number": "4103",
+        "account_name": "PPM North",
+        "type": "REVENUE",
+        "balance": 0
+      },
+      {
+        "account_number": "4104",
+        "account_name": "PPM East",
+        "type": "REVENUE",
+        "balance": 0
+      },
+      {
+        "account_number": "2502",
+        "account_name": "Hibret Bank 3024 OD",
+        "type": "LIABILITY",
+        "balance": 0
+      }
+    ],
+    "customers": [
+      {
+        "name": "Australian Embassy",
+        "balance": 0
+      },
+      {
+        "name": "Awash Wine",
+        "balance": 0
+      },
+      {
+        "name": "Bedele  Br.",
+        "balance": 0
+      },
+      {
+        "name": "CELTIC ETHIOPIA",
+        "balance": 0
+      },
+      {
+        "name": "East African Bottling",
+        "balance": 0
+      },
+      {
+        "name": "Ethio Telecom",
+        "balance": 0
+      },
+      {
+        "name": "Getu Commercial",
+        "balance": 0
+      },
+      {
+        "name": "Habesha Br.Sc",
+        "balance": 0
+      },
+      {
+        "name": "Harar Br.",
+        "balance": 0
+      },
+      {
+        "name": "Heineken Br.",
+        "balance": 0
+      },
+      {
+        "name": "ICRC",
+        "balance": 0
+      },
+      {
+        "name": "Kasme Trading",
+        "balance": 0
+      },
+      {
+        "name": "National Tobaco",
+        "balance": 0
+      },
+      {
+        "name": "Office Rent",
+        "balance": 0
+      },
+      {
+        "name": "Others",
+        "balance": 0
+      },
+      {
+        "name": "Sheraton Addis",
+        "balance": 0
+      },
+      {
+        "name": "UNHCR",
+        "balance": 0
+      },
+      {
+        "name": "United Bev.",
+        "balance": 0
+      },
+      {
+        "name": "WAF Trading plc",
+        "balance": 0
+      },
+      {
+        "name": "THx\"",
+        "balance": 0
+      },
+      {
+        "name": "QC7P",
+        "balance": 0
+      }
+    ],
+    "vendors": [
+      {
+        "name": "Employee",
+        "balance": 0
+      },
+      {
+        "name": "Inventory",
+        "balance": 0
+      },
+      {
+        "name": "Erca",
+        "balance": 0
+      },
+      {
+        "name": "ArvB",
+        "balance": 0
+      },
+      {
+        "name": "Vehicle",
+        "balance": 0
+      },
+      {
+        "name": "Airborne'",
+        "balance": 0
+      },
+      {
+        "name": "Payment",
+        "balance": 0
+      },
+      {
+        "name": "DIXT",
+        "balance": 0
+      },
+      {
+        "name": "A1Ww",
+        "balance": 0
+      },
+      {
+        "name": "Cost",
+        "balance": 0
+      },
+      {
+        "name": "Building Costs",
+        "balance": 0
+      },
+      {
+        "name": "Ethio Telecom",
+        "balance": 0
+      }
+    ],
+    "company_info": null
+  },
+  "error": null,
+  "stats": {
+    "totalAccounts": 194,
+    "accountsWithBalances": 0,
+    "totalCustomers": 21,
+    "totalVendors": 12,
+    "balanceSummary": {
+      "assets": 0,
+      "liabilities": 0,
+      "equity": 0,
+      "revenue": 0,
+      "expenses": 0
+    }
+  }
+}

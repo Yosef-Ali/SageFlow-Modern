@@ -19,6 +19,17 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // License & Machine ID
   getMachineId: () => ipcRenderer.invoke('license:getMachineId'),
 
+  // PTB Import/Export
+  ptb: {
+    import: () => ipcRenderer.invoke('ptb:import'),
+    importFromPath: (filePath) => ipcRenderer.invoke('ptb:importFromPath', filePath),
+    export: (data) => ipcRenderer.invoke('ptb:export', data),
+    exportToPath: (data, outputPath) => ipcRenderer.invoke('ptb:exportToPath', { data, outputPath }),
+    onProgress: (callback) => {
+      ipcRenderer.on('ptb:progress', (_, progress) => callback(progress));
+    },
+  },
+
   // Check if running in Electron
   isElectron: true,
 });

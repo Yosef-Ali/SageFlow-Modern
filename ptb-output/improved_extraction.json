@@ -1,0 +1,148 @@
+{
+  "accounts": [
+    {
+      "account_number": "7818",
+      "account_name": "",
+      "type": "EXPENSE",
+      "balance": 0,
+      "balance_source": null
+    },
+    {
+      "account_number": "6000",
+      "account_name": "Salary Expense",
+      "type": "EXPENSE",
+      "balance": 0,
+      "balance_source": null
+    },
+    {
+      "account_number": "1012",
+      "account_name": "Hibret Bank 3039",
+      "type": "ASSET",
+      "balance": 0,
+      "balance_source": null
+    },
+    {
+      "account_number": "1153",
+      "account_name": "Withholding of Building rent",
+      "type": "ASSET",
+      "balance": 0,
+      "balance_source": null
+    },
+    {
+      "account_number": "1502",
+      "account_name": "IT and compurers",
+      "type": "ASSET",
+      "balance": 0,
+      "balance_source": null
+    },
+    {
+      "account_number": "1600",
+      "account_name": "Building",
+      "type": "ASSET",
+      "balance": 0,
+      "balance_source": null
+    },
+    {
+      "account_number": "3910",
+      "account_name": "Retained earnings",
+      "type": "EQUITY",
+      "balance": 0,
+      "balance_source": null
+    },
+    {
+      "account_number": "7101",
+      "account_name": "GIT 8-2017",
+      "type": "EXPENSE",
+      "balance": 897.88,
+      "balance_source": "CHARTAR:offset-16"
+    },
+    {
+      "account_number": "6850",
+      "account_name": "Bank Service Charge",
+      "type": "EXPENSE",
+      "balance": 0,
+      "balance_source": null
+    },
+    {
+      "account_number": "1152",
+      "account_name": "Withholding of Sales",
+      "type": "ASSET",
+      "balance": 0,
+      "balance_source": null
+    },
+    {
+      "account_number": "6150",
+      "account_name": "Fuel & lubricant",
+      "type": "EXPENSE",
+      "balance": 0,
+      "balance_source": null
+    },
+    {
+      "account_number": "1202",
+      "account_name": "GIT 1-2017",
+      "type": "ASSET",
+      "balance": 0,
+      "balance_source": null
+    },
+    {
+      "account_number": "2017",
+      "account_name": "",
+      "type": "LIABILITY",
+      "balance": 0,
+      "balance_source": null
+    },
+    {
+      "account_number": "7106",
+      "account_name": "GIT 8-2017",
+      "type": "EXPENSE",
+      "balance": 0,
+      "balance_source": null
+    },
+    {
+      "account_number": "2303",
+      "account_name": "Profit tax",
+      "type": "LIABILITY",
+      "balance": 0,
+      "balance_source": null
+    },
+    {
+      "account_number": "3039",
+      "account_name": "",
+      "type": "EQUITY",
+      "balance": 0,
+      "balance_source": null
+    },
+    {
+      "account_number": "2360",
+      "account_name": "Abyssinya 5544149",
+      "type": "LIABILITY",
+      "balance": 0,
+      "balance_source": null
+    },
+    {
+      "account_number": "3016",
+      "account_name": "",
+      "type": "EQUITY",
+      "balance": 0,
+      "balance_source": null
+    },
+    {
+      "account_number": "4000",
+      "account_name": "Maintenance service",
+      "type": "REVENUE",
+      "balance": 0.01,
+      "balance_source": "CHARTAR:offset-48"
+    },
+    {
+      "account_number": "7104",
+      "account_name": "GIT 8-2017",
+      "type": "EXPENSE",
+      "balance": 0,
+      "balance_source": null
+    }
+  ],
+  "stats": {
+    "total": 20,
+    "withBalances": 2
+  }
+}

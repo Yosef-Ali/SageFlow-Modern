@@ -1,24 +1,33 @@
 /**
- * Peachtree/CSV Import Library
- * 
- * Export all parsers and services for easy importing
+ * Peachtree/CSV Import & Export Library
  */
 
 // PTB Parser
-export { 
-  parsePtbFile, 
+export {
+  parsePtbFile,
   getParseDebugInfo,
   type PtbParseResult,
   type ParsedCustomer,
   type ParsedVendor,
   type ParsedAccount,
+  type ParsedInventoryItem,
+  type ParsedJournalEntry,
+  type ParsedEmployee,
+  type AccountType,
 } from './ptb-parser';
 
 // PTB Import Service
-export { 
+export {
   importPtbFile,
   type ImportResult,
 } from './ptb-import-service';
+
+// PTB Export Service
+export {
+  generatePtbBackup,
+  downloadPtbBackup,
+  type PtbExportResult,
+} from './ptb-export-service';
 
 // CSV Parser
 export {
