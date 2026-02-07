@@ -1,33 +1,30 @@
--- Transactional PTB Import Function
--- Handles Upsert logic without unique constraints on the table schema
--- 
+-- Transactional PTB Import Function v2
+-- Counts ALL processed records (inserts + updates)
+--
 -- Usage: supabase.rpc('import_ptb_v1', { p_company_id: '...', p_data: { ... } })
 
 create or replace function import_ptb_v1(p_company_id text, p_data jsonb)
 returns jsonb
 language plpgsql
-security definer -- Run as creator (admin) to bypass RLS if needed, or use invoker
+security definer
 as $$
 declare
   v_rec jsonb;
-  v_counts jsonb;
+  v_exist_id text;
   v_c_cnt int := 0;
   v_v_cnt int := 0;
   v_a_cnt int := 0;
   v_e_cnt int := 0;
   v_t_cnt int := 0;
   v_i_cnt int := 0;
-  v_exist_id text;
 begin
   -- 1. Customers
   if p_data ? 'customers' then
     for v_rec in select * from jsonb_array_elements(p_data->'customers') loop
-      -- Check existence by (company_id, customer_number)
       select id into v_exist_id from customers 
       where company_id = p_company_id and customer_number = (v_rec->>'id');
 
       if v_exist_id is not null then
-        -- Update
         update customers 
         set name = (v_rec->>'name'),
             email = coalesce(v_rec->>'email', email),
@@ -35,21 +32,16 @@ begin
             updated_at = now()
         where id = v_exist_id;
       else
-        -- Insert
         insert into customers (
           id, company_id, customer_number, name, email, phone, 
           customer_type, payment_terms, is_active, balance
         ) values (
-          gen_random_uuid(),
-          p_company_id, 
-          v_rec->>'id', 
-          v_rec->>'name', 
-          v_rec->>'email', 
-          v_rec->>'phone',
+          gen_random_uuid(), p_company_id, 
+          v_rec->>'id', v_rec->>'name', v_rec->>'email', v_rec->>'phone',
           'CORPORATE', 'NET_30', true, 0
         );
-        v_c_cnt := v_c_cnt + 1;
       end if;
+      v_c_cnt := v_c_cnt + 1;  -- Count ALL (insert + update)
     end loop;
   end if;
 
@@ -71,16 +63,12 @@ begin
           id, company_id, vendor_number, name, email, phone, 
           vendor_type, payment_terms, is_active, balance
         ) values (
-          gen_random_uuid(),
-          p_company_id, 
-          v_rec->>'id', 
-          v_rec->>'name', 
-          v_rec->>'email', 
-          v_rec->>'phone',
+          gen_random_uuid(), p_company_id, 
+          v_rec->>'id', v_rec->>'name', v_rec->>'email', v_rec->>'phone',
           'SUPPLIER', 'NET_30', true, 0
         );
-        v_v_cnt := v_v_cnt + 1;
       end if;
+      v_v_cnt := v_v_cnt + 1;  -- Count ALL
     end loop;
   end if;
 
@@ -97,18 +85,14 @@ begin
         where id = v_exist_id;
       else
         insert into chart_of_accounts (
-          id, company_id, account_number, account_name, type, 
-          balance, is_active
+          id, company_id, account_number, account_name, type, balance, is_active
         ) values (
-          gen_random_uuid(),
-          p_company_id, 
-          v_rec->>'accountNumber', 
-          v_rec->>'accountName', 
-          (v_rec->>'type')::account_type, 
-          0, true
+          gen_random_uuid(), p_company_id, 
+          v_rec->>'accountNumber', v_rec->>'accountName', 
+          (v_rec->>'type')::account_type, 0, true
         );
-        v_a_cnt := v_a_cnt + 1;
       end if;
+      v_a_cnt := v_a_cnt + 1;
     end loop;
   end if;
 
@@ -125,19 +109,15 @@ begin
           id, company_id, employee_code, first_name, last_name, 
           email, phone, job_title, department, is_active
         ) values (
-          gen_random_uuid(),
-          p_company_id, 
+          gen_random_uuid(), p_company_id, 
           v_rec->>'id', 
           split_part(v_rec->>'name', ' ', 1), 
           coalesce(nullif(substring(v_rec->>'name' from strpos(v_rec->>'name', ' ')+1), ''), '.'),
-          v_rec->>'email', 
-          v_rec->>'phone',
-          v_rec->>'position',
-          v_rec->>'department',
-          true
+          v_rec->>'email', v_rec->>'phone',
+          v_rec->>'position', v_rec->>'department', true
         );
-        v_e_cnt := v_e_cnt + 1;
       end if;
+      v_e_cnt := v_e_cnt + 1;
     end loop;
   end if;
 
@@ -148,55 +128,46 @@ begin
       where company_id = p_company_id and sku = (v_rec->>'itemCode');
 
       if v_exist_id is not null then
-         update items 
-         set name = (v_rec->>'itemName'),
-             description = (v_rec->>'description'),
-             updated_at = now()
-         where id = v_exist_id;
+        update items 
+        set name = (v_rec->>'itemName'),
+            description = (v_rec->>'description'),
+            updated_at = now()
+        where id = v_exist_id;
       else
-         insert into items (
-           id, company_id, sku, name, description, unit_of_measure,
-           cost_price, selling_price, quantity_on_hand, is_active
-         ) values (
-           gen_random_uuid(),
-           p_company_id,
-           v_rec->>'itemCode',
-           v_rec->>'itemName',
-           v_rec->>'description',
-           'PCS',
-           coalesce((v_rec->>'costPrice')::numeric, 0),
-           coalesce((v_rec->>'unitPrice')::numeric, 0),
-           coalesce((v_rec->>'quantity')::numeric, 0),
-           true
-         );
-         v_i_cnt := v_i_cnt + 1;
+        insert into items (
+          id, company_id, sku, name, description, unit_of_measure,
+          cost_price, selling_price, quantity_on_hand, is_active
+        ) values (
+          gen_random_uuid(), p_company_id,
+          v_rec->>'itemCode', v_rec->>'itemName', v_rec->>'description',
+          'PCS', coalesce((v_rec->>'costPrice')::numeric, 0),
+          coalesce((v_rec->>'unitPrice')::numeric, 0),
+          coalesce((v_rec->>'quantity')::numeric, 0), true
+        );
       end if;
+      v_i_cnt := v_i_cnt + 1;
     end loop;
   end if;
-  
-  -- 6. Journal Entries
-  -- For transactions, we ONLY Insert if new. No updates.
+
+  -- 6. Journal Entries (insert only, no updates)
   if p_data ? 'journalEntries' then
     for v_rec in select * from jsonb_array_elements(p_data->'journalEntries') loop
-       if (v_rec->>'entryId') is not null then
-          select id into v_exist_id from journal_entries
-          where company_id = p_company_id and reference = (v_rec->>'entryId');
+      if (v_rec->>'entryId') is not null then
+        select id into v_exist_id from journal_entries
+        where company_id = p_company_id and reference = (v_rec->>'entryId');
 
-          if v_exist_id is null then
-             insert into journal_entries (
-               id, company_id, date, description, reference, status, source_type
-             ) values (
-               gen_random_uuid(),
-               p_company_id,
-               coalesce((v_rec->>'date')::timestamp, now()),
-               coalesce(v_rec->>'description', 'Imported Transaction'),
-               v_rec->>'entryId',
-               'POSTED',
-               'MANUAL'
-             );
-             v_t_cnt := v_t_cnt + 1;
-          end if;
-       end if;
+        if v_exist_id is null then
+          insert into journal_entries (
+            id, company_id, date, description, reference, status, source_type
+          ) values (
+            gen_random_uuid(), p_company_id,
+            coalesce((v_rec->>'date')::timestamp, now()),
+            coalesce(v_rec->>'description', 'Imported Transaction'),
+            v_rec->>'entryId', 'POSTED', 'MANUAL'
+          );
+          v_t_cnt := v_t_cnt + 1;
+        end if;
+      end if;
     end loop;
   end if;
 

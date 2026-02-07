@@ -105,7 +105,11 @@ const IGNORE_WORDS = new Set([
   'arial', 'times', 'courier', 'verdana', 'tahoma', 'calibri', 'font',
   'style', 'printer', 'landscape', 'portrait', 'audit', 'gross', 'regular',
   'net', 'withholding', 'balance', 'sheet', 'profit', 'loss', 'airborne',
-  'airborneq', 'dupf', 'dixt', 'others',
+  'airborneq', 'dupf', 'dixt', 'others', 'customer', 'vendor', 'employee',
+  'inventory', 'payment', 'supplies', 'cost', 'vehicle', 'building', 'sales',
+  'purchase', 'office', 'general', 'journal', 'report', 'template', 'form',
+  'system', 'backup', 'restore', 'import', 'export', 'filter', 'total',
+  'subtotal', 'amount', 'quantity', 'price', 'rate', 'percent', 'number',
 ]);
 
 // ─── Core Binary String Extractor ───────────────────────────────────────────
@@ -145,8 +149,8 @@ function filterNames(strings: string[]): string[] {
       if (!/^[A-Z]/.test(s)) return false;
       if (seen.has(s)) return false;
 
-      // Reject special characters
-      if (/['"$@\[\]{}\\<>\(\)]/.test(s)) return false;
+      // Reject special characters (including ~ and @)
+      if (/['"$@\[\]{}\\<>\(\)~]/.test(s)) return false;
 
       // Reject short CamelCase junk (ArvB, DupF, THx)
       if (s.length <= 5 && /[a-z][A-Z0-9]/.test(s)) return false;
@@ -208,11 +212,14 @@ function parseAccounts(data: Uint8Array): ParsedAccount[] {
   const allStrings = extractStrings(data);
   const accountNumbers = allStrings.filter(s => /^\d{4,5}$/.test(s));
 
+  const accountKeywords = /cash|bank|income|expense|tax|rent|salary|cost|asset|payable|receivable|equity|revenue|sales|petty|loan|credit|debit|maintenance|supplies|transport|property|pension|insurance|depreciation|accrued|account|interest|cooperative|dashen|awash|abyssinia|cbe|nib|oromia|wegagen/i;
+
   const accountNames = allStrings.filter(s => {
     if (s.length < 4 || s.length > 60) return false;
     if (!/^[A-Z]/.test(s)) return false;
-    return /cash|bank|income|expense|tax|rent|salary|cost|asset|payable|receivable|equity|revenue|sales|petty|loan|credit|debit|maintenance|supplies|transport|property|pension|insurance|depreciation|accrued|account/i.test(s)
-      || s.length > 10;
+    if (/['"$@\[\]{}\\<>\(\)~]/.test(s)) return false;
+    if (IGNORE_WORDS.has(s.toLowerCase())) return false;
+    return accountKeywords.test(s) || s.length > 10;
   });
 
   const unique = [...new Set(accountNames)];
@@ -275,7 +282,25 @@ function parseJournals(data: Uint8Array): ParsedJournalEntry[] {
 }
 
 function parseEmployees(data: Uint8Array): ParsedEmployee[] {
-  const names = filterNames(extractStrings(data));
+  // Try with shorter min length since names can be short (e.g. "Abebe")
+  let names = filterNames(extractStrings(data, 3));
+  
+  // If binary Btrieve with no readable strings, try scanning for
+  // name-like patterns in the raw bytes (fixed-width records)
+  if (names.length === 0) {
+    // Try extracting with even shorter min to find name fragments
+    const raw = extractStrings(data, 3);
+    names = raw.filter(s => {
+      if (s.length < 4 || s.length > 40) return false;
+      if (!/^[A-Z][a-z]/.test(s)) return false; // Must start Title Case
+      if (/[0-9'"$@\[\]{}\\<>\(\)~]/.test(s)) return false;
+      if (!/[aeiou]/i.test(s)) return false;
+      if (IGNORE_WORDS.has(s.toLowerCase())) return false;
+      return true;
+    });
+    names = [...new Set(names)];
+  }
+
   return names.slice(0, 200).map((name, i) => ({
     id: `EMP-${i + 1000}`,
     name,
@@ -361,7 +386,14 @@ export async function parsePtbFile(file: File): Promise<PtbParseResult> {
   };
 
   try {
-    const arrayBuffer = await file.arrayBuffer();
+    let arrayBuffer: ArrayBuffer;
+    try {
+      arrayBuffer = await file.arrayBuffer();
+    } catch (readErr: any) {
+      result.errors.push('Failed to read file: ' + (readErr.message || 'Unknown read error'));
+      return result;
+    }
+
     const zip = new JSZip();
     let contents: JSZip;
 

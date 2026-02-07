@@ -408,8 +408,15 @@ export function PtbImportDialogSimple() {
                 </div>
               </div>
               
-              {(importedCounts.transactions > 0 || importedCounts.employees > 0) && (
+              {(importedCounts.transactions > 0 || importedCounts.employees > 0 || importedCounts.inventory > 0) && (
                 <div className="grid grid-cols-2 gap-3">
+                  {importedCounts.inventory > 0 && (
+                    <div className="bg-teal-50 dark:bg-teal-950/30 rounded-lg p-3 text-center">
+                      <Package className="h-5 w-5 mx-auto text-teal-600 mb-1" />
+                      <p className="text-xl font-bold text-teal-600">{importedCounts.inventory}</p>
+                      <p className="text-xs text-muted-foreground">Inventory</p>
+                    </div>
+                  )}
                   {importedCounts.transactions > 0 && (
                     <div className="bg-indigo-50 dark:bg-indigo-950/30 rounded-lg p-3 text-center">
                       <FileText className="h-5 w-5 mx-auto text-indigo-600 mb-1" />
