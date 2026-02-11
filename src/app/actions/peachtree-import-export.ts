@@ -26,6 +26,40 @@ function extractAmountCandidates(data: Uint8Array, min = 0.01, max = 1_000_000_0
 }
 
 /**
+ * Extract monetary values from PTB journal row data.
+ *
+ * Strategy:
+ * - Parse only explicit decimal amounts embedded in row content.
+ * - Preserve sign so caller can map debit/credit direction.
+ * - Drop obvious outliers/duplicates to reduce binary-noise imports.
+ */
+function extractMonetaryValues(data: Uint8Array): number[] {
+  const decoder = new TextDecoder('iso-8859-1');
+  const content = decoder.decode(data);
+
+  const textMatches = content.match(/-?(?:\d{1,3}(?:,\d{3})+|\d+)\.\d{2}/g) || [];
+  const seen = new Set<string>();
+  const values: number[] = [];
+
+  for (const match of textMatches) {
+    const normalized = match.replace(/,/g, '');
+    const parsed = Number.parseFloat(normalized);
+    const rounded = Number(parsed.toFixed(2));
+
+    if (!Number.isFinite(rounded)) continue;
+    if (Math.abs(rounded) < 0.01 || Math.abs(rounded) > 1_000_000_000) continue;
+
+    // Preserve first-seen ordering while reducing repetitive noise.
+    if (!seen.has(normalized)) {
+      seen.add(normalized);
+      values.push(rounded);
+    }
+  }
+
+  return values;
+}
+
+/**
  * Import Peachtree (.ptb) backup file
  * PTB files are actually ZIP archives containing .DAT files
  */
@@ -314,56 +348,73 @@ export async function importPtbAction(formData: FormData): Promise<ActionResult<
     }
 
     // 6. Parse Journal Entries (JRNLHDR.DAT)
-    const jrnlData = await getFileContent('JRNLHDR');
-    const jrnlRowData = await getFileContent('JRNLROW');
-    const journalAmounts = jrnlRowData ? extractAmountCandidates(jrnlRowData) : [];
-    let journalAmountIndex = 0;
+    const [jrnlHdrData, jrnlRowData] = await Promise.all([
+      getFileContent('JRNLHDR'),
+      getFileContent('JRNLROW')
+    ]);
     const accountBalanceDeltas = new Map<string, number>();
 
-    if (jrnlData && accountIds.length >= 2) {
-      const strings = extractStrings(jrnlData, 5, 50);
+    if (jrnlHdrData && accountIds.length >= 2) {
+      const strings = extractStrings(jrnlHdrData, 5, 50);
       const descriptions = [...new Set(strings)].filter(s =>
         !s.includes('DAT') && s.length > 8 && /^[A-Za-z0-9]/.test(s)
       ).slice(0, 30);
+      const extractedAmounts = jrnlRowData ? extractMonetaryValues(jrnlRowData) : [];
       console.log(`[Import] Found ${descriptions.length} potential journals`);
+      console.log(`[Import] Extracted ${extractedAmounts.length} candidate journal amounts`);
+      if (extractedAmounts.length === 0) {
+        console.warn('[Import] No numeric journal amounts found in JRNLROW; skipping journal line import.');
+      }
 
-      for (const desc of descriptions) {
+      const journalsToImport = Math.min(descriptions.length, extractedAmounts.length);
+
+      for (let index = 0; index < journalsToImport; index++) {
+        const desc = descriptions[index];
+        const selectedAmount = extractedAmounts[index];
+        const amount = Math.abs(selectedAmount).toFixed(2);
+        if (amount === '0.00') {
+          continue;
+        }
+
+        // Deterministic pairing reduces random account assignment noise.
+        const acct1 = accountIds[index % accountIds.length];
+        const acct2 = accountIds[(index + 1) % accountIds.length] || acct1;
+
         const { data: entry, error: entryError } = await supabase.from('journal_entries').insert({
           company_id: companyId,
           date: new Date().toISOString(),
-          reference: `PTB-${Math.floor(Math.random() * 10000)}`,
+          reference: `PTB-${String(index + 1).padStart(4, '0')}`,
           description: `Imported: ${desc}`,
           status: 'POSTED',
           source_type: 'MANUAL',
         }).select('id').single();
 
         if (!entryError && entry) {
-          const amountValue = journalAmounts[journalAmountIndex++] ?? (Math.random() * 5000 + 500);
-          const amount = amountValue.toFixed(2);
-          // Pick two random accounts from ALL valid accounts (existing + new)
-          const acct1 = accountIds[Math.floor(Math.random() * accountIds.length)];
-          const acct2 = accountIds[Math.floor(Math.random() * accountIds.length)] || acct1;
+          const isNegative = selectedAmount < 0;
+          const debitAccount = isNegative ? acct2 : acct1;
+          const creditAccount = isNegative ? acct1 : acct2;
 
           await supabase.from('journal_lines').insert([
             {
               journal_entry_id: entry.id,
-              account_id: acct1,
+              account_id: debitAccount,
               description: 'Debit',
               debit: amount,
               credit: '0',
             },
             {
               journal_entry_id: entry.id,
-              account_id: acct2,
+              account_id: creditAccount,
               description: 'Credit',
               debit: '0',
               credit: amount,
             }
           ]);
-          const debitDelta = accountBalanceDeltas.get(acct1) ?? 0;
-          accountBalanceDeltas.set(acct1, debitDelta + amountValue);
-          const creditDelta = accountBalanceDeltas.get(acct2) ?? 0;
-          accountBalanceDeltas.set(acct2, creditDelta - amountValue);
+          const parsedAmount = parseFloat(amount);
+          const debitDelta = accountBalanceDeltas.get(debitAccount) ?? 0;
+          accountBalanceDeltas.set(debitAccount, debitDelta + parsedAmount);
+          const creditDelta = accountBalanceDeltas.get(creditAccount) ?? 0;
+          accountBalanceDeltas.set(creditAccount, creditDelta - parsedAmount);
           importedJournals++;
         }
       }
