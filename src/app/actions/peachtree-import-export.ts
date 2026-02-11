@@ -15,6 +15,16 @@ function extractStrings(data: Uint8Array, minLen = 3, maxLen = 100) {
   return matches.map(m => m.trim()).filter(m => m.length >= minLen);
 }
 
+function extractAmountCandidates(data: Uint8Array, min = 0.01, max = 1_000_000_000) {
+  const decoder = new TextDecoder('iso-8859-1');
+  const content = decoder.decode(data);
+  const regex = /-?\d{1,3}(?:,\d{3})*(?:\.\d{2})/g;
+  const matches = content.match(regex) || [];
+  return matches
+    .map(value => parseFloat(value.replace(/,/g, '')))
+    .filter(value => Number.isFinite(value) && value >= min && value <= max);
+}
+
 /**
  * Extract monetary values from PTB journal row data.
  *
@@ -342,6 +352,7 @@ export async function importPtbAction(formData: FormData): Promise<ActionResult<
       getFileContent('JRNLHDR'),
       getFileContent('JRNLROW')
     ]);
+    const accountBalanceDeltas = new Map<string, number>();
 
     if (jrnlHdrData && accountIds.length >= 2) {
       const strings = extractStrings(jrnlHdrData, 5, 50);
@@ -399,8 +410,35 @@ export async function importPtbAction(formData: FormData): Promise<ActionResult<
               credit: amount,
             }
           ]);
+          const parsedAmount = parseFloat(amount);
+          const debitDelta = accountBalanceDeltas.get(debitAccount) ?? 0;
+          accountBalanceDeltas.set(debitAccount, debitDelta + parsedAmount);
+          const creditDelta = accountBalanceDeltas.get(creditAccount) ?? 0;
+          accountBalanceDeltas.set(creditAccount, creditDelta - parsedAmount);
           importedJournals++;
         }
+      }
+    }
+
+    if (accountBalanceDeltas.size > 0) {
+      const accountIdsToUpdate = Array.from(accountBalanceDeltas.keys());
+      const { data: accountsToUpdate } = await supabase
+        .from('chart_of_accounts')
+        .select('id, balance')
+        .in('id', accountIdsToUpdate);
+
+      if (accountsToUpdate) {
+        await Promise.all(
+          accountsToUpdate.map(account => {
+            const delta = accountBalanceDeltas.get(account.id) ?? 0;
+            const currentBalance = parseFloat(account.balance || '0');
+            const newBalance = (currentBalance + delta).toFixed(2);
+            return supabase
+              .from('chart_of_accounts')
+              .update({ balance: newBalance })
+              .eq('id', account.id);
+          })
+        );
       }
     }
 
